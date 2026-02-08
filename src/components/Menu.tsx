@@ -1,7 +1,7 @@
 import { Search, Plus, FolderPlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAdmin } from '@/contexts/AdminContext';
 import { AdminCardModal } from './AdminCardModal';
@@ -10,6 +10,7 @@ import { AdminDeleteConfirm } from './AdminDeleteConfirm';
 import { useToast } from '@/hooks/use-toast';
 import { useMenuItems, menuCategories, groupMenuItems, toMenuCardItem } from '@/hooks/useMenuItems';
 import MenuCard from './MenuCard';
+import FlippableMenuCard from './FlippableMenuCard';
 
 const Menu = () => {
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
@@ -192,52 +193,71 @@ const Menu = () => {
 
       {/* Menu Cards Grid */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-        {menuCategories.map((category) => {
-          const categoryData = groupedMenu[category.id];
-          if (!categoryData || Object.keys(categoryData).length === 0) return null;
+        {(() => {
+          let globalIndex = 0; // Track global card index across all categories
           
-          return (
-            <div key={category.id} id={category.id} className="mb-16 scroll-mt-32">
-              {/* Section Header */}
-              <div className="mb-8">
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
-                  {category.name}
-                </h2>
-              </div>
+          return menuCategories.map((category) => {
+            const categoryData = groupedMenu[category.id];
+            if (!categoryData || Object.keys(categoryData).length === 0) return null;
+            
+            return (
+              <div key={category.id} id={category.id} className="mb-16 scroll-mt-32">
+                {/* Section Header */}
+                <div className="mb-8">
+                  <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                    {category.name}
+                  </h2>
+                </div>
 
-              {/* Subsections */}
-              {Object.entries(categoryData).map(([subsectionName, items]) => {
-                const filteredItems = filterItems(items);
-                if (filteredItems.length === 0) return null;
-                
-                return (
-                  <div key={subsectionName} className="mb-12">
-                    <h3 className="text-xl md:text-2xl font-semibold text-[#c9a962] mb-6">
-                      {subsectionName}
-                    </h3>
-                    
-                    {/* Items Grid with Lazy Loading */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
-                      {filteredItems.map((item) => {
-                        const cardItem = toMenuCardItem(item);
-                        return (
-                          <MenuCard
-                            key={item.id}
-                            item={cardItem}
-                            cardNumber={item.card_number}
-                            eagerLoad={true}
-                            onEdit={() => handleEdit(item)}
-                            onDelete={() => handleDelete(item)}
-                          />
-                        );
-                      })}
+                {/* Subsections */}
+                {Object.entries(categoryData).map(([subsectionName, items]) => {
+                  const filteredItems = filterItems(items);
+                  if (filteredItems.length === 0) return null;
+                  
+                  return (
+                    <div key={subsectionName} className="mb-12">
+                      <h3 className="text-xl md:text-2xl font-semibold text-[#c9a962] mb-6">
+                        {subsectionName}
+                      </h3>
+                      
+                      {/* Items Grid with Lazy Loading */}
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
+                        {filteredItems.map((item) => {
+                          const cardItem = toMenuCardItem(item);
+                          const currentIndex = globalIndex;
+                          globalIndex++;
+                          
+                          // First 4 cards use FlippableMenuCard
+                          if (currentIndex < 4) {
+                            return (
+                              <FlippableMenuCard
+                                key={item.id}
+                                item={cardItem}
+                                cardNumber={item.card_number}
+                                category={category.id}
+                              />
+                            );
+                          }
+                          
+                          return (
+                            <MenuCard
+                              key={item.id}
+                              item={cardItem}
+                              cardNumber={item.card_number}
+                              eagerLoad={true}
+                              onEdit={() => handleEdit(item)}
+                              onDelete={() => handleDelete(item)}
+                            />
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
+                  );
+                })}
+              </div>
+            );
+          });
+        })()}
       </div>
 
       {/* Modal for Card Details */}
