@@ -204,7 +204,7 @@ const Menu = () => {
               <div key={category.id} id={category.id} className="mb-16 scroll-mt-32">
                 {/* Section Header */}
                 <div className="mb-8">
-                  <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                  <h2 className="text-3xl md:text-4xl font-cinzel font-bold text-white mb-2">
                     {category.name}
                   </h2>
                 </div>
@@ -216,7 +216,7 @@ const Menu = () => {
                   
                   return (
                     <div key={subsectionName} className="mb-12">
-                      <h3 className="text-xl md:text-2xl font-semibold text-[#c9a962] mb-6">
+                      <h3 className="text-xl md:text-2xl font-cinzel font-semibold text-[#c9a962] mb-6">
                         {subsectionName}
                       </h3>
                       

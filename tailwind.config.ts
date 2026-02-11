@@ -149,6 +149,7 @@ export default {
 			},
 			fontFamily: {
 				'playfair': ['Playfair Display', 'serif'],
+				'cinzel': ['Cinzel', 'serif'],
 				'inter': ['Inter', 'sans-serif']
 			}
 		}
