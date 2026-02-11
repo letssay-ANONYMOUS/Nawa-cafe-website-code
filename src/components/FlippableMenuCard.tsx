@@ -107,16 +107,16 @@ const FlippableMenuCard = ({ item, cardNumber, category = 'menu' }: FlippableMen
             </div>
           </div>
 
-          {/* Golden Footer */}
-          <div className="absolute bottom-0 left-0 right-0 bg-[#c9a962]/90 backdrop-blur-sm p-3">
-            <h3 className="font-semibold text-white text-sm md:text-base leading-tight mb-1">
+          {/* Golden Footer - fixed height to match regular cards */}
+          <div className="absolute bottom-0 left-0 right-0 bg-[#c9a962]/90 backdrop-blur-sm p-3 min-h-[5.5rem] flex flex-col justify-between">
+            <h3 className="font-semibold text-white text-xs sm:text-sm md:text-base leading-tight mb-1 line-clamp-2">
               {item.name}
             </h3>
             <div className="flex items-center justify-between">
-              <p className="text-white/90 font-bold text-base md:text-lg">
+              <p className="text-white/90 font-bold text-sm sm:text-base md:text-lg">
                 AED {item.price.toFixed(2)}
               </p>
-              <p className="text-white/60 text-xs">
+              <p className="text-white/60 text-[10px]">
                 Tap to flip
               </p>
             </div>

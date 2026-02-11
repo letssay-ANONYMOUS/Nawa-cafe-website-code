@@ -125,18 +125,18 @@ const Menu = () => {
   return (
     <section className="min-h-screen bg-gradient-to-b from-[#4a5f4a]/30 via-[#5a6f5a]/20 to-[#4a5f4a]/30 backdrop-blur-sm">
       {/* Header with Search */}
-      <div className="bg-[#4a5f4a]/80 backdrop-blur-md py-4 px-4 sm:px-6 lg:px-8 sticky top-16 z-10">
+       <div className="bg-[#4a5f4a]/80 backdrop-blur-md py-3 px-3 sm:px-6 lg:px-8 sticky top-16 z-10">
         <div className="container mx-auto">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-white whitespace-nowrap">Specialty Coffee</h1>
-            <div className="flex-1 relative max-w-2xl">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
+            <h1 className="text-lg sm:text-2xl font-cinzel font-bold text-white whitespace-nowrap text-center sm:text-left">Specialty Coffee</h1>
+            <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-coffee-700 w-5 h-5" />
               <Input
                 type="text"
                 placeholder="Search Item By Name, Price Or Description."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-[#c9a962] border-none text-coffee-900 placeholder:text-coffee-700 rounded-lg"
+                className="pl-10 w-full bg-[#c9a962] border-none text-coffee-900 placeholder:text-coffee-700 rounded-lg h-11"
               />
             </div>
             {isAdmin && (
@@ -163,14 +163,14 @@ const Menu = () => {
       </div>
 
       {/* Category Navigation */}
-      <div className="overflow-x-auto py-6 px-4 sm:px-6 lg:px-8 scrollbar-hide">
+      <div className="overflow-x-auto py-4 px-3 sm:px-6 lg:px-8 scrollbar-hide">
         <div className="container mx-auto">
-          <div className="flex gap-4 min-w-max justify-start">
+          <div className="flex gap-3 sm:gap-4 min-w-max justify-start">
             {menuCategories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => scrollToSection(category.id)}
-                className="flex-shrink-0 w-40 group cursor-pointer"
+                className="flex-shrink-0 w-28 sm:w-40 group cursor-pointer"
               >
                 <div className="relative overflow-hidden rounded-lg aspect-[4/3] mb-2">
                   <img
@@ -192,7 +192,7 @@ const Menu = () => {
       </div>
 
       {/* Menu Cards Grid */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+      <div className="container mx-auto px-3 sm:px-6 lg:px-8 pb-20">
         {(() => {
           let globalIndex = 0; // Track global card index across all categories
           
@@ -203,10 +203,11 @@ const Menu = () => {
             return (
               <div key={category.id} id={category.id} className="mb-16 scroll-mt-32">
                 {/* Section Header */}
-                <div className="mb-8">
-                  <h2 className="text-3xl md:text-4xl font-cinzel font-bold text-white mb-2">
+                <div className="mb-6">
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-cinzel font-bold text-white mb-2 tracking-wide">
                     {category.name}
                   </h2>
+                  <div className="w-16 h-0.5 bg-[#c9a962]" />
                 </div>
 
                 {/* Subsections */}
@@ -216,12 +217,12 @@ const Menu = () => {
                   
                   return (
                     <div key={subsectionName} className="mb-12">
-                      <h3 className="text-xl md:text-2xl font-cinzel font-semibold text-[#c9a962] mb-6">
+                      <h3 className="text-lg sm:text-xl md:text-2xl font-cinzel font-semibold text-[#c9a962] mb-4 sm:mb-6">
                         {subsectionName}
                       </h3>
                       
                       {/* Items Grid with Lazy Loading */}
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-6">
                         {filteredItems.map((item) => {
                           const cardItem = toMenuCardItem(item);
                           const currentIndex = globalIndex;

@@ -5,14 +5,22 @@ import Footer from '@/components/Footer';
 
 const MenuPage = () => {
   useEffect(() => {
-    // Restore scroll position if returning from detail page
     const savedScrollY = sessionStorage.getItem('menuScrollY');
     if (savedScrollY) {
-      // Small delay to ensure the page is rendered
-      setTimeout(() => {
-        window.scrollTo(0, parseInt(savedScrollY));
-        sessionStorage.removeItem('menuScrollY');
-      }, 100);
+      const targetY = parseInt(savedScrollY);
+      sessionStorage.removeItem('menuScrollY');
+      // Use requestAnimationFrame to ensure DOM is painted, then scroll
+      const tryScroll = () => {
+        requestAnimationFrame(() => {
+          window.scrollTo(0, targetY);
+          // Verify scroll happened; retry if content wasn't ready
+          if (Math.abs(window.scrollY - targetY) > 50 && targetY > 0) {
+            setTimeout(() => window.scrollTo(0, targetY), 200);
+          }
+        });
+      };
+      // Wait for menu data to likely be rendered
+      setTimeout(tryScroll, 50);
     } else {
       window.scrollTo(0, 0);
     }

@@ -93,17 +93,17 @@ const MenuCard = ({ item, cardNumber, eagerLoad = false, onEdit, onDelete }: Men
         )}
       </div>
 
-      {/* Golden Footer */}
-      <div className="bg-[#c9a962]/90 backdrop-blur-sm p-3">
-        <h3 className="font-semibold text-white text-sm md:text-base leading-tight mb-2">
+      {/* Golden Footer - fixed height for uniformity */}
+      <div className="bg-[#c9a962]/90 backdrop-blur-sm p-3 min-h-[5.5rem] flex flex-col justify-between">
+        <h3 className="font-semibold text-white text-xs sm:text-sm md:text-base leading-tight mb-1 line-clamp-2">
           {item.name}
         </h3>
         
         <div className="flex items-center justify-between">
-          <p className="text-white/90 font-bold text-base md:text-lg">
+          <p className="text-white/90 font-bold text-sm sm:text-base md:text-lg">
             AED {item.price.toFixed(2)}
           </p>
-          <p className="text-white/60 text-xs hidden md:block">
+          <p className="text-white/60 text-[10px] hidden md:block">
             Click for details
           </p>
         </div>
