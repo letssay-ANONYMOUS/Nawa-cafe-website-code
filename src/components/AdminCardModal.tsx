@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -50,6 +50,8 @@ export const AdminCardModal = ({ open, onOpenChange, onSave, initialData, title,
   const selectedCategory = categories.find(c => c.id === formData.category);
   const availableSections = selectedCategory?.sections || [];
 
+  const categoriesKey = useMemo(() => JSON.stringify(categories.map(c => c.id)), [categories]);
+
   useEffect(() => {
     if (initialData) {
       setFormData(initialData);
@@ -66,7 +68,8 @@ export const AdminCardModal = ({ open, onOpenChange, onSave, initialData, title,
       setImagePreview('');
     }
     setImageFile(null);
-  }, [initialData, open, categories]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialData, open, categoriesKey]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
