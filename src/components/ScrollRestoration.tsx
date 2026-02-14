@@ -1,29 +1,31 @@
-import { useEffect, useRef } from 'react';
-import { useLocation, useNavigationType } from 'react-router-dom';
+import { useEffect, useRef, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 
 const scrollPositions = new Map<string, number>();
 
 const ScrollRestoration = () => {
   const { pathname } = useLocation();
-  const navType = useNavigationType();
   const prevPathRef = useRef<string | null>(null);
+  const restoringRef = useRef(false);
 
-  // Save scroll on every scroll event (debounced)
+  // Save scroll on every scroll event (debounced) — but not while restoring
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout>;
     const handleScroll = () => {
+      if (restoringRef.current) return;
       clearTimeout(timeout);
       timeout = setTimeout(() => {
         scrollPositions.set(pathname, window.scrollY);
-      }, 80);
+      }, 60);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
       window.removeEventListener('scroll', handleScroll);
       clearTimeout(timeout);
-      // Save final position on unmount
-      scrollPositions.set(pathname, window.scrollY);
+      if (!restoringRef.current) {
+        scrollPositions.set(pathname, window.scrollY);
+      }
     };
   }, [pathname]);
 
@@ -34,15 +36,53 @@ const ScrollRestoration = () => {
 
     const saved = scrollPositions.get(pathname);
     if (saved && saved > 0) {
-      // Restore with retries to handle async content
-      const restore = (attempts: number) => {
+      restoringRef.current = true;
+
+      // Keep trying until we reach the target or run out of attempts
+      let attempts = 0;
+      const maxAttempts = 30; // ~3 seconds total
+      const tryRestore = () => {
         window.scrollTo(0, saved);
-        if (attempts > 0 && Math.abs(window.scrollY - saved) > 50) {
-          requestAnimationFrame(() => setTimeout(() => restore(attempts - 1), 100));
+        attempts++;
+        if (Math.abs(window.scrollY - saved) < 30) {
+          // Success
+          setTimeout(() => { restoringRef.current = false; }, 200);
+          return;
+        }
+        if (attempts < maxAttempts) {
+          setTimeout(tryRestore, 100);
+        } else {
+          // Give up, accept current position
+          restoringRef.current = false;
         }
       };
-      // Wait for DOM to paint
-      requestAnimationFrame(() => setTimeout(() => restore(5), 50));
+
+      // Also watch for DOM changes (async content loading)
+      const observer = new MutationObserver(() => {
+        if (restoringRef.current) {
+          window.scrollTo(0, saved);
+          if (Math.abs(window.scrollY - saved) < 30) {
+            restoringRef.current = false;
+            observer.disconnect();
+          }
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+
+      // Start retry loop after first paint
+      requestAnimationFrame(() => setTimeout(tryRestore, 30));
+
+      // Cleanup observer after timeout
+      const cleanupTimer = setTimeout(() => {
+        observer.disconnect();
+        restoringRef.current = false;
+      }, 3500);
+
+      return () => {
+        observer.disconnect();
+        clearTimeout(cleanupTimer);
+        restoringRef.current = false;
+      };
     } else {
       window.scrollTo(0, 0);
     }
