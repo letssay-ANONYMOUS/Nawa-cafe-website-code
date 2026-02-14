@@ -9,6 +9,7 @@ import { AdminProvider } from "@/contexts/AdminContext";
 import { RouteAwareCookieConsent } from "@/components/RouteAwareCookieConsent";
 import PageViewTracker from "@/components/PageViewTracker";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import ScrollRestoration from "@/components/ScrollRestoration";
 import Home from "./pages/Home";
 import MenuPage from "./pages/MenuPage";
 import AboutPage from "./pages/AboutPage";
@@ -40,6 +41,7 @@ const App = () => (
           <BrowserRouter>
             <GoogleAnalytics />
             <PageViewTracker />
+            <ScrollRestoration />
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/menu" element={<MenuPage />} />

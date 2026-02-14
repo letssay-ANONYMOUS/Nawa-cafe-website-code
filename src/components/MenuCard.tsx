@@ -31,8 +31,6 @@ const MenuCard = ({ item, cardNumber, eagerLoad = false, onEdit, onDelete }: Men
       'view'
     );
     
-    // Save scroll position before navigating
-    sessionStorage.setItem('menuScrollY', window.scrollY.toString());
     navigate(`/menu/${item.id}`);
   };
 
