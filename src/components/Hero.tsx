@@ -1,7 +1,9 @@
 
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Coffee, UserCircle, Home } from 'lucide-react';
+import { fadeUp, staggerContainer, buttonHover } from '@/lib/motionVariants';
 
 const Hero = () => {
   return (
@@ -39,21 +41,25 @@ const Hero = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
             <Link to="/menu">
-              <Button
-                size="lg"
-                className="bg-cream-400 hover:bg-cream-500 text-coffee-800 px-10 py-4 text-lg font-semibold rounded-full transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-cream-400/25"
-              >
-                Explore Our Menu
-              </Button>
+              <motion.div {...buttonHover}>
+                <Button
+                  size="lg"
+                  className="bg-cream-400 hover:bg-cream-500 text-coffee-800 px-10 py-4 text-lg font-semibold rounded-full transition-colors duration-300 shadow-2xl hover:shadow-cream-400/25"
+                >
+                  Explore Our Menu
+                </Button>
+              </motion.div>
             </Link>
             <Link to="/locations">
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-2 border-white text-white bg-white/10 hover:bg-white hover:text-coffee-800 px-10 py-4 text-lg font-semibold rounded-full transition-all duration-300 transform hover:scale-105 backdrop-blur-sm"
-              >
-                Find Locations
-              </Button>
+              <motion.div {...buttonHover}>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="border-2 border-white text-white bg-white/10 hover:bg-white hover:text-coffee-800 px-10 py-4 text-lg font-semibold rounded-full transition-colors duration-300 backdrop-blur-sm"
+                >
+                  Find Locations
+                </Button>
+              </motion.div>
             </Link>
           </div>
         </div>

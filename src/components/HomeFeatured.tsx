@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import homeSpread from '@/assets/home-spread.jpg';
+import { cardHover } from '@/lib/motionVariants';
 
 const featured = [
   {
@@ -43,10 +45,16 @@ const HomeFeatured = () => {
         {/* Featured cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
           {featured.map((item) => (
-            <Link
+            <motion.div
               key={item.title}
+              variants={cardHover}
+              initial="rest"
+              whileHover="hover"
+              className="rounded-2xl overflow-hidden"
+            >
+            <Link
               to="/menu"
-              className="group relative rounded-2xl overflow-hidden aspect-[3/4] shadow-lg hover:shadow-2xl transition-all duration-500"
+              className="group relative block aspect-[3/4] overflow-hidden"
             >
               <img
                 src={item.image}
@@ -67,6 +75,7 @@ const HomeFeatured = () => {
                 </div>
               </div>
             </Link>
+            </motion.div>
           ))}
         </div>
 
