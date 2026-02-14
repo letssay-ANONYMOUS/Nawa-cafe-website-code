@@ -1,47 +1,51 @@
-import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { useLocation, useNavigationType } from 'react-router-dom';
 
-const SCROLL_KEY_PREFIX = 'scrollY_';
+const scrollPositions = new Map<string, number>();
 
 const ScrollRestoration = () => {
   const { pathname } = useLocation();
+  const navType = useNavigationType();
+  const prevPathRef = useRef<string | null>(null);
 
+  // Save scroll on every scroll event (debounced)
   useEffect(() => {
-    // Restore scroll position for this route
-    const saved = sessionStorage.getItem(SCROLL_KEY_PREFIX + pathname);
-    if (saved) {
-      const targetY = parseInt(saved);
-      // Wait for content to render, then scroll
-      const tryScroll = () => {
-        requestAnimationFrame(() => {
-          window.scrollTo(0, targetY);
-          if (Math.abs(window.scrollY - targetY) > 50 && targetY > 0) {
-            setTimeout(() => window.scrollTo(0, targetY), 200);
-          }
-        });
-      };
-      setTimeout(tryScroll, 50);
-    } else {
-      window.scrollTo(0, 0);
-    }
-
-    // Save scroll position on scroll (debounced)
     let timeout: ReturnType<typeof setTimeout>;
     const handleScroll = () => {
       clearTimeout(timeout);
       timeout = setTimeout(() => {
-        sessionStorage.setItem(SCROLL_KEY_PREFIX + pathname, window.scrollY.toString());
-      }, 100);
+        scrollPositions.set(pathname, window.scrollY);
+      }, 80);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-
     return () => {
-      // Save final position on unmount (route change)
-      sessionStorage.setItem(SCROLL_KEY_PREFIX + pathname, window.scrollY.toString());
       window.removeEventListener('scroll', handleScroll);
       clearTimeout(timeout);
+      // Save final position on unmount
+      scrollPositions.set(pathname, window.scrollY);
     };
+  }, [pathname]);
+
+  // Restore or reset scroll on route change
+  useEffect(() => {
+    if (prevPathRef.current === pathname) return;
+    prevPathRef.current = pathname;
+
+    const saved = scrollPositions.get(pathname);
+    if (saved && saved > 0) {
+      // Restore with retries to handle async content
+      const restore = (attempts: number) => {
+        window.scrollTo(0, saved);
+        if (attempts > 0 && Math.abs(window.scrollY - saved) > 50) {
+          requestAnimationFrame(() => setTimeout(() => restore(attempts - 1), 100));
+        }
+      };
+      // Wait for DOM to paint
+      requestAnimationFrame(() => setTimeout(() => restore(5), 50));
+    } else {
+      window.scrollTo(0, 0);
+    }
   }, [pathname]);
 
   return null;
