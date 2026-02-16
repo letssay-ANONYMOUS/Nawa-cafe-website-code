@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import homeBarista from '@/assets/home-barista.jpg';
+const homeBarista = 'https://lomqlmqsoyayuegheetv.supabase.co/storage/v1/object/public/menu-images/home/barista-cup.jpg';
 
 const HomeStory = () => {
   return (

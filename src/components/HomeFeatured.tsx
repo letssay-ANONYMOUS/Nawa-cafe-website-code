@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
-import homeSpread from '@/assets/home-spread.jpg';
+const homeSpread = 'https://lomqlmqsoyayuegheetv.supabase.co/storage/v1/object/public/menu-images/home/breakfast-spread.jpg';
 import { cardHover } from '@/lib/motionVariants';
 
 const featured = [
