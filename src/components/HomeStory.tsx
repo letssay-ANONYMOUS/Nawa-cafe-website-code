@@ -12,7 +12,7 @@ const HomeStory = () => {
               <img
                 src={homeBarista}
                 alt="Barista crafting latte art"
-                className="w-full h-[500px] object-cover"
+                className="w-full h-[400px] object-cover object-center"
                 loading="lazy"
               />
             </div>
