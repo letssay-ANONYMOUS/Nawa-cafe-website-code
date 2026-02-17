@@ -70,12 +70,20 @@ export const ConversionFunnel = ({ dateRange }: ConversionFunnelProps) => {
         .eq('event_name', 'checkout_started')
         .gte('created_at', startDate.toISOString());
 
-      // Fetch completed orders
-      const { count: orderComplete } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('payment_status', 'paid')
-        .gte('created_at', startDate.toISOString());
+      // Fetch completed orders via admin edge function
+      const token = localStorage.getItem('admin_session') || '';
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const ordersResponse = await fetch(
+        `${supabaseUrl}/functions/v1/admin-orders?mode=count&start_date=${startDate.toISOString()}&payment_status=paid`,
+        {
+          headers: {
+            'x-admin-token': token,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+        }
+      );
+      const ordersResult = await ordersResponse.json();
+      const orderComplete = ordersResult.count || 0;
 
       setData({
         pageViews: pageViews || 0,

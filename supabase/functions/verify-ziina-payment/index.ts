@@ -18,17 +18,11 @@ serve(async (req) => {
     console.log("Verifying payment:", { payment_id, order_id });
 
     // Validate required fields
-    if (!payment_id || !order_id) {
-      console.error("Missing required fields");
+    if (!order_id) {
+      console.error("Missing order_id");
       return new Response(
-        JSON.stringify({
-          success: false,
-          error: "Missing payment_id or order_id",
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400,
-        }
+        JSON.stringify({ success: false, error: "Missing order_id" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
 
@@ -36,6 +30,24 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // If no payment_id provided, look it up from the order
+    let actualPaymentId = payment_id;
+    if (!actualPaymentId) {
+      const { data: orderLookup, error: lookupError } = await supabase
+        .from("orders")
+        .select("payment_reference")
+        .eq("id", order_id)
+        .single();
+
+      if (lookupError || !orderLookup?.payment_reference) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Order not found or missing payment reference" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
+        );
+      }
+      actualPaymentId = orderLookup.payment_reference;
+    }
 
     // Get Ziina API token
     const ziinaToken = Deno.env.get("ZIINA_API_TOKEN") || Deno.env.get("ZIINA_API_KEY");
@@ -56,7 +68,7 @@ serve(async (req) => {
     // Fetch payment status from Ziina API
     console.log("Fetching payment status from Ziina...");
     const ziinaResponse = await fetch(
-      `https://api-v2.ziina.com/api/payment_intent/${payment_id}`,
+      `https://api-v2.ziina.com/api/payment_intent/${actualPaymentId}`,
       {
         method: "GET",
         headers: {
@@ -128,10 +140,10 @@ serve(async (req) => {
       }
 
       // Security: Verify payment reference matches
-      if (existingOrder.payment_reference !== payment_id) {
+      if (existingOrder.payment_reference !== actualPaymentId) {
         console.error("Payment reference mismatch:", {
           expected: existingOrder.payment_reference,
-          received: payment_id,
+          received: actualPaymentId,
         });
         return new Response(
           JSON.stringify({

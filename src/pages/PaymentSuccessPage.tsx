@@ -21,7 +21,6 @@ const PaymentSuccessPage = () => {
 
   useEffect(() => {
     const verifyPayment = async () => {
-      // Check for required params
       if (!orderId) {
         setError('Missing order information. Please contact support.');
         setVerifying(false);
@@ -29,34 +28,11 @@ const PaymentSuccessPage = () => {
       }
 
       try {
-        // First, get the order to find the payment_reference (payment_id)
-        const { data: orderData, error: orderError } = await supabase
-          .from('orders')
-          .select('payment_reference, order_number')
-          .eq('id', orderId)
-          .single();
-
-        if (orderError || !orderData) {
-          console.error('Error fetching order:', orderError);
-          setError('Order not found. Please contact support.');
-          setVerifying(false);
-          return;
-        }
-
-        const actualPaymentId = paymentId || orderData.payment_reference;
-        
-        if (!actualPaymentId) {
-          setError('Missing payment information. Please contact support.');
-          setVerifying(false);
-          return;
-        }
-
-        console.log('Verifying payment:', { payment_id: actualPaymentId, order_id: orderId });
-
-        // Call the verification edge function
+        // Call the verification edge function directly — it uses service role
+        // to look up the order and verify payment server-side
         const { data, error: verifyError } = await supabase.functions.invoke('verify-ziina-payment', {
           body: { 
-            payment_id: actualPaymentId, 
+            payment_id: paymentId || '', 
             order_id: orderId 
           }
         });
@@ -78,7 +54,6 @@ const PaymentSuccessPage = () => {
             description: "Thank you for your order. We'll start preparing it right away!",
           });
         } else {
-          // Payment not completed yet or failed
           console.log('Payment not verified:', data);
           setError(data?.error || 'Payment verification failed. Please try again or contact support.');
         }

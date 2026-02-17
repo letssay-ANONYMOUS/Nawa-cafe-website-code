@@ -61,15 +61,13 @@ const CheckoutPage = () => {
       // Create Ziina payment intent
       const { data, error } = await supabase.functions.invoke('create-ziina-checkout', {
         body: {
-          amount: total,
           customerName: formData.name,
           phoneNumber: formData.phone,
           visitorId: getVisitorId(),
           orderItems: cartItems.map(item => ({
             name: item.name,
             quantity: item.quantity,
-            price: item.price,
-            total: item.price * item.quantity
+            category: item.category,
           })),
           additionalNotes: formData.notes || "None",
         },

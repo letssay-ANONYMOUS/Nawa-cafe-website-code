@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.verify-ziina-payment]
 verify_jwt = false
+
+[functions.admin-orders]
+verify_jwt = false

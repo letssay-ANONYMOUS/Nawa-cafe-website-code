@@ -13,45 +13,93 @@ serve(async (req) => {
   }
 
   try {
-    const { amount, customerName, phoneNumber, orderItems, additionalNotes, visitorId } = await req.json();
+    const { customerName, phoneNumber, orderItems, additionalNotes, visitorId } = await req.json();
 
-    console.log("Checkout request:", { amount, customerName, phoneNumber, itemCount: orderItems?.length, visitorId });
+    console.log("Checkout request:", { customerName, phoneNumber, itemCount: orderItems?.length, visitorId });
+
+    // Validate required fields
+    if (!customerName || !phoneNumber || !orderItems || orderItems.length === 0) {
+      return new Response(
+        JSON.stringify({ error: { provider: "validation", message: "Missing required fields" } }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // ===== SERVER-SIDE PRICE VALIDATION =====
+    // Fetch actual prices from database to prevent client-side manipulation
+    const itemNames = orderItems.map((item: any) => item.name);
+    const { data: dbItems, error: menuError } = await supabase
+      .from('menu_items')
+      .select('title, price')
+      .in('title', itemNames)
+      .eq('published', true);
+
+    if (menuError) {
+      console.error("Error fetching menu items for validation:", menuError);
+      return new Response(
+        JSON.stringify({ error: { provider: "validation", message: "Failed to validate prices" } }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+
+    // Build a price lookup map from database
+    const priceMap = new Map<string, number>();
+    for (const item of dbItems || []) {
+      priceMap.set(item.title, Number(item.price));
+    }
+
+    // Validate each item and calculate server-side total
+    let serverTotal = 0;
+    const validatedItems: any[] = [];
+    for (const item of orderItems) {
+      const dbPrice = priceMap.get(item.name);
+      if (dbPrice === undefined) {
+        console.error(`Item not found in menu: ${item.name}`);
+        return new Response(
+          JSON.stringify({ error: { provider: "validation", message: `Item "${item.name}" not found in menu` } }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+        );
+      }
+      const qty = Number(item.quantity);
+      if (!Number.isInteger(qty) || qty < 1) {
+        return new Response(
+          JSON.stringify({ error: { provider: "validation", message: `Invalid quantity for "${item.name}"` } }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+        );
+      }
+      serverTotal += dbPrice * qty;
+      validatedItems.push({ ...item, price: dbPrice }); // Use DB price
+    }
+
+    const amount = Math.round(serverTotal * 100) / 100; // Round to 2 decimals
+    console.log("Server-validated total:", amount);
+
     // Get Ziina API token
     const ziinaToken = Deno.env.get("ZIINA_API_TOKEN") || Deno.env.get("ZIINA_API_KEY");
     if (!ziinaToken) {
       console.error("No Ziina token configured");
       return new Response(
-        JSON.stringify({
-          error: { provider: "ziina", message: "Payment gateway not configured" },
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
+        JSON.stringify({ error: { provider: "ziina", message: "Payment gateway not configured" } }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
 
     // Get origin for redirect URLs
     const origin = req.headers.get("origin") || "https://cafe-delight-website-builder.lovable.app";
 
-    // In preview environments, enable Ziina test mode so checkout can be verified end-to-end
-    // without being blocked by wallet activation state.
     const isPreviewOrigin =
       origin.includes("id-preview--") ||
       origin.includes("lovableproject.com") ||
       origin.includes("localhost");
 
     // Build payment request - amount in fils (base units)
-    const amountInFils = Math.round(Number(amount) * 100);
+    const amountInFils = Math.round(amount * 100);
 
-    // We'll add order_id to success_url after we create the order
-    // For now, build the base payment body
     const basePaymentBody: Record<string, unknown> = {
       amount: amountInFils,
       currency_code: "AED",
@@ -66,9 +114,8 @@ serve(async (req) => {
     let orderData: { id: string; order_number: string } | null = null;
     
     try {
-      // Calculate subtotal
-      const subtotal = orderItems?.reduce((sum: number, item: any) => 
-        sum + (item.price * item.quantity), 0) || amount;
+      // Use server-validated prices
+      const subtotal = amount;
 
       // Insert order into database (without payment reference yet)
       const { data: insertedOrder, error: orderError } = await supabase
@@ -103,13 +150,13 @@ serve(async (req) => {
       orderData = insertedOrder;
       console.log("Order created:", orderData);
 
-      // Insert order items
-      if (orderItems && orderItems.length > 0) {
-        const orderItemsToInsert = orderItems.map((item: any) => ({
+      // Insert order items using validated prices from DB
+      if (validatedItems && validatedItems.length > 0) {
+        const orderItemsToInsert = validatedItems.map((item: any) => ({
           order_id: orderData!.id,
           item_name: item.name,
           quantity: item.quantity,
-          unit_price: item.price,
+          unit_price: item.price, // DB-validated price
           total_price: item.price * item.quantity,
           item_category: item.category || null,
           extras: item.extras || null,

@@ -133,12 +133,20 @@ const AnalyticsDashboard = () => {
         .gte('last_seen_at', fiveMinutesAgo.toISOString())
         .order('last_seen_at', { ascending: false });
 
-      // Fetch orders for conversion
-      const { data: ordersData } = await supabase
-        .from('orders')
-        .select('id')
-        .gte('created_at', startDate.toISOString())
-        .eq('payment_status', 'paid');
+      // Fetch orders for conversion via admin edge function
+      const token = localStorage.getItem('admin_session') || '';
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const ordersResponse = await fetch(
+        `${supabaseUrl}/functions/v1/admin-orders?mode=count&start_date=${startDate.toISOString()}&payment_status=paid`,
+        {
+          headers: {
+            'x-admin-token': token,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+        }
+      );
+      const ordersResult = await ordersResponse.json();
+      const ordersData = ordersResult.count ? Array(ordersResult.count).fill({ id: '' }) : [];
 
       // Calculate metrics
       const totalSessions = sessionsData?.length || 0;

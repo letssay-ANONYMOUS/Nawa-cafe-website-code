@@ -142,11 +142,20 @@ export const VisitorDetailsTable = ({ dateRange }: VisitorDetailsTableProps) => 
         .select('visitor_id, page_path, time_on_page, engagement_time, viewed_at')
         .gte('viewed_at', startDate.toISOString());
 
-      // Fetch orders
-      const { data: ordersData } = await supabase
-        .from('orders')
-        .select('visitor_id')
-        .gte('created_at', startDate.toISOString());
+      // Fetch orders via admin edge function
+      const token = localStorage.getItem('admin_session') || '';
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const ordersResponse = await fetch(
+        `${supabaseUrl}/functions/v1/admin-orders?mode=visitor_ids&start_date=${startDate.toISOString()}`,
+        {
+          headers: {
+            'x-admin-token': token,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+        }
+      );
+      const ordersResult = await ordersResponse.json();
+      const ordersData = ordersResult.data || [];
 
       // Fetch cart events from site_events
       const { data: cartEvents } = await supabase

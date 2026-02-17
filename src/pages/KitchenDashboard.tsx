@@ -200,31 +200,40 @@ const KitchenDashboard = () => {
   const loadOrders = async () => {
     setIsLoading(true);
     try {
-      // Use date range for historical data (default 1 month)
       const startDate = getDateFromRange(dateRange);
+      const token = localStorage.getItem('admin_session') || '';
 
-      const { data: ordersData, error: ordersError } = await supabase
-        .from('orders')
-        .select('*')
-        .gte('created_at', startDate.toISOString())
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.functions.invoke('admin-orders', {
+        headers: { 'x-admin-token': token },
+        body: null,
+        method: 'GET',
+      });
 
-      if (ordersError) throw ordersError;
+      // Use fetch directly since invoke doesn't support query params well
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/admin-orders?start_date=${startDate.toISOString()}`,
+        {
+          headers: {
+            'x-admin-token': token,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
-      if (ordersData && ordersData.length > 0) {
-        const orderIds = ordersData.map(o => o.id);
-        const { data: itemsData, error: itemsError } = await supabase
-          .from('order_items')
-          .select('*')
-          .in('order_id', orderIds);
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Failed to load orders');
+      }
 
-        if (itemsError) throw itemsError;
+      const result = await response.json();
 
-        const ordersWithItems: OrderWithItems[] = ordersData.map(order => ({
+      if (result.orders && result.orders.length > 0) {
+        const ordersWithItems: OrderWithItems[] = result.orders.map((order: Order) => ({
           ...order,
-          items: (itemsData || []).filter(item => item.order_id === order.id)
+          items: (result.items || []).filter((item: OrderItem) => item.order_id === order.id)
         }));
-
         setOrders(ordersWithItems);
       } else {
         setOrders([]);
