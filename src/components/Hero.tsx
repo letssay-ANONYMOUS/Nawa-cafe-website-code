@@ -23,28 +23,28 @@ const Hero = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+      <div className="relative z-10 text-center px-6 sm:px-6 lg:px-8 max-w-5xl mx-auto">
         <div className="animate-fade-in">
-          <div className="mb-6">
-            <span className="inline-block px-4 py-2 bg-cream-400/20 text-cream-200 rounded-full text-sm font-medium backdrop-blur-sm">
+          <div className="mb-4 sm:mb-6">
+            <span className="inline-block px-3 py-1.5 sm:px-4 sm:py-2 bg-cream-400/20 text-cream-200 rounded-full text-xs sm:text-sm font-medium backdrop-blur-sm">
               Premium Coffee Experience Since 2014
             </span>
           </div>
-          <h1 className="font-playfair text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 leading-tight">
+          <h1 className="font-playfair text-[2.5rem] sm:text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-4 sm:mb-6 leading-[1.1]">
             Craft Coffee
             <span className="block text-gradient bg-gradient-to-r from-cream-300 to-cream-500 bg-clip-text text-transparent">
               Artisan Experience
             </span>
           </h1>
-          <p className="text-base sm:text-xl md:text-2xl text-cream-100 mb-10 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-xl md:text-2xl text-cream-100 mb-8 sm:mb-10 max-w-3xl mx-auto leading-relaxed">
             Where passion meets perfection.
           </p>
-          <div className="flex flex-row gap-4 sm:gap-6 justify-center items-center">
+          <div className="flex flex-row gap-3 sm:gap-6 justify-center items-center">
             <Link to="/menu">
               <motion.div {...buttonHover}>
                 <Button
                   size="lg"
-                  className="bg-cream-400 hover:bg-cream-500 text-coffee-800 px-10 py-4 text-lg font-semibold rounded-full transition-colors duration-300 shadow-2xl hover:shadow-cream-400/25"
+                  className="bg-cream-400 hover:bg-cream-500 text-coffee-800 px-6 sm:px-10 py-3 sm:py-4 text-sm sm:text-lg font-semibold rounded-full transition-colors duration-300 shadow-2xl hover:shadow-cream-400/25"
                 >
                   Explore Our Menu
                 </Button>
@@ -55,7 +55,7 @@ const Hero = () => {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="border-2 border-white text-white bg-white/10 hover:bg-white hover:text-coffee-800 px-10 py-4 text-lg font-semibold rounded-full transition-colors duration-300 backdrop-blur-sm"
+                  className="border-2 border-white text-white bg-white/10 hover:bg-white hover:text-coffee-800 px-6 sm:px-10 py-3 sm:py-4 text-sm sm:text-lg font-semibold rounded-full transition-colors duration-300 backdrop-blur-sm"
                 >
                   Find Locations
                 </Button>
@@ -65,27 +65,27 @@ const Hero = () => {
         </div>
 
         {/* Features */}
-        <div className="mt-16 grid grid-cols-3 gap-4 sm:gap-8">
+        <div className="mt-10 sm:mt-16 grid grid-cols-3 gap-3 sm:gap-8">
           <div className="text-center animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/15 border border-white/20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 backdrop-blur-md">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/15 border border-white/20 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-4 backdrop-blur-md">
               <Coffee className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
-            <h3 className="text-sm sm:text-xl font-semibold text-white mb-1 sm:mb-2">Premium Beans</h3>
-            <p className="text-cream-200 text-[10px] sm:text-base">Ethically sourced from the world's finest coffee regions</p>
+            <h3 className="text-xs sm:text-xl font-semibold text-white mb-1">Premium Beans</h3>
+            <p className="text-cream-200 text-[10px] sm:text-base leading-tight">Ethically sourced from the world's finest coffee regions</p>
           </div>
           <div className="text-center animate-fade-in" style={{ animationDelay: '0.4s' }}>
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/15 border border-white/20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 backdrop-blur-md">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/15 border border-white/20 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-4 backdrop-blur-md">
               <UserCircle className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
-            <h3 className="text-sm sm:text-xl font-semibold text-white mb-1 sm:mb-2">Expert Baristas</h3>
-            <p className="text-cream-200 text-[10px] sm:text-base">Trained artisans dedicated to the perfect brew</p>
+            <h3 className="text-xs sm:text-xl font-semibold text-white mb-1">Expert Baristas</h3>
+            <p className="text-cream-200 text-[10px] sm:text-base leading-tight">Trained artisans dedicated to the perfect brew</p>
           </div>
           <div className="text-center animate-fade-in" style={{ animationDelay: '0.6s' }}>
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/15 border border-white/20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 backdrop-blur-md">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/15 border border-white/20 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-4 backdrop-blur-md">
               <Home className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
-            <h3 className="text-sm sm:text-xl font-semibold text-white mb-1 sm:mb-2">Cozy Atmosphere</h3>
-            <p className="text-cream-200 text-[10px] sm:text-base">Your home away from home for work and relaxation</p>
+            <h3 className="text-xs sm:text-xl font-semibold text-white mb-1">Cozy Atmosphere</h3>
+            <p className="text-cream-200 text-[10px] sm:text-base leading-tight">Your home away from home for work and relaxation</p>
           </div>
         </div>
       </div>
