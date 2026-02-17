@@ -30,17 +30,17 @@ const Hero = () => {
               Premium Coffee Experience Since 2014
             </span>
           </div>
-          <h1 className="font-playfair text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 leading-tight">
+          <h1 className="font-playfair text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 leading-tight">
             Craft Coffee
             <span className="block text-gradient bg-gradient-to-r from-cream-300 to-cream-500 bg-clip-text text-transparent">
               Artisan Experience
             </span>
           </h1>
-          <p className="text-xl md:text-2xl text-cream-100 mb-10 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-xl md:text-2xl text-cream-100 mb-10 max-w-3xl mx-auto leading-relaxed">
             Where passion meets perfection. Every cup is meticulously crafted from ethically sourced beans, 
             creating moments of pure bliss in our warm, welcoming atmosphere.
           </p>
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+          <div className="flex flex-row gap-4 sm:gap-6 justify-center items-center">
             <Link to="/menu">
               <motion.div {...buttonHover}>
                 <Button
@@ -66,7 +66,7 @@ const Hero = () => {
         </div>
 
         {/* Features */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="mt-16 grid grid-cols-3 gap-4 sm:gap-8">
           <div className="text-center animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <div className="w-16 h-16 bg-cream-400/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
               <Coffee className="w-8 h-8 text-cream-200" />

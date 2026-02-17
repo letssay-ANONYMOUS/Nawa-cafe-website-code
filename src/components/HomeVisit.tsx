@@ -14,7 +14,7 @@ const HomeVisit = () => {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-3 gap-3 sm:gap-8 max-w-4xl mx-auto">
           {/* Location */}
           <div className="bg-card rounded-2xl p-8 text-center shadow-md hover:shadow-xl transition-shadow duration-300 border border-border">
             <div className="w-14 h-14 bg-coffee-100 rounded-full flex items-center justify-center mx-auto mb-4">

@@ -24,10 +24,10 @@ const HomeExperience = () => {
             <span className="font-cinzel text-sm tracking-[0.3em] uppercase text-cream-400">
               The Experience
             </span>
-            <h2 className="font-cinzel text-4xl md:text-6xl font-bold text-white mt-3 mb-6">
+            <h2 className="font-cinzel text-2xl sm:text-4xl md:text-6xl font-bold text-white mt-3 mb-4 sm:mb-6">
               More Than Just Coffee
             </h2>
-            <p className="text-cream-100 text-xl leading-relaxed">
+            <p className="text-cream-100 text-sm sm:text-xl leading-relaxed">
               Step into NAWA and feel the warmth. Our spaces are designed for connection — 
               whether you're catching up with friends, finding a quiet corner to work, or savoring a moment of peace.
             </p>
@@ -38,10 +38,10 @@ const HomeExperience = () => {
       {/* Stats bar */}
       <div className="bg-coffee-700">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-coffee-600">
+          <div className="grid grid-cols-4 divide-x divide-coffee-600">
             {stats.map((stat) => (
               <div key={stat.label} className="py-8 text-center">
-                <p className="font-cinzel text-3xl md:text-4xl font-bold text-cream-400">
+                <p className="font-cinzel text-xl sm:text-3xl md:text-4xl font-bold text-cream-400">
                   {stat.value}
                 </p>
                 <p className="text-cream-200 text-sm mt-1 uppercase tracking-wider">
