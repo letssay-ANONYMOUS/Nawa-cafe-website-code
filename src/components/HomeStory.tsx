@@ -32,11 +32,8 @@ const HomeStory = () => {
               Born From a Love
               <span className="block text-cream-400">of Coffee</span>
             </h2>
-            <p className="text-cream-200 text-xs sm:text-lg leading-relaxed mb-3 sm:mb-6">
-              NAWA CAFÉ began as a simple dream — to create a space where the warmth of Arabic hospitality meets world-class specialty coffee. Every cup we serve carries the passion of our journey from Al Ain to your table.
-            </p>
-            <p className="text-cream-300 text-xs sm:text-base leading-relaxed mb-4 sm:mb-8 hidden sm:block">
-              Our beans are hand-selected from the finest growing regions, carefully roasted in-house, and prepared by baristas who treat every pour as an art form. But NAWA is more than coffee — it's a gathering place, a creative haven, and a second home.
+            <p className="text-cream-200 text-xs sm:text-lg leading-relaxed mb-3 sm:mb-8">
+              NAWA CAFÉ began as a simple dream — to create a space where the warmth of Arabic hospitality meets world-class specialty coffee.
             </p>
             <Link
               to="/about"

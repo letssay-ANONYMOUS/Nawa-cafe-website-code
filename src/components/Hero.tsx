@@ -37,8 +37,7 @@ const Hero = () => {
             </span>
           </h1>
           <p className="text-base sm:text-xl md:text-2xl text-cream-100 mb-10 max-w-3xl mx-auto leading-relaxed">
-            Where passion meets perfection. Every cup is meticulously crafted from ethically sourced beans, 
-            creating moments of pure bliss in our warm, welcoming atmosphere.
+            Where passion meets perfection.
           </p>
           <div className="flex flex-row gap-4 sm:gap-6 justify-center items-center">
             <Link to="/menu">
@@ -68,25 +67,25 @@ const Hero = () => {
         {/* Features */}
         <div className="mt-16 grid grid-cols-3 gap-4 sm:gap-8">
           <div className="text-center animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            <div className="w-16 h-16 bg-cream-400/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-              <Coffee className="w-8 h-8 text-cream-200" />
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/15 border border-white/20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 backdrop-blur-md">
+              <Coffee className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Premium Beans</h3>
-            <p className="text-cream-200">Ethically sourced from the world's finest coffee regions</p>
+            <h3 className="text-sm sm:text-xl font-semibold text-white mb-1 sm:mb-2">Premium Beans</h3>
+            <p className="text-cream-200 text-[10px] sm:text-base">Ethically sourced from the world's finest coffee regions</p>
           </div>
           <div className="text-center animate-fade-in" style={{ animationDelay: '0.4s' }}>
-            <div className="w-16 h-16 bg-cream-400/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-              <UserCircle className="w-8 h-8 text-cream-200" />
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/15 border border-white/20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 backdrop-blur-md">
+              <UserCircle className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Expert Baristas</h3>
-            <p className="text-cream-200">Trained artisans dedicated to the perfect brew</p>
+            <h3 className="text-sm sm:text-xl font-semibold text-white mb-1 sm:mb-2">Expert Baristas</h3>
+            <p className="text-cream-200 text-[10px] sm:text-base">Trained artisans dedicated to the perfect brew</p>
           </div>
           <div className="text-center animate-fade-in" style={{ animationDelay: '0.6s' }}>
-            <div className="w-16 h-16 bg-cream-400/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-              <Home className="w-8 h-8 text-cream-200" />
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/15 border border-white/20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 backdrop-blur-md">
+              <Home className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Cozy Atmosphere</h3>
-            <p className="text-cream-200">Your home away from home for work and relaxation</p>
+            <h3 className="text-sm sm:text-xl font-semibold text-white mb-1 sm:mb-2">Cozy Atmosphere</h3>
+            <p className="text-cream-200 text-[10px] sm:text-base">Your home away from home for work and relaxation</p>
           </div>
         </div>
       </div>
