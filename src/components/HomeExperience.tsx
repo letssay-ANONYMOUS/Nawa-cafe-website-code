@@ -1,10 +1,10 @@
-import homeInterior from '@/assets/home-interior.jpg';
+const homeInterior = 'https://lomqlmqsoyayuegheetv.supabase.co/storage/v1/object/public/menu-images/home/interior-nawa.jpg';
 
 const stats = [
   { value: '50+', label: 'Menu Items' },
   { value: '4.7★', label: 'Google Rating' },
   { value: '2014', label: 'Est. Year' },
-  { value: '3', label: 'Locations' },
+  { value: '2', label: 'Locations' },
 ];
 
 const HomeExperience = () => {
