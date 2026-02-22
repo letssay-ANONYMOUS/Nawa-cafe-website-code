@@ -60,7 +60,7 @@ async function fetchMenuItems(): Promise<MenuItem[]> {
     .from('menu_items')
     .select('*')
     .eq('published', true)
-    .order('display_order', { ascending: true });
+    .order('card_number', { ascending: true });
 
   if (error) {
     console.error('Error fetching menu items:', error);
