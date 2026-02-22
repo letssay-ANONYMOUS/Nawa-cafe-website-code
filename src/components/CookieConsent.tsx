@@ -70,77 +70,64 @@ export const CookieConsent = () => {
   if (!showBanner) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-3 sm:p-4 animate-in slide-in-from-bottom-5 duration-300 touch-manipulation">
-      <div className="max-w-4xl mx-auto bg-card border border-border rounded-lg shadow-lg p-3 sm:p-4 md:p-6">
-        <div className="flex items-start gap-3 sm:gap-4">
-          {/* Cookie icon - visible on ALL devices including mobile */}
-          <div className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex-shrink-0">
-            <Cookie className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-          </div>
+    <div className="fixed bottom-0 left-0 right-0 z-50 p-2 sm:p-3 animate-in slide-in-from-bottom-5 duration-300 touch-manipulation">
+      <div className="max-w-3xl mx-auto bg-card border border-border rounded-lg shadow-lg px-4 py-3 sm:px-5 sm:py-3">
+        {/* Desktop: single row layout */}
+        <div className="flex items-center gap-3">
+          <Cookie className="w-4 h-4 text-primary flex-shrink-0 hidden sm:block" />
           
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-foreground text-sm sm:text-base">Cookie Preferences</h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 sm:h-8 sm:w-8 -mr-1 sm:-mr-2 touch-manipulation"
-                onClick={handleDecline}
-                aria-label="Close cookie banner"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 leading-relaxed">
-              We use cookies to enhance your experience, save your cart, and analyze site traffic. 
-              Your visitor ID helps us remember your preferences across sessions.
-            </p>
-
-            {showDetails && (
-              <div className="mb-3 sm:mb-4 p-2 sm:p-3 bg-muted rounded-md space-y-2 text-xs sm:text-sm">
-                <div className="flex justify-between">
-                  <span className="font-medium">Essential Cookies</span>
-                  <span className="text-muted-foreground">Always Active</span>
-                </div>
-                <p className="text-muted-foreground text-xs">
-                  Required for the website to function. Includes your visitor ID and cart data.
-                </p>
-                <div className="flex justify-between mt-2">
-                  <span className="font-medium">Analytics Cookies</span>
-                  <span className="text-muted-foreground">Optional</span>
-                </div>
-                <p className="text-muted-foreground text-xs">
-                  Help us understand how visitors interact with our website.
-                </p>
-              </div>
-            )}
-            
-            {/* Touch-friendly buttons with minimum 44px touch targets */}
-            <div className="flex flex-wrap gap-2 items-center">
-              <Button 
-                onClick={handleAcceptAll}
-                className="bg-primary hover:bg-primary/90 min-h-[44px] px-4 text-sm touch-manipulation"
-              >
-                Accept All
-              </Button>
-              <Button 
-                onClick={handleAcceptEssential}
-                variant="outline"
-                className="min-h-[44px] px-4 text-sm touch-manipulation"
-              >
-                Essential Only
-              </Button>
-              <Button
-                onClick={() => setShowDetails(!showDetails)}
-                variant="ghost"
-                className="text-muted-foreground min-h-[44px] px-3 text-sm touch-manipulation"
-              >
-                {showDetails ? 'Hide Details' : 'Cookie Details'}
-              </Button>
-            </div>
+          <p className="text-xs text-muted-foreground flex-1 min-w-0 leading-snug">
+            We use cookies to enhance your experience and analyze traffic.{' '}
+            <button
+              onClick={() => setShowDetails(!showDetails)}
+              className="text-primary hover:underline text-xs touch-manipulation"
+            >
+              {showDetails ? 'Hide details' : 'Learn more'}
+            </button>
+          </p>
+          
+          <div className="flex gap-2 flex-shrink-0">
+            <Button 
+              onClick={handleAcceptAll}
+              size="sm"
+              className="bg-primary hover:bg-primary/90 min-h-[36px] px-3 text-xs touch-manipulation"
+            >
+              Accept
+            </Button>
+            <Button 
+              onClick={handleAcceptEssential}
+              variant="outline"
+              size="sm"
+              className="min-h-[36px] px-3 text-xs touch-manipulation"
+            >
+              Essential Only
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 touch-manipulation"
+              onClick={handleDecline}
+              aria-label="Close"
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
           </div>
         </div>
+
+        {showDetails && (
+          <div className="mt-2 p-2 bg-muted rounded-md space-y-1.5 text-xs">
+            <div className="flex justify-between">
+              <span className="font-medium">Essential Cookies</span>
+              <span className="text-muted-foreground">Always Active</span>
+            </div>
+            <p className="text-muted-foreground text-xs">Required for site to function. Includes visitor ID and cart.</p>
+            <div className="flex justify-between mt-1">
+              <span className="font-medium">Analytics Cookies</span>
+              <span className="text-muted-foreground">Optional</span>
+            </div>
+            <p className="text-muted-foreground text-xs">Help us understand how visitors interact with our website.</p>
+          </div>
+        )}
       </div>
     </div>
   );

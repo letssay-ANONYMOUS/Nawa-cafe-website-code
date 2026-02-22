@@ -256,7 +256,7 @@ const Footer = () => {
                 className={`text-cream-300 text-sm ${!isAdmin ? 'cursor-pointer select-none' : ''}`}
                 onClick={handleCopyrightClick}
               >
-                © 2024 NAWA CAFÉ. All rights reserved.
+                © {new Date().getFullYear()} NAWA CAFÉ. All rights reserved.
               </p>
               
               {isAdmin && (

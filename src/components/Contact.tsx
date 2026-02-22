@@ -1,5 +1,4 @@
-
-import { Coffee } from 'lucide-react';
+import { Coffee, MapPin, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -8,51 +7,42 @@ const Contact = () => {
     {
       title: "Visit Us",
       details: ["Al Banafsaj St. Hazza Bin Zayed Stadium", "Bldg. 15 - Al Tiwayya - Abu Dhabi", "United Arab Emirates"],
-      icon: "📍"
+      icon: MapPin
     },
     {
       title: "Call Us",
-      details: ["037800030", "0506584176", "Mon-Fri: 6AM-9PM | Sat-Sun: 7AM-10PM"],
-      icon: "📞"
+      details: ["037 800 030", "050 658 4176", "Sat–Thu: 7 AM–12 AM | Fri: 1 PM–12 AM"],
+      icon: Phone
     },
     {
       title: "Email Us",
       details: ["nawacafe22@gmail.com"],
-      icon: "✉️"
+      icon: Mail
     }
   ];
 
   return (
-    <section id="contact" className="py-20 bg-gradient-to-b from-white to-cream-50">
+    <section id="contact" className="py-20 bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16 animate-fade-in">
-          <h2 className="font-playfair text-4xl md:text-5xl font-bold text-coffee-800 mb-4">
-            Contact Us
-          </h2>
-          <p className="text-xl text-coffee-600 max-w-2xl mx-auto">
-            Come experience the warmth and aroma of our cozy coffee haven
-          </p>
-          <div className="w-24 h-1 bg-coffee-400 mx-auto mt-6 rounded-full"></div>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           {/* Contact Information */}
-          <div className="space-y-8">
+          <div className="space-y-6">
             {contactInfo.map((info, index) => (
               <Card
                 key={index}
-                className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white"
-                style={{ animationDelay: `${index * 0.1}s` }}
+                className="border-border bg-card hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
               >
                 <CardContent className="p-6">
                   <div className="flex items-start space-x-4">
-                    <div className="text-3xl">{info.icon}</div>
+                    <div className="w-11 h-11 rounded-full bg-coffee-100 flex items-center justify-center flex-shrink-0">
+                      <info.icon className="w-5 h-5 text-coffee-600" />
+                    </div>
                     <div>
-                      <h3 className="font-playfair text-xl font-semibold text-coffee-800 mb-2">
+                      <h3 className="font-cinzel text-lg font-semibold text-card-foreground mb-2">
                         {info.title}
                       </h3>
                       {info.details.map((detail, idx) => (
-                        <p key={idx} className="text-coffee-600 leading-relaxed">
+                        <p key={idx} className="text-muted-foreground text-sm leading-relaxed">
                           {detail}
                         </p>
                       ))}
@@ -61,29 +51,23 @@ const Contact = () => {
                 </CardContent>
               </Card>
             ))}
-
           </div>
 
           {/* Map and Hours */}
           <div className="space-y-8">
-
-            <Card className="border-0 shadow-lg bg-white">
+            <Card className="border-border bg-card shadow-lg">
               <CardContent className="p-6">
-                <h3 className="font-playfair text-2xl font-bold text-coffee-800 mb-4">
+                <h3 className="font-cinzel text-2xl font-bold text-card-foreground mb-4">
                   Opening Hours
                 </h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-coffee-600">Monday - Thursday</span>
-                    <span className="font-semibold text-coffee-800">6:30 AM - 12:00 AM</span>
+                    <span className="text-muted-foreground">Saturday – Thursday</span>
+                    <span className="font-semibold text-card-foreground">7:00 AM - 12:00 AM</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-coffee-600">Friday - Saturday</span>
-                    <span className="font-semibold text-coffee-800">7:00 AM - 1:00 AM</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-coffee-600">Sunday</span>
-                    <span className="font-semibold text-coffee-800">6:30 AM - 12:00 AM</span>
+                    <span className="text-muted-foreground">Friday</span>
+                    <span className="font-semibold text-card-foreground">1:00 PM - 12:00 AM</span>
                   </div>
                 </div>
               </CardContent>
