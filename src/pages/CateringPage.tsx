@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Calendar, Coffee, Utensils, Clock, MapPin, Plus, Edit, X } from 'lucide-react';
+import { Plus, Edit, X } from 'lucide-react';
 import cateringHeroImage from '@/assets/catering-hero.png';
+import cateringCoffeeBar from '@/assets/catering-coffee-bar.jpg';
+import cateringMeal from '@/assets/catering-meal.jpg';
+import cateringCorporate from '@/assets/catering-corporate.jpg';
+import cateringWedding from '@/assets/catering-wedding.jpg';
+import cateringBrunch from '@/assets/catering-brunch.jpg';
+import cateringOnsite from '@/assets/catering-onsite.jpg';
 import { useAdmin } from '@/contexts/AdminContext';
 import { AdminCardModal } from '@/components/AdminCardModal';
 import { AdminDeleteConfirm } from '@/components/AdminDeleteConfirm';
@@ -24,19 +30,19 @@ const CateringPage = () => {
 
   const initialServices = [
     {
-      icon: Coffee,
+      image: cateringCoffeeBar,
       title: "Coffee Bar Service",
       description: "Professional baristas serving premium espresso drinks, pour-overs, and specialty beverages at your event.",
       features: ["Premium arabica beans", "Latte art", "Multiple brewing methods"]
     },
     {
-      icon: Utensils,
+      image: cateringMeal,
       title: "Full Meal Catering",
       description: "Complete meal service featuring fresh, locally-sourced ingredients and customizable menu options.",
       features: ["Breakfast & brunch", "Lunch spreads", "Dinner packages"]
     },
     {
-      icon: Users,
+      image: cateringCorporate,
       title: "Corporate Events",
       description: "Perfect for business meetings, conferences, and corporate gatherings of all sizes.",
       features: ["Meeting refreshments", "Conference catering", "Team building events"]
@@ -72,7 +78,7 @@ const CateringPage = () => {
       setServices(services.map(s => s.title === editingCard.title ? { ...s, title: data.name, description: data.description } : s));
     } else {
       setServices([...services, {
-        icon: Coffee,
+        image: cateringCoffeeBar,
         title: data.name,
         description: data.description,
         features: ["Premium service", "Professional staff", "Custom options"]
@@ -95,24 +101,28 @@ const CateringPage = () => {
     });
   };
 
+  const occasions = [
+    { image: cateringCorporate, title: "Corporate Events" },
+    { image: cateringWedding, title: "Special Occasions" },
+    { image: cateringBrunch, title: "Morning Events" },
+    { image: cateringOnsite, title: "On-Site Service" },
+  ];
+
   const packages = [
     {
       name: "Essentials",
-      price: "Starting at AED 55/person",
-      description: "Perfect for small gatherings and meetings",
-      includes: ["Coffee & tea station", "Pastries & light snacks", "Setup & cleanup", "2-hour service"]
+      price: "AED 55/person",
+      includes: ["Coffee & tea station", "Pastries & snacks", "2-hour service"]
     },
     {
       name: "Premium",
-      price: "Starting at AED 130/person",
-      description: "Ideal for special occasions",
-      includes: ["Full coffee bar", "Gourmet sandwiches & salads", "Dessert selection", "4-hour service", "Professional staff"]
+      price: "AED 130/person",
+      includes: ["Full coffee bar", "Gourmet food", "4-hour service", "Professional staff"]
     },
     {
       name: "Deluxe",
-      price: "Starting at AED 240/person",
-      description: "Complete luxury catering experience",
-      includes: ["Signature coffee drinks", "Multi-course meal service", "Premium desserts", "Full-day service", "Dedicated event coordinator"]
+      price: "AED 240/person",
+      includes: ["Signature drinks", "Multi-course meals", "Full-day service", "Event coordinator"]
     }
   ];
 
@@ -132,126 +142,122 @@ const CateringPage = () => {
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="container mx-auto px-6 sm:px-8 lg:px-12 text-center text-white">
-              <h1 className="font-playfair text-5xl md:text-7xl font-bold mb-8 animate-fade-in drop-shadow-lg">
+          <div className="absolute inset-0 flex items-end justify-center pb-16 md:pb-20">
+            <div className="text-center text-white px-6">
+              <h1 className="font-playfair text-5xl md:text-7xl font-bold mb-6 drop-shadow-lg">
                 Catering Services
               </h1>
-              <p className="text-xl md:text-2xl max-w-3xl mx-auto mb-10 animate-fade-in drop-shadow-md leading-relaxed">
-                Elevate your events with our premium catering services. From intimate gatherings to large corporate events, 
-                we bring the café experience to you.
+              <p className="text-lg md:text-xl max-w-xl mx-auto mb-8 drop-shadow-md opacity-90">
+                We bring the café experience to your events.
               </p>
-              <div className="animate-scale-in">
-                <Button 
-                  size="lg" 
-                  className="bg-[#c9a962] hover:bg-[#b89952] text-white rounded-full px-10 py-6 text-lg shadow-lg"
-                  onClick={() => document.getElementById('cta-section')?.scrollIntoView({ behavior: 'smooth' })}
-                >
-                  Get a Quote
-                </Button>
-              </div>
+              <Button 
+                size="lg" 
+                className="bg-[#c9a962] hover:bg-[#b89952] text-white rounded-full px-10 py-6 text-lg shadow-lg"
+                onClick={() => document.getElementById('cta-section')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                Get a Quote
+              </Button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Services Section */}
-      <section className="py-20 px-6 sm:px-8 lg:px-12 bg-gradient-to-b from-cream-50/50 to-white">
+      {/* Services – Image Cards */}
+      <section className="py-16 px-6 sm:px-8 lg:px-12">
         <div className="container mx-auto">
-          <div className="flex justify-between items-center mb-16">
-            <div>
-              <span className="text-[#c9a962] font-medium uppercase tracking-wider text-sm mb-2 block">What We Offer</span>
-              <h2 className="font-playfair text-4xl md:text-5xl font-bold text-coffee-900">
-                Our Catering Services
-              </h2>
-            </div>
+          <div className="flex justify-between items-center mb-10">
+            <h2 className="font-playfair text-3xl md:text-4xl font-bold text-coffee-900">
+              What We Offer
+            </h2>
             {isAdmin && (
-              <Button
-                onClick={handleAddNew}
-                className="bg-coffee-600 hover:bg-coffee-700 text-white"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add New Card
+              <Button onClick={handleAddNew} className="bg-coffee-600 hover:bg-coffee-700 text-white">
+                <Plus className="w-4 h-4 mr-2" /> Add Card
               </Button>
             )}
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-6">
             {services.map((service, index) => (
-              <Card key={index} className="border-coffee-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 relative">
+              <div key={index} className="group relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
                 {isAdmin && (
-                  <div className="absolute top-4 right-4 flex gap-2 z-10">
-                    <Button
-                      size="icon"
-                      variant="secondary"
-                      className="h-8 w-8 bg-white/90 hover:bg-white"
-                      onClick={() => handleEdit(service)}
-                    >
+                  <div className="absolute top-3 right-3 flex gap-2 z-10">
+                    <Button size="icon" variant="secondary" className="h-8 w-8 bg-white/90 hover:bg-white" onClick={() => handleEdit(service)}>
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                      className="h-8 w-8"
-                      onClick={() => handleDelete(service)}
-                    >
+                    <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDelete(service)}>
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
                 )}
-                <CardHeader>
-                  <div className="w-16 h-16 bg-coffee-100 rounded-full flex items-center justify-center mb-4">
-                    <service.icon className="w-8 h-8 text-coffee-600" />
-                  </div>
-                  <CardTitle className="text-2xl text-coffee-900">{service.title}</CardTitle>
-                  <CardDescription className="text-coffee-600">{service.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {service.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-center text-coffee-700">
-                        <span className="w-2 h-2 bg-coffee-500 rounded-full mr-3"></span>
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
+                <div className="aspect-[4/3] overflow-hidden">
+                  <img 
+                    src={service.image} 
+                    alt={service.title} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                  <h3 className="font-playfair text-2xl font-bold mb-1">{service.title}</h3>
+                  <p className="text-sm opacity-85 line-clamp-2">{service.description}</p>
+                </div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Packages Section */}
-      <section className="py-20 px-6 sm:px-8 lg:px-12 bg-gradient-to-br from-cream-50 to-coffee-50">
+      {/* Occasions – Visual Grid */}
+      <section className="py-16 px-6 sm:px-8 lg:px-12 bg-coffee-50/50">
         <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <span className="text-[#c9a962] font-medium uppercase tracking-wider text-sm mb-2 block">Choose Your Plan</span>
-            <h2 className="font-playfair text-4xl md:text-5xl font-bold text-coffee-900">
-              Catering Packages
-            </h2>
-            <p className="text-coffee-600 mt-4 max-w-2xl mx-auto text-lg">
-              Select from our carefully crafted packages designed to suit every occasion and budget.
-            </p>
+          <h2 className="font-playfair text-3xl md:text-4xl font-bold text-coffee-900 text-center mb-10">
+            Perfect For Every Occasion
+          </h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {occasions.map((item, index) => (
+              <div key={index} className="relative rounded-xl overflow-hidden aspect-square group cursor-pointer">
+                <img 
+                  src={item.image} 
+                  alt={item.title} 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <h3 className="font-playfair text-xl md:text-2xl font-bold text-white text-center drop-shadow-lg">
+                    {item.title}
+                  </h3>
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+        </div>
+      </section>
+
+      {/* Packages – Compact */}
+      <section className="py-16 px-6 sm:px-8 lg:px-12">
+        <div className="container mx-auto">
+          <h2 className="font-playfair text-3xl md:text-4xl font-bold text-coffee-900 text-center mb-10">
+            Packages
+          </h2>
+          <div className="grid md:grid-cols-3 gap-6">
             {packages.map((pkg, index) => (
-              <Card key={index} className="border-coffee-200 hover:shadow-2xl transition-all duration-300 hover:scale-105">
-                <CardHeader className="text-center pb-4">
-                  <CardTitle className="text-3xl font-playfair text-coffee-900 mb-2">{pkg.name}</CardTitle>
-                  <div className="text-4xl font-bold text-coffee-600 mb-2">{pkg.price}</div>
-                  <CardDescription className="text-coffee-700">{pkg.description}</CardDescription>
+              <Card key={index} className={`border-coffee-200 hover:shadow-xl transition-all duration-300 ${index === 1 ? 'ring-2 ring-[#c9a962] scale-[1.02]' : ''}`}>
+                <CardHeader className="text-center pb-2">
+                  <CardTitle className="text-2xl font-playfair text-coffee-900">{pkg.name}</CardTitle>
+                  <p className="text-3xl font-bold text-[#c9a962] mt-1">{pkg.price}</p>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-3">
+                  <ul className="space-y-2 mb-5">
                     {pkg.includes.map((item, idx) => (
-                      <li key={idx} className="flex items-start text-coffee-700">
-                        <Coffee className="w-5 h-5 text-coffee-500 mr-3 mt-0.5 flex-shrink-0" />
-                        <span>{item}</span>
+                      <li key={idx} className="flex items-center text-coffee-700 text-sm">
+                        <span className="w-1.5 h-1.5 bg-[#c9a962] rounded-full mr-2.5 flex-shrink-0" />
+                        {item}
                       </li>
                     ))}
                   </ul>
-                  <Button className="w-full mt-6 bg-coffee-600 hover:bg-coffee-700 text-white rounded-full">
-                    Select Package
+                  <Button className="w-full bg-coffee-600 hover:bg-coffee-700 text-white rounded-full">
+                    Select
                   </Button>
                 </CardContent>
               </Card>
@@ -260,58 +266,24 @@ const CateringPage = () => {
         </div>
       </section>
 
-      {/* Event Types Section */}
-      <section className="py-20 px-6 sm:px-8 lg:px-12">
-        <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <span className="text-[#c9a962] font-medium uppercase tracking-wider text-sm mb-2 block">Versatile Solutions</span>
-            <h2 className="font-playfair text-4xl md:text-5xl font-bold text-coffee-900">
-              Perfect For Every Occasion
-            </h2>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { icon: Users, title: "Corporate Events", desc: "Meetings & conferences" },
-              { icon: Calendar, title: "Special Occasions", desc: "Weddings & celebrations" },
-              { icon: Clock, title: "Morning Events", desc: "Breakfast & brunches" },
-              { icon: MapPin, title: "On-Site Service", desc: "Any location" }
-            ].map((event, index) => (
-              <Card key={index} className="text-center border-coffee-200 hover:border-coffee-400 transition-all duration-300">
-                <CardHeader>
-                  <div className="w-20 h-20 bg-gradient-to-br from-coffee-100 to-cream-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <event.icon className="w-10 h-10 text-coffee-600" />
-                  </div>
-                  <CardTitle className="text-xl text-coffee-900">{event.title}</CardTitle>
-                  <CardDescription className="text-coffee-600">{event.desc}</CardDescription>
-                </CardHeader>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
-      <section id="cta-section" className="py-24 px-6 sm:px-8 lg:px-12 bg-gradient-to-r from-coffee-700 via-coffee-600 to-coffee-700 text-white relative overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute top-0 left-0 w-64 h-64 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/5 rounded-full translate-x-1/3 translate-y-1/3" />
-        
-        <div className="container mx-auto text-center relative z-10">
-          <h2 className="font-playfair text-4xl md:text-6xl font-bold mb-8">
+      <section id="cta-section" className="relative py-24 px-6 overflow-hidden">
+        <img src={cateringMeal} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-coffee-900/80" />
+        <div className="container mx-auto text-center relative z-10 text-white">
+          <h2 className="font-playfair text-4xl md:text-5xl font-bold mb-6">
             Ready to Plan Your Event?
           </h2>
-          <p className="text-xl md:text-2xl text-cream-100 mb-12 max-w-3xl mx-auto leading-relaxed">
-            Contact us today for a personalized quote and let us make your event unforgettable.
+          <p className="text-lg text-cream-100 mb-10 max-w-xl mx-auto opacity-90">
+            Let us make your event unforgettable.
           </p>
-          <div className="flex justify-center">
-            <Button 
-              size="lg" 
-              className="bg-white text-coffee-600 hover:bg-cream-50 rounded-full px-12 py-6 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300"
-              onClick={() => window.location.href = 'mailto:nawacafe22@gmail.com?subject=Catering Inquiry&body=Hello NAWA Café Team, I would like to inquire about your catering services. Please contact me at: 037800030 or 0506584176'}
-            >
-              Connect With Us
-            </Button>
-          </div>
+          <Button 
+            size="lg" 
+            className="bg-[#c9a962] hover:bg-[#b89952] text-white rounded-full px-12 py-6 text-lg font-semibold shadow-xl"
+            onClick={() => window.location.href = 'mailto:nawacafe22@gmail.com?subject=Catering Inquiry&body=Hello NAWA Café Team, I would like to inquire about your catering services. Please contact me at: 037800030 or 0506584176'}
+          >
+            Connect With Us
+          </Button>
         </div>
       </section>
 
