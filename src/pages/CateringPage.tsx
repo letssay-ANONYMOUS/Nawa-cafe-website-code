@@ -263,7 +263,7 @@ const CateringPage = () => {
       {/* CTA Section */}
       <section id="cta-section" className="relative py-24 px-6 overflow-hidden">
         <img src={cateringMeal} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-coffee-900/80" />
+        <div className="absolute inset-0 bg-black/50" />
         <div className="container mx-auto text-center relative z-10 text-white">
           <h2 className="font-playfair text-4xl md:text-5xl font-bold mb-6">
             Ready to Plan Your Event?
