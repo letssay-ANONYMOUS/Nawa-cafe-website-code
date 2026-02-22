@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Edit, X } from 'lucide-react';
 import cateringHeroImage from '@/assets/catering-hero.png';
-import cateringCoffeeBar from '@/assets/catering-coffee-bar.jpg';
+
 import cateringMeal from '@/assets/catering-meal.jpg';
 import cateringCorporate from '@/assets/catering-corporate.jpg';
 import cateringWedding from '@/assets/catering-wedding.jpg';
@@ -29,12 +29,6 @@ const CateringPage = () => {
   const [deletingCard, setDeletingCard] = useState<any>(null);
 
   const initialServices = [
-    {
-      image: cateringCoffeeBar,
-      title: "Coffee Bar Service",
-      description: "Professional baristas serving premium espresso drinks, pour-overs, and specialty beverages at your event.",
-      features: ["Premium arabica beans", "Latte art", "Multiple brewing methods"]
-    },
     {
       image: cateringMeal,
       title: "Full Meal Catering",
@@ -78,7 +72,7 @@ const CateringPage = () => {
       setServices(services.map(s => s.title === editingCard.title ? { ...s, title: data.name, description: data.description } : s));
     } else {
       setServices([...services, {
-        image: cateringCoffeeBar,
+        image: cateringMeal,
         title: data.name,
         description: data.description,
         features: ["Premium service", "Professional staff", "Custom options"]
