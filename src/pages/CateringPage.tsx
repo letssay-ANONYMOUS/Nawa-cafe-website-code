@@ -4,7 +4,7 @@ import Footer from '@/components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Edit, X } from 'lucide-react';
-import cateringHeroImage from '@/assets/catering-hero.png';
+import cateringHeroImage from '@/assets/catering-hero.jpg';
 
 import cateringMeal from '@/assets/catering-meal.jpg';
 import cateringCorporate from '@/assets/catering-corporate.jpg';
