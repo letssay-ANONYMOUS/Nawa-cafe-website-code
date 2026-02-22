@@ -89,7 +89,7 @@ const HomeFeatured = () => {
             className="w-full h-full object-cover"
             loading="lazy"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-coffee-900/70 via-coffee-900/40 to-transparent flex items-center">
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent flex items-center">
             <div className="px-8 md:px-16 max-w-xl">
               <h3 className="font-cinzel text-3xl md:text-4xl font-bold text-white mb-4">
                 Every Morning Deserves This
