@@ -24,13 +24,9 @@ const HomeExperience = () => {
             <span className="font-cinzel text-[10px] sm:text-sm tracking-[0.3em] uppercase text-cream-400">
               The Experience
             </span>
-            <h2 className="font-cinzel text-xl sm:text-4xl md:text-6xl font-bold text-white mt-2 sm:mt-3 mb-3 sm:mb-6">
+            <h2 className="font-cinzel text-xl sm:text-4xl md:text-6xl font-bold text-white mt-2 sm:mt-3">
               More Than Just Coffee
             </h2>
-            <p className="text-cream-100 text-xs sm:text-xl leading-relaxed">
-              Step into NAWA and feel the warmth. Our spaces are designed for connection — 
-              whether you're catching up with friends, finding a quiet corner to work, or savoring a moment of peace.
-            </p>
           </div>
         </div>
       </div>

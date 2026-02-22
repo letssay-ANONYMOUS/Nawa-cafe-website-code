@@ -30,15 +30,12 @@ const Hero = () => {
               Premium Coffee Experience Since 2014
             </span>
           </div>
-          <h1 className="font-playfair text-[2.5rem] sm:text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-4 sm:mb-6 leading-[1.1]">
+          <h1 className="font-playfair text-[2.5rem] sm:text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 sm:mb-10 leading-[1.1]">
             Craft Coffee
             <span className="block text-gradient bg-gradient-to-r from-cream-300 to-cream-500 bg-clip-text text-transparent">
               Artisan Experience
             </span>
           </h1>
-          <p className="text-base sm:text-xl md:text-2xl text-cream-100 mb-8 sm:mb-10 max-w-3xl mx-auto leading-relaxed">
-            Where passion meets perfection.
-          </p>
           <div className="flex flex-row gap-3 sm:gap-6 justify-center items-center">
             <Link to="/menu">
               <motion.div {...buttonHover}>
@@ -70,22 +67,19 @@ const Hero = () => {
             <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/15 border border-white/20 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-4 backdrop-blur-md">
               <Coffee className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
-            <h3 className="text-xs sm:text-xl font-semibold text-white mb-1">Premium Beans</h3>
-            <p className="text-cream-200 text-[10px] sm:text-base leading-tight">Ethically sourced from the world's finest coffee regions</p>
+            <h3 className="text-xs sm:text-xl font-semibold text-white">Premium Beans</h3>
           </div>
           <div className="text-center animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/15 border border-white/20 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-4 backdrop-blur-md">
               <UserCircle className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
-            <h3 className="text-xs sm:text-xl font-semibold text-white mb-1">Expert Baristas</h3>
-            <p className="text-cream-200 text-[10px] sm:text-base leading-tight">Trained artisans dedicated to the perfect brew</p>
+            <h3 className="text-xs sm:text-xl font-semibold text-white">Expert Baristas</h3>
           </div>
           <div className="text-center animate-fade-in" style={{ animationDelay: '0.6s' }}>
             <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/15 border border-white/20 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-4 backdrop-blur-md">
               <Home className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
-            <h3 className="text-xs sm:text-xl font-semibold text-white mb-1">Cozy Atmosphere</h3>
-            <p className="text-cream-200 text-[10px] sm:text-base leading-tight">Your home away from home for work and relaxation</p>
+            <h3 className="text-xs sm:text-xl font-semibold text-white">Cozy Atmosphere</h3>
           </div>
         </div>
       </div>

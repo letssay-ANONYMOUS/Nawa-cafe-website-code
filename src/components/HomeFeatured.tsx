@@ -37,9 +37,6 @@ const HomeFeatured = () => {
           <h2 className="font-cinzel text-4xl md:text-5xl font-bold text-foreground mt-3">
             Crafted With Passion
           </h2>
-          <p className="mt-4 text-muted-foreground max-w-2xl mx-auto text-lg">
-            Every dish and drink at NAWA CAFÉ is a celebration of quality, from ethically sourced beans to locally inspired cuisine.
-          </p>
         </div>
 
         {/* Featured cards - mobile horizontal scroll, desktop grid */}
@@ -91,12 +88,9 @@ const HomeFeatured = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-r from-coffee-900/70 via-coffee-900/40 to-transparent flex items-center">
             <div className="px-8 md:px-16 max-w-xl">
-              <h3 className="font-cinzel text-3xl md:text-4xl font-bold text-white mb-4">
+              <h3 className="font-cinzel text-3xl md:text-4xl font-bold text-white mb-6">
                 Every Morning Deserves This
               </h3>
-              <p className="text-cream-200 text-lg mb-6">
-                Fresh pastries, artisan coffee, and dishes made from scratch — your perfect morning ritual.
-              </p>
               <Link
                 to="/menu"
                 className="inline-flex items-center gap-2 bg-cream-400 hover:bg-cream-500 text-coffee-800 px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:scale-105"

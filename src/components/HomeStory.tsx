@@ -33,7 +33,7 @@ const HomeStory = () => {
               <span className="block text-cream-400">of Coffee</span>
             </h2>
             <p className="text-cream-200 text-xs sm:text-lg leading-relaxed mb-3 sm:mb-8">
-              NAWA CAFÉ began as a simple dream — to create a space where the warmth of Arabic hospitality meets world-class specialty coffee.
+              Where Arabic hospitality meets world-class specialty coffee.
             </p>
             <Link
               to="/about"
