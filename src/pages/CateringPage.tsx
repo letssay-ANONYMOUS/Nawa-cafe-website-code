@@ -190,7 +190,7 @@ const CateringPage = () => {
                     loading="lazy"
                   />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                
                 <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
                   <h3 className="font-playfair text-2xl font-bold mb-1">{service.title}</h3>
                   <p className="text-sm opacity-85 line-clamp-2">{service.description}</p>
