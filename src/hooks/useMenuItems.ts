@@ -23,9 +23,7 @@ export interface MenuCategory {
 }
 
 export interface GroupedMenuData {
-  [categoryId: string]: {
-    [subcategory: string]: MenuItem[];
-  };
+  [categoryId: string]: MenuItem[];
 }
 
 // Category configuration for display
@@ -92,21 +90,20 @@ export function useMenuItems() {
   });
 }
 
-// Group items by category and subcategory
+// Group items by category, flat array sorted by card_number
 export function groupMenuItems(items: MenuItem[]): GroupedMenuData {
   const grouped: GroupedMenuData = {};
 
   for (const item of items) {
     if (!grouped[item.category]) {
-      grouped[item.category] = {};
+      grouped[item.category] = [];
     }
-    
-    const subcategory = item.subcategory || 'Items';
-    if (!grouped[item.category][subcategory]) {
-      grouped[item.category][subcategory] = [];
-    }
-    
-    grouped[item.category][subcategory].push(item);
+    grouped[item.category].push(item);
+  }
+
+  // Sort each category by card_number
+  for (const cat of Object.keys(grouped)) {
+    grouped[cat].sort((a, b) => a.card_number - b.card_number);
   }
 
   return grouped;
