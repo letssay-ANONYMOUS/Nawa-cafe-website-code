@@ -7,7 +7,7 @@ import heroImage from '@/assets/hero-espresso.jpg';
 
 const Hero = () => {
   return (
-    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section id="home" className="relative min-h-[100svh] flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
         <img
@@ -22,33 +22,33 @@ const Hero = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 text-center px-6 sm:px-6 lg:px-8 max-w-5xl mx-auto mt-16">
+      <div className="relative z-10 text-center px-5 sm:px-6 lg:px-8 max-w-5xl mx-auto mt-10 sm:mt-16">
         <div className="animate-fade-in">
-          <h1 className="font-cinzel text-[2.5rem] sm:text-5xl md:text-7xl lg:text-8xl font-bold text-cream-400 mb-4 sm:mb-6 leading-[1.1] uppercase tracking-wide">
+          <h1 className="font-cinzel text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-bold text-cream-400 mb-3 sm:mb-6 leading-[1.1] uppercase tracking-wide">
             Craft Coffee
             <span className="block">
               Artisan Experience
             </span>
           </h1>
-          <p className="text-base sm:text-xl md:text-2xl text-cream-100 mb-8 sm:mb-10 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-xl md:text-2xl text-cream-100 mb-6 sm:mb-10 max-w-3xl mx-auto leading-relaxed">
             Where passion meets perfection.
           </p>
-          <div className="flex flex-row gap-3 sm:gap-6 justify-center items-center">
-            <Link to="/menu">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 justify-center items-center">
+            <Link to="/menu" className="w-full sm:w-auto">
               <motion.div {...buttonHover}>
                 <Button
                   size="lg"
-                  className="bg-transparent border-2 border-cream-400 text-cream-400 hover:bg-cream-400 hover:text-coffee-800 px-6 sm:px-10 py-3 sm:py-4 text-sm sm:text-lg font-semibold rounded-full transition-colors duration-300 uppercase tracking-widest"
+                  className="w-full sm:w-auto bg-transparent border-2 border-cream-400 text-cream-400 hover:bg-cream-400 hover:text-coffee-800 px-6 sm:px-10 py-3 sm:py-4 text-sm sm:text-lg font-semibold rounded-full transition-colors duration-300 uppercase tracking-widest min-h-[48px]"
                 >
                   Explore Our Menu
                 </Button>
               </motion.div>
             </Link>
-            <Link to="/locations">
+            <Link to="/locations" className="w-full sm:w-auto">
               <motion.div {...buttonHover}>
                 <Button
                   size="lg"
-                  className="bg-transparent border-2 border-cream-400 text-cream-400 hover:bg-cream-400 hover:text-coffee-800 px-6 sm:px-10 py-3 sm:py-4 text-sm sm:text-lg font-semibold rounded-full transition-colors duration-300 uppercase tracking-widest"
+                  className="w-full sm:w-auto bg-transparent border-2 border-cream-400 text-cream-400 hover:bg-cream-400 hover:text-coffee-800 px-6 sm:px-10 py-3 sm:py-4 text-sm sm:text-lg font-semibold rounded-full transition-colors duration-300 uppercase tracking-widest min-h-[48px]"
                 >
                   Find Locations
                 </Button>
