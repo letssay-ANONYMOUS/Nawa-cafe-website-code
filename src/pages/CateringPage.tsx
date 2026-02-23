@@ -135,21 +135,21 @@ const CateringPage = () => {
             fetchPriority="high"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-          <div className="absolute inset-0 flex items-end justify-center pb-16 md:pb-20">
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
             <div className="text-center text-white px-6">
-              <h1 className="font-playfair text-5xl md:text-7xl font-bold mb-6 drop-shadow-lg">
-                Catering Services
+              <h1 className="font-cinzel text-5xl md:text-7xl font-bold mb-6 drop-shadow-lg tracking-wide">
+                Elevated Catering
               </h1>
-              <p className="text-lg md:text-xl max-w-xl mx-auto mb-8 drop-shadow-md opacity-90">
-                We bring the café experience to your events.
+              <p className="text-lg md:text-xl max-w-xl mx-auto mb-10 drop-shadow-md opacity-90 font-light">
+                Exceptional spreads and seamless service<br />for your special event.
               </p>
               <Button 
                 size="lg" 
-                className="bg-[#c9a962] hover:bg-[#b89952] text-white rounded-full px-10 py-6 text-lg shadow-lg"
+                className="bg-transparent hover:bg-[#c9a962]/20 text-white border border-[#c9a962] rounded-full px-10 py-6 text-lg shadow-lg"
                 onClick={() => document.getElementById('cta-section')?.scrollIntoView({ behavior: 'smooth' })}
               >
-                Get a Quote
+                Inquire Now
               </Button>
             </div>
           </div>
@@ -191,9 +191,10 @@ const CateringPage = () => {
                   />
                 </div>
                 
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                  <h3 className="font-playfair text-2xl font-bold mb-1">{service.title}</h3>
-                  <p className="text-sm opacity-85 line-clamp-2">{service.description}</p>
+                  <h3 className="font-playfair text-2xl font-bold mb-1 drop-shadow-md">{service.title}</h3>
+                  <p className="text-sm opacity-90 line-clamp-2 drop-shadow-sm">{service.description}</p>
                 </div>
               </div>
             ))}

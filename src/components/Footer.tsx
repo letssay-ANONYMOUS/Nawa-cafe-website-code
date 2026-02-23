@@ -1,4 +1,4 @@
-import { Coffee, Star, Save, LogOut, Loader2 } from 'lucide-react';
+import { Coffee, Star, Save, LogOut, Loader2, MapPin, Phone, Mail } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { AdminPasswordModal } from './AdminPasswordModal';
 import { useAdmin } from '@/contexts/AdminContext';
@@ -233,17 +233,17 @@ const Footer = () => {
           {/* Contact Info */}
           <div>
             <h3 className="font-playfair text-xl font-semibold mb-4">Contact</h3>
-            <div className="space-y-2 text-cream-200">
-              <p>📍 Al Ain</p>
-              <p>📍 United Arab Emirates</p>
-              <a href="tel:037800030" className="block hover:text-cream-100 transition-colors">
-                📱 037800030
+            <div className="space-y-3 text-cream-200">
+              <p className="flex items-center gap-2"><MapPin className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> Al Ain</p>
+              <p className="flex items-center gap-2"><MapPin className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> United Arab Emirates</p>
+              <a href="tel:037800030" className="flex items-center gap-2 hover:text-cream-100 transition-colors">
+                <Phone className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> 037800030
               </a>
-              <a href="tel:0506584176" className="block hover:text-cream-100 transition-colors">
-                📱 0506584176
+              <a href="tel:0506584176" className="flex items-center gap-2 hover:text-cream-100 transition-colors">
+                <Phone className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> 0506584176
               </a>
-              <a href="mailto:nawacafe22@gmail.com" className="block hover:text-cream-100 transition-colors">
-                📧 nawacafe22@gmail.com
+              <a href="mailto:nawacafe22@gmail.com" className="flex items-center gap-2 hover:text-cream-100 transition-colors">
+                <Mail className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> nawacafe22@gmail.com
               </a>
             </div>
           </div>
