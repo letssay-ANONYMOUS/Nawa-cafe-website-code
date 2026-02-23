@@ -40,7 +40,7 @@ const Menu = () => {
   const menuCategoriesForAdmin = menuCategories.map(cat => ({
     id: cat.id,
     name: cat.name,
-    sections: Object.keys(groupedMenu[cat.id] || {})
+    sections: [] as string[]
   }));
 
   const handleAddNew = () => {
@@ -197,8 +197,11 @@ const Menu = () => {
           let globalIndex = 0; // Track global card index across all categories
           
           return menuCategories.map((category) => {
-            const categoryData = groupedMenu[category.id];
-            if (!categoryData || Object.keys(categoryData).length === 0) return null;
+            const items = groupedMenu[category.id];
+            if (!items || items.length === 0) return null;
+            
+            const filteredItems = filterItems(items);
+            if (filteredItems.length === 0) return null;
             
             return (
               <div key={category.id} id={category.id} className="mb-16 scroll-mt-32">
@@ -210,51 +213,36 @@ const Menu = () => {
                   <div className="w-16 h-0.5 bg-[#c9a962]" />
                 </div>
 
-                {/* Subsections */}
-                {Object.entries(categoryData).map(([subsectionName, items]) => {
-                  const filteredItems = filterItems(items);
-                  if (filteredItems.length === 0) return null;
-                  
-                  return (
-                    <div key={subsectionName} className="mb-12">
-                      <h3 className="text-lg sm:text-xl md:text-2xl font-cinzel font-semibold text-[#c9a962] mb-4 sm:mb-6">
-                        {subsectionName}
-                      </h3>
-                      
-                      {/* Items Grid with Lazy Loading */}
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-6">
-                        {filteredItems.map((item) => {
-                          const cardItem = toMenuCardItem(item);
-                          const currentIndex = globalIndex;
-                          globalIndex++;
-                          
-                          // First 4 cards use FlippableMenuCard
-                          if (currentIndex < 4) {
-                            return (
-                              <FlippableMenuCard
-                                key={item.id}
-                                item={cardItem}
-                                cardNumber={item.card_number}
-                                category={category.id}
-                              />
-                            );
-                          }
-                          
-                          return (
-                            <MenuCard
-                              key={item.id}
-                              item={cardItem}
-                              cardNumber={item.card_number}
-                              eagerLoad={true}
-                              onEdit={() => handleEdit(item)}
-                              onDelete={() => handleDelete(item)}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
+                {/* Items Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-6">
+                  {filteredItems.map((item) => {
+                    const cardItem = toMenuCardItem(item);
+                    const currentIndex = globalIndex;
+                    globalIndex++;
+                    
+                    if (currentIndex < 4) {
+                      return (
+                        <FlippableMenuCard
+                          key={item.id}
+                          item={cardItem}
+                          cardNumber={item.card_number}
+                          category={category.id}
+                        />
+                      );
+                    }
+                    
+                    return (
+                      <MenuCard
+                        key={item.id}
+                        item={cardItem}
+                        cardNumber={item.card_number}
+                        eagerLoad={true}
+                        onEdit={() => handleEdit(item)}
+                        onDelete={() => handleDelete(item)}
+                      />
+                    );
+                  })}
+                </div>
               </div>
             );
           });
