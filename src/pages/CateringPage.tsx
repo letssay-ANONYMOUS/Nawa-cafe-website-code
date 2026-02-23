@@ -8,6 +8,7 @@ import cateringHeroImage from '@/assets/catering-hero.jpg';
 
 import cateringMeal from '@/assets/catering-meal.jpg';
 import cateringCorporate from '@/assets/catering-corporate.jpg';
+import cateringCtaBg from '@/assets/catering-cta-bg.jpg';
 import cateringWedding from '@/assets/catering-wedding.jpg';
 import cateringBrunch from '@/assets/catering-brunch.jpg';
 import cateringOnsite from '@/assets/catering-onsite.jpg';
@@ -208,9 +209,9 @@ const CateringPage = () => {
           <h2 className="font-playfair text-3xl md:text-4xl font-bold text-coffee-900 text-center mb-10">
             Perfect For Every Occasion
           </h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4 max-w-5xl mx-auto">
             {occasions.map((item, index) => (
-              <div key={index} className="relative rounded-xl overflow-hidden aspect-square group cursor-pointer">
+              <div key={index} className="relative rounded-xl overflow-hidden aspect-[3/2] group cursor-pointer">
                 <img 
                   src={item.image} 
                   alt={item.title} 
@@ -263,8 +264,8 @@ const CateringPage = () => {
 
       {/* CTA Section */}
       <section id="cta-section" className="relative py-24 px-6 overflow-hidden">
-        <img src={cateringMeal} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-black/50" />
+        <img src={cateringCtaBg} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-black/55" />
         <div className="container mx-auto text-center relative z-10 text-white">
           <h2 className="font-playfair text-4xl md:text-5xl font-bold mb-6">
             Ready to Plan Your Event?
@@ -274,8 +275,8 @@ const CateringPage = () => {
           </p>
           <Button 
             size="lg" 
-            className="bg-[#c9a962] hover:bg-[#b89952] text-white rounded-full px-12 py-6 text-lg font-semibold shadow-xl"
-            onClick={() => window.location.href = 'mailto:nawacafe22@gmail.com?subject=Catering Inquiry&body=Hello NAWA Café Team, I would like to inquire about your catering services. Please contact me at: 037800030 or 0506584176'}
+            className="bg-[#c9a962] hover:bg-[#b89952] text-white rounded-full px-12 py-6 text-lg font-semibold shadow-xl min-h-[48px]"
+            onClick={() => window.location.href = '/contact'}
           >
             Connect With Us
           </Button>
