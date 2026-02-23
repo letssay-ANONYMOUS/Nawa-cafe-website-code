@@ -11,7 +11,7 @@ const HomeExperience = () => {
   return (
     <section className="relative">
       {/* Full-width parallax image */}
-      <div className="relative h-[350px] sm:h-[600px] overflow-hidden">
+      <div className="relative h-[300px] sm:h-[600px] overflow-hidden">
         <img
           src={homeInterior}
           alt="NAWA Café warm interior"

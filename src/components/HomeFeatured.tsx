@@ -24,20 +24,20 @@ const featured = [
 
 const HomeFeatured = () => {
   return (
-    <section className="relative py-24 bg-background overflow-hidden">
+    <section className="relative py-14 sm:py-24 bg-background overflow-hidden">
       {/* Decorative accent */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-transparent via-coffee-400 to-transparent" />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
-        <div className="text-center mb-16">
-          <span className="font-cinzel text-sm tracking-[0.3em] uppercase text-coffee-400">
+        <div className="text-center mb-8 sm:mb-16">
+          <span className="font-cinzel text-xs sm:text-sm tracking-[0.3em] uppercase text-coffee-400">
             Our Selections
           </span>
-          <h2 className="font-cinzel text-4xl md:text-5xl font-bold text-foreground mt-3">
+          <h2 className="font-cinzel text-2xl sm:text-4xl md:text-5xl font-bold text-foreground mt-2 sm:mt-3">
             Crafted With Passion
           </h2>
-          <p className="mt-4 text-muted-foreground max-w-2xl mx-auto text-lg">
+          <p className="mt-3 sm:mt-4 text-muted-foreground max-w-2xl mx-auto text-sm sm:text-lg px-2">
             Every dish and drink at NAWA CAFÉ is a celebration of quality, from ethically sourced beans to locally inspired cuisine.
           </p>
         </div>
@@ -82,26 +82,26 @@ const HomeFeatured = () => {
         </div>
 
         {/* Full-width food spread banner */}
-        <div className="relative rounded-3xl overflow-hidden h-[400px] shadow-xl">
+        <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden h-[280px] sm:h-[400px] shadow-xl">
           <img
             src={homeSpread}
             alt="Artisan coffee and pastry spread"
             className="w-full h-full object-cover"
             loading="lazy"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent flex items-center">
-            <div className="px-8 md:px-16 max-w-xl">
-              <h3 className="font-cinzel text-3xl md:text-4xl font-bold text-white mb-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent sm:from-black/60 sm:via-black/30 flex items-center">
+            <div className="px-5 sm:px-8 md:px-16 max-w-xl">
+              <h3 className="font-cinzel text-xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-4">
                 Every Morning Deserves This
               </h3>
-              <p className="text-cream-200 text-lg mb-6">
+              <p className="text-cream-200 text-xs sm:text-lg mb-4 sm:mb-6 leading-relaxed">
                 Fresh pastries, artisan coffee, and dishes made from scratch — your perfect morning ritual.
               </p>
               <Link
                 to="/menu"
-                className="inline-flex items-center gap-2 bg-cream-400 hover:bg-cream-500 text-coffee-800 px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:scale-105"
+                className="inline-flex items-center gap-2 bg-cream-400 hover:bg-cream-500 text-coffee-800 px-5 py-2.5 sm:px-8 sm:py-3 rounded-full text-sm sm:text-base font-semibold transition-all duration-300 hover:scale-105 min-h-[44px]"
               >
-                View Full Menu <ArrowRight className="w-5 h-5" />
+                View Full Menu <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
               </Link>
             </div>
           </div>

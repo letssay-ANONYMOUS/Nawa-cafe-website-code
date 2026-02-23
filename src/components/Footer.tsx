@@ -129,9 +129,9 @@ const Footer = () => {
 
   return (
     <>
-    <footer className="bg-coffee-800 text-white py-8 sm:py-12">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 sm:gap-8">
+    <footer className="bg-coffee-800 text-white py-10 sm:py-12">
+      <div className="container mx-auto px-5 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8">
           {/* Brand */}
           <div className="sm:col-span-2">
             <div className="flex items-center space-x-2 mb-3 sm:mb-4">
@@ -295,14 +295,14 @@ const Footer = () => {
               )}
             </div>
             
-            <div className="flex space-x-6">
-              <button className="text-cream-300 hover:text-cream-100 transition-colors duration-200 text-sm">
+          <div className="flex flex-wrap gap-4 sm:space-x-6 justify-center sm:justify-end">
+              <button className="text-cream-300 hover:text-cream-100 transition-colors duration-200 text-xs sm:text-sm">
                 Privacy Policy
               </button>
-              <button className="text-cream-300 hover:text-cream-100 transition-colors duration-200 text-sm">
+              <button className="text-cream-300 hover:text-cream-100 transition-colors duration-200 text-xs sm:text-sm">
                 Terms of Service
               </button>
-              <button className="text-cream-300 hover:text-cream-100 transition-colors duration-200 text-sm">
+              <button className="text-cream-300 hover:text-cream-100 transition-colors duration-200 text-xs sm:text-sm">
                 Cookie Policy
               </button>
             </div>
