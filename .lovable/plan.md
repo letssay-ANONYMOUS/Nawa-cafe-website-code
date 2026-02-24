@@ -1,68 +1,64 @@
 
 
-# Plan: Create Pure SQL Menu Table in Supabase Backend
+# Plan: Track Customer IP Address and Location for Kitchen Dashboard
 
-## What You Get
+## Overview
 
-A clean SQL table called `menu_cards` directly in your Supabase backend with all 167 items from your file. You can open it in Supabase, see every row, and verify everything is correct.
+Capture each customer's IP address and approximate location (city/country) when they place an order, and display this information in the kitchen dashboard so staff can identify which branch (main or Al Ain) the customer is near.
 
-## Step 1: Create the Table (Database Migration)
+## How It Works
 
-Run a single migration that:
-- Creates the `menu_cards` table with these columns:
-  - `id` (integer, primary key) -- card number 1 through 167
-  - `name` (text) -- item name exactly from the file
-  - `price` (text) -- price as shown (e.g. "AED 48.00")
-  - `description` (text, nullable) -- item description
-  - `image_url` (text, nullable) -- the image link
-- Enables RLS with a SELECT policy so the table is readable
+1. When a customer submits their order at checkout, the `create-ziina-checkout` edge function already runs server-side -- this is where we capture the IP address from request headers
+2. A free IP geolocation API (ip-api.com) resolves the IP to a human-readable city and country
+3. The IP address and location are saved directly on the `orders` table
+4. The kitchen dashboard displays this info on every order row and in the expanded details
 
-## Step 2: Insert All 167 Rows
+## Step 1: Add Columns to Orders Table
 
-Insert every single item from your file, character-for-character:
+Add two new columns to the `orders` table via migration:
 
-| Range | Items |
-|-------|-------|
-| 1-11 | Truffle Omelette Toast through Loaded avocado toast |
-| 12-22 | Beetroot Avocado Toast through Egg Croissant |
-| 23-40 | Espresso through Affogato |
-| 41-56 | Iced Americano through CREAMY ESPRESSO |
-| 57-60 | Chemex through Cold Brew |
-| 61-62 | COFFE & CREAMY FULFFY CROISSANT, COFFE & TACOS PANCAKE |
-| 63-66 | NAWA Mixed Sesame Salad through NAWA Special Salad |
-| 67-75 | Truffle Aranchini Balls through Classic Cheese Chicken Wrap |
-| 76-79 | Alfredo Penne Pasta through PINK PENNE PASTA with CHICKEN |
-| 80-86 | Truffle Mushroom Risotto Chicken through CREAMY PESTO BASIL RISOTTO |
-| 87-88 | PAELLA DE MARISCO, PAELLA DE POLLO |
-| 89-96 | NAWA Signature Fried Chicken Burger through BLACK & WHITE |
-| 97-99 | PLAIN FRIES through NAWA Classic Cheese Fries |
-| 100 | NAWA SPECIAL CLUB SANDWICH |
-| 101-103 | NAWA Kid's Beef Slider through NAWA Kid's Chicken Strips |
-| 104-121 | HANINI CREME BRULE through San Sebastian Cheesecake |
-| 122-134 | Acai Bowl through HIMALAYAN STILL WATER 750 ML |
-| 135 | HIBISCUS FRUIT BOTTLE 1 LT |
-| 136-139 | Orange Juice through ORA COLADA |
-| 140-142 | Coca-Cola 290ml through Sprite 290ml |
-| 143-150 | Matcha Latte through MATCHA WITH ROSE ICE CREAM |
-| 151-154 | EARL GREY SPECIAL through NAWA SPECIAL BLACK TEA |
-| 155 | Burrata with cherry roasted tomatoes |
-| 156-157 | Focaccia Halloumi Sandwich, Best Ever Avocado Sandwich |
-| 158-165 | Plain Croissant through HAZELNUTS CROISSANT |
-| 166-167 | NAWA Cookie, NAWA Cookies - Box of 6 |
+- `ip_address` (text, nullable) -- raw IP address
+- `customer_location` (text, nullable) -- human-readable location like "Abu Dhabi, AE" or "Al Ain, AE"
 
-All names, prices, descriptions, and image URLs copied exactly from your file. No modifications, no interpretation.
+## Step 2: Update `create-ziina-checkout` Edge Function
 
-## What This Does NOT Touch
+When an order is created, the edge function will:
 
-- The existing `menu_items` table stays completely untouched
-- No frontend code changes
-- No edge function changes
+1. Extract the customer's IP from request headers (`cf-connecting-ip`, `x-forwarded-for`, `x-real-ip`)
+2. Call `http://ip-api.com/json/{ip}` (free, no API key needed) to get city and country
+3. Build a location string like "Al Ain, United Arab Emirates"
+4. Save both `ip_address` and `customer_location` on the order row during the existing INSERT
+
+## Step 3: Display in Kitchen Dashboard Order Table
+
+In the `OrderTable` component:
+
+- Add a new "Location" column in the table header (visible on medium+ screens)
+- Show the `customer_location` value (e.g., "Al Ain, AE") in each order row
+- In the expanded order details section, show both:
+  - IP Address (e.g., `85.115.x.x`)
+  - Location (e.g., "Al Ain, United Arab Emirates")
+- Use a `MapPin` icon from lucide-react for visual clarity
+
+## What This Looks Like in the Kitchen
+
+**Table row** (collapsed):
+```text
+Date/Time | Order # | Customer | Phone | Location      | Items | Total | Action
+10:32 AM  | NAWA-.. | Ahmed    | +971..| Al Ain, AE    |   3   | 85.00 | ACK
+```
+
+**Expanded details** will show:
+```text
+IP Address: 85.115.42.xxx
+Location:   Al Ain, United Arab Emirates
+```
 
 ## Technical Details
 
-- Table: `menu_cards` (simple, clean name)
-- Primary key: `id` integer (1-167)
-- RLS: SELECT-only policy (read-only, nobody can modify it from the frontend)
-- All data inserted via the data operation tool, not migrations
-- You will be able to see it immediately in your Supabase dashboard under Tables
+- **IP Geolocation**: Uses ip-api.com (free tier, 45 requests/minute, no key needed). Plenty for a cafe.
+- **No new edge functions** -- all logic added to the existing `create-ziina-checkout` function
+- **No new tables** -- just two new nullable columns on `orders`
+- **Fallback**: If geolocation fails, the IP is still saved and location shows "Unknown"
+- The `admin-orders` edge function already returns `SELECT *` from orders, so the new columns will automatically be available to the kitchen dashboard without changes to that function
 
