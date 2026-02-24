@@ -25,6 +25,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import KitchenDashboard from "./pages/KitchenDashboard";
 import StaffLogin from "./pages/StaffLogin";
+import KitchenAuthGate from "./components/KitchenAuthGate";
 import NotFound from "./pages/NotFound";
 import MenuItemDetail from "./pages/MenuItemDetail";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
@@ -67,7 +68,7 @@ const App = () => (
               <Route path="/payment-success" element={<PaymentSuccessPage />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/kitchen" element={<KitchenDashboard />} />
+              <Route path="/admin/kitchen" element={<KitchenAuthGate><KitchenDashboard /></KitchenAuthGate>} />
               <Route path="/staff/login" element={<StaffLogin />} />
               <Route path="/visitors" element={<AnalyticsDashboard />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

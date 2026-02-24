@@ -154,16 +154,13 @@ const KitchenDashboard = () => {
   };
 
   useEffect(() => {
-    checkAuth();
     loadOrders();
 
-    // Poll for new orders every 10 seconds instead of using realtime subscriptions
-    const pollInterval = setInterval(() => {
-      loadOrders();
-    }, 10000);
+    // Set up realtime subscription instead of polling
+    const channel = setupRealtimeSubscription();
 
     return () => {
-      clearInterval(pollInterval);
+      supabase.removeChannel(channel);
       stopAlert();
     };
   }, [dateRange]);
@@ -177,64 +174,32 @@ const KitchenDashboard = () => {
     }
   }, [unacknowledgedOrders.size, soundEnabled, startAlert, stopAlert]);
 
-  const checkAuth = async () => {
-    const token = sessionStorage.getItem('admin_session');
-    if (!token) {
-      navigate('/staff/login');
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase.functions.invoke('admin-session', {
-        headers: { 'x-admin-token': token }
-      });
-
-      if (error || (!data?.valid && !data?.authenticated)) {
-        sessionStorage.removeItem('admin_session');
-        navigate('/staff/login');
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      navigate('/staff/login');
-    }
-  };
-
   const loadOrders = async () => {
     setIsLoading(true);
     try {
       const startDate = getDateFromRange(dateRange);
-      const token = sessionStorage.getItem('admin_session') || '';
 
-      const { data, error } = await supabase.functions.invoke('admin-orders', {
-        headers: { 'x-admin-token': token },
-        body: null,
-        method: 'GET',
-      });
+      // Query orders directly via Supabase client (RLS restricts to staff/admin)
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select('*')
+        .gte('created_at', startDate.toISOString())
+        .order('created_at', { ascending: false });
 
-      // Use fetch directly since invoke doesn't support query params well
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/admin-orders?start_date=${startDate.toISOString()}`,
-        {
-          headers: {
-            'x-admin-token': token,
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      if (ordersError) throw ordersError;
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Failed to load orders');
-      }
+      if (ordersData && ordersData.length > 0) {
+        const orderIds = ordersData.map(o => o.id);
+        const { data: itemsData, error: itemsError } = await supabase
+          .from('order_items')
+          .select('*')
+          .in('order_id', orderIds);
 
-      const result = await response.json();
+        if (itemsError) throw itemsError;
 
-      if (result.orders && result.orders.length > 0) {
-        const ordersWithItems: OrderWithItems[] = result.orders.map((order: Order) => ({
+        const ordersWithItems: OrderWithItems[] = ordersData.map((order) => ({
           ...order,
-          items: (result.items || []).filter((item: OrderItem) => item.order_id === order.id)
+          items: (itemsData || []).filter((item) => item.order_id === order.id)
         }));
         setOrders(ordersWithItems);
       } else {
@@ -344,8 +309,8 @@ const KitchenDashboard = () => {
     });
   }, []);
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('admin_session');
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate('/staff/login');
   };
 
