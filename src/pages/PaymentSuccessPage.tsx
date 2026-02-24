@@ -6,8 +6,10 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useCart } from '@/contexts/CartContext';
 
 const PaymentSuccessPage = () => {
+  const { clearCart } = useCart();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -49,6 +51,7 @@ const PaymentSuccessPage = () => {
         if (data?.success) {
           setVerified(true);
           setOrderNumber(data.order_number);
+          clearCart();
           toast({
             title: "Payment Confirmed!",
             description: "Thank you for your order. We'll start preparing it right away!",

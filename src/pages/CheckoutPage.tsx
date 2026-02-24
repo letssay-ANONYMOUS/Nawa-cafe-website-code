@@ -98,9 +98,6 @@ const CheckoutPage = () => {
         itemCount: itemCount
       });
 
-      // Clear cart before redirect
-      clearCart();
-
       // Redirect to Ziina Checkout (break out of embedded previews/iframes if needed)
       console.log('Redirecting to:', data.url);
       try {
