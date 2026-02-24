@@ -98,9 +98,20 @@ const CheckoutPage = () => {
         itemCount: itemCount
       });
 
-      // Redirect to Ziina Checkout
-      console.log('Redirecting to:', data.url);
-      window.location.href = data.url;
+      // Open Ziina Checkout in a new tab (Ziina blocks iframe embedding)
+      console.log('Opening Ziina payment:', data.url);
+      const paymentWindow = window.open(data.url, '_blank', 'noopener');
+      if (!paymentWindow) {
+        // If popup was blocked, fall back to direct navigation
+        window.location.href = data.url;
+      } else {
+        // Reset loading state since user will complete payment in new tab
+        setLoading(false);
+        toast({
+          title: "Payment page opened",
+          description: "Complete your payment in the new tab. You'll be redirected back after payment.",
+        });
+      }
 
     } catch (error) {
       console.error('Error creating payment:', error);
