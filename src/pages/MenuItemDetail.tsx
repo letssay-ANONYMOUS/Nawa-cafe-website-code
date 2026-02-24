@@ -37,10 +37,6 @@ const MenuItemDetail = () => {
   }, [navigate]);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         handleBack();

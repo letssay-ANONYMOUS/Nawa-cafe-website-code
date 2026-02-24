@@ -29,7 +29,15 @@ import MenuItemDetail from "./pages/MenuItemDetail";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import ProductDetail from "./pages/ProductDetail";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes before data is considered stale
+      gcTime: 30 * 60 * 1000,   // 30 minutes cache retention
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

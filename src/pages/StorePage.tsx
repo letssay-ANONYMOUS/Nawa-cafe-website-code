@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -11,9 +11,6 @@ import { AdminDeleteConfirm } from '@/components/AdminDeleteConfirm';
 import { useToast } from '@/hooks/use-toast';
 
 const StorePage = () => {
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
 
   const { isAdmin, addPendingChange } = useAdmin();
   const { toast } = useToast();

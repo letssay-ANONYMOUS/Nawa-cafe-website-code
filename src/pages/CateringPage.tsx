@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -10,9 +9,6 @@ import cateringBrunch from '@/assets/catering-brunch.jpg';
 import cateringOnsite from '@/assets/catering-onsite.jpg';
 
 const CateringPage = () => {
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
 
   const occasions = [
     { image: cateringCorporate, title: "Corporate Events" },
