@@ -98,18 +98,9 @@ const CheckoutPage = () => {
         itemCount: itemCount
       });
 
-      // Redirect to Ziina Checkout (break out of embedded previews/iframes if needed)
+      // Redirect to Ziina Checkout
       console.log('Redirecting to:', data.url);
-      try {
-        if (window.top && window.top !== window.self) {
-          window.top.location.href = data.url;
-        } else {
-          window.location.href = data.url;
-        }
-      } catch {
-        // Fallback for sandboxed iframes
-        window.open(data.url, '_blank', 'noopener,noreferrer');
-      }
+      window.location.href = data.url;
 
     } catch (error) {
       console.error('Error creating payment:', error);
