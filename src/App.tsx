@@ -10,6 +10,7 @@ import { RouteAwareCookieConsent } from "@/components/RouteAwareCookieConsent";
 import PageViewTracker from "@/components/PageViewTracker";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import ScrollRestoration from "@/components/ScrollRestoration";
+import ImagePreloader from "@/components/ImagePreloader";
 import Home from "./pages/Home";
 import MenuPage from "./pages/MenuPage";
 import AboutPage from "./pages/AboutPage";
@@ -50,6 +51,7 @@ const App = () => (
             <GoogleAnalytics />
             <PageViewTracker />
             <ScrollRestoration />
+            <ImagePreloader />
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/menu" element={<MenuPage />} />
