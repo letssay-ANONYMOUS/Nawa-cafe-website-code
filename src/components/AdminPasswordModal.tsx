@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useAdmin } from '@/contexts/AdminContext';
 import { useToast } from '@/hooks/use-toast';
-import { adminService } from '@/services/adminService';
+import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 
 interface AdminPasswordModalProps {
@@ -14,16 +14,17 @@ interface AdminPasswordModalProps {
 }
 
 export const AdminPasswordModal = ({ open, onOpenChange }: AdminPasswordModalProps) => {
+  const [email, setEmail] = useState('nawacafe22@gmail.com');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { setIsAdmin } = useAdmin();
   const { toast } = useToast();
 
   const handleLogin = async () => {
-    if (!password.trim()) {
+    if (!email.trim() || !password.trim()) {
       toast({
         title: 'Error',
-        description: 'Please enter a password',
+        description: 'Please enter email and password',
         variant: 'destructive',
       });
       return;
@@ -32,23 +33,45 @@ export const AdminPasswordModal = ({ open, onOpenChange }: AdminPasswordModalPro
     setIsLoading(true);
     
     try {
-      const result = await adminService.login(password);
-      
-      if (result.success) {
-        setIsAdmin(true);
-        onOpenChange(false);
-        toast({
-          title: 'Success',
-          description: 'Admin mode activated',
-        });
-        setPassword('');
-      } else {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password.trim(),
+      });
+
+      if (error) {
         toast({
           title: 'Error',
-          description: result.error || 'Incorrect password',
+          description: error.message,
           variant: 'destructive',
         });
+        return;
       }
+
+      // Verify user has staff or admin role
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.user.id);
+
+      const hasAccess = roles?.some(r => r.role === 'staff' || r.role === 'admin');
+
+      if (!hasAccess) {
+        await supabase.auth.signOut();
+        toast({
+          title: 'Access Denied',
+          description: 'You do not have admin privileges.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      setIsAdmin(true);
+      onOpenChange(false);
+      toast({
+        title: 'Success',
+        description: 'Admin mode activated',
+      });
+      setPassword('');
     } catch (error) {
       toast({
         title: 'Error',
@@ -68,6 +91,17 @@ export const AdminPasswordModal = ({ open, onOpenChange }: AdminPasswordModalPro
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
+            <Label htmlFor="admin-email">Email</Label>
+            <Input
+              id="admin-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter admin email"
+              disabled={isLoading}
+            />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="admin-password">Password</Label>
             <Input
               id="admin-password"
@@ -75,7 +109,7 @@ export const AdminPasswordModal = ({ open, onOpenChange }: AdminPasswordModalPro
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleLogin()}
-              placeholder="Enter admin password"
+              placeholder="Enter password"
               disabled={isLoading}
             />
           </div>

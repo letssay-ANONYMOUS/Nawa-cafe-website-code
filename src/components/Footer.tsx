@@ -34,7 +34,8 @@ const Footer = () => {
   };
 
   const handleLogout = async () => {
-    await adminService.logout();
+    const { supabase } = await import('@/integrations/supabase/client');
+    await supabase.auth.signOut();
     setIsAdmin(false);
     clearPendingChanges();
     toast({

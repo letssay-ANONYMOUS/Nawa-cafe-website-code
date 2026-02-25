@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PendingChange {
   type: 'add' | 'edit' | 'delete';
@@ -23,6 +24,38 @@ const AdminContext = createContext<AdminContextType | undefined>(undefined);
 export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [pendingChanges, setPendingChanges] = useState<PendingChange[]>([]);
+
+  useEffect(() => {
+    // Check if there's an existing session with admin/staff role
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id);
+        const hasAccess = roles?.some(r => r.role === 'staff' || r.role === 'admin');
+        if (hasAccess) setIsAdmin(true);
+      }
+    };
+    checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setIsAdmin(false);
+        setPendingChanges([]);
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id);
+        const hasAccess = roles?.some(r => r.role === 'staff' || r.role === 'admin');
+        if (hasAccess) setIsAdmin(true);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const addPendingChange = (change: PendingChange) => {
     setPendingChanges(prev => [...prev, change]);

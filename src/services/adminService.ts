@@ -11,8 +11,11 @@ interface MenuItemData {
 }
 
 const getAuthHeaders = () => {
+  // Legacy token support for edge functions that still validate X-Admin-Token
   const token = localStorage.getItem(ADMIN_TOKEN_KEY);
-  return token ? { 'X-Admin-Token': token } : {};
+  if (token) return { 'X-Admin-Token': token };
+  // Fallback: no token header (edge functions will need updating separately)
+  return {};
 };
 
 export const adminService = {
