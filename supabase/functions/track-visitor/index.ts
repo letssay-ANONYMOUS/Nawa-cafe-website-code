@@ -36,8 +36,26 @@ Deno.serve(async (req) => {
     let ipAddress = cfConnectingIp || (forwardedFor?.split(',')[0]?.trim()) || realIp || 'unknown';
     
     console.log('Track visitor request received');
-    console.log('IP headers:', { forwardedFor, realIp, cfConnectingIp });
     console.log('Resolved IP:', ipAddress);
+
+    // Resolve IP to geolocation
+    let country: string | null = null;
+    let city: string | null = null;
+    if (ipAddress !== 'unknown') {
+      try {
+        const geoRes = await fetch(`http://ip-api.com/json/${ipAddress}?fields=status,country,city`);
+        if (geoRes.ok) {
+          const geo = await geoRes.json();
+          if (geo.status === 'success') {
+            country = geo.country || null;
+            city = geo.city || null;
+            console.log('Geolocation resolved:', { country, city });
+          }
+        }
+      } catch (e) {
+        console.error('Geolocation lookup failed:', e);
+      }
+    }
 
     const body: TrackVisitorRequest = await req.json();
     const { 
@@ -67,13 +85,16 @@ Deno.serve(async (req) => {
 
     if (existingVisitor) {
       // Update last_seen_at for returning visitor
+      const updateData: Record<string, unknown> = { 
+        last_seen_at: new Date().toISOString(),
+      };
+      if (ipAddress !== 'unknown') updateData.ip_address = ipAddress;
+      if (country) updateData.country = country;
+      if (city) updateData.city = city;
+
       const { error: updateError } = await supabase
         .from('anonymous_visitors')
-        .update({ 
-          last_seen_at: new Date().toISOString(),
-          // Update IP if changed
-          ip_address: ipAddress !== 'unknown' ? ipAddress : undefined
-        })
+        .update(updateData)
         .eq('visitor_id', visitor_id);
 
       if (updateError) {
@@ -89,6 +110,8 @@ Deno.serve(async (req) => {
           visitor_id,
           fingerprint,
           ip_address: ipAddress !== 'unknown' ? ipAddress : null,
+          country,
+          city,
           browser,
           browser_version,
           os,
