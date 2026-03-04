@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getVisitorId } from '@/hooks/useVisitorId';
 
 const SESSION_STORAGE_KEY = 'nawa_session_id';
+const LOCAL_SESSION_PREFIX = 'local-';
 
 interface SessionInfo {
   sessionId: string;
@@ -35,10 +36,12 @@ const getBrowser = (): string => {
   return 'Unknown';
 };
 
+const isLocalSession = (sessionId: string) => sessionId.startsWith(LOCAL_SESSION_PREFIX);
+
 /**
  * Hook to manage anonymous visitor sessions
  */
-export const useSession = () => {
+export const useSession = (enabled = true) => {
   const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -54,17 +57,19 @@ export const useSession = () => {
         .insert({
           visitor_id: visitorId,
           device_type: deviceType,
-          browser: browser,
-          referrer: referrer,
+          browser,
+          referrer,
           landing_page: landingPage,
-          pages_viewed: 1
+          pages_viewed: 1,
         })
         .select('id')
         .single();
 
       if (error) {
-        console.error('Failed to create session:', error);
-        return null;
+        console.warn('Session persistence unavailable, using local session fallback.');
+        const localSessionId = `${LOCAL_SESSION_PREFIX}${crypto.randomUUID()}`;
+        sessionStorage.setItem(SESSION_STORAGE_KEY, localSessionId);
+        return localSessionId;
       }
 
       const sessionId = data.id;
@@ -72,11 +77,15 @@ export const useSession = () => {
       return sessionId;
     } catch (err) {
       console.error('Session creation error:', err);
-      return null;
+      const localSessionId = `${LOCAL_SESSION_PREFIX}${crypto.randomUUID()}`;
+      sessionStorage.setItem(SESSION_STORAGE_KEY, localSessionId);
+      return localSessionId;
     }
   }, []);
 
   const updateSessionEnd = useCallback(async (sessionId: string) => {
+    if (isLocalSession(sessionId)) return;
+
     try {
       await supabase
         .from('visitor_sessions')
@@ -88,8 +97,9 @@ export const useSession = () => {
   }, []);
 
   const incrementPagesViewed = useCallback(async (sessionId: string) => {
+    if (isLocalSession(sessionId)) return;
+
     try {
-      // Get current count and increment
       const { data } = await supabase
         .from('visitor_sessions')
         .select('pages_viewed')
@@ -108,57 +118,47 @@ export const useSession = () => {
   }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      setSessionInfo(null);
+      setIsLoading(false);
+      return;
+    }
+
     const initSession = async () => {
       const visitorId = getVisitorId();
       const existingSessionId = sessionStorage.getItem(SESSION_STORAGE_KEY);
 
       if (existingSessionId) {
-        // Session already exists for this tab
         setSessionInfo({
           sessionId: existingSessionId,
           visitorId,
           deviceType: getDeviceType(),
-          browser: getBrowser()
+          browser: getBrowser(),
         });
         setIsLoading(false);
         return;
       }
 
-      // Create new session
       const newSessionId = await createSession(visitorId);
       if (newSessionId) {
         setSessionInfo({
           sessionId: newSessionId,
           visitorId,
           deviceType: getDeviceType(),
-          browser: getBrowser()
+          browser: getBrowser(),
         });
       }
       setIsLoading(false);
     };
 
-    initSession();
-
-    // Update session end time when tab closes
-    const handleBeforeUnload = () => {
-      const sessionId = sessionStorage.getItem(SESSION_STORAGE_KEY);
-      if (sessionId) {
-        // Use sendBeacon for reliable delivery on page unload
-        const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/visitor_sessions?id=eq.${sessionId}`;
-        const body = JSON.stringify({ session_end: new Date().toISOString() });
-        navigator.sendBeacon(url, body);
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [createSession]);
+    void initSession();
+  }, [createSession, enabled]);
 
   return {
     sessionInfo,
     isLoading,
     incrementPagesViewed,
-    updateSessionEnd
+    updateSessionEnd,
   };
 };
 

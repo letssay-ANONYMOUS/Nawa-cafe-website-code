@@ -16,20 +16,34 @@ const StaffLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const hasKitchenAccess = useCallback(async (userId: string): Promise<boolean> => {
-    const { data, error } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .in('role', ['staff', 'admin'])
-      .limit(1);
+  const hasKitchenAccess = useCallback(async (userId: string): Promise<boolean | null> => {
+    let lastError: unknown = null;
 
-    if (error) {
-      console.error('Role validation failed:', error);
-      return false;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .in('role', ['staff', 'admin'])
+          .limit(1);
+
+        if (error) {
+          lastError = error;
+        } else {
+          return (data?.length ?? 0) > 0;
+        }
+      } catch (err) {
+        lastError = err;
+      }
+
+      if (attempt < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+      }
     }
 
-    return (data?.length ?? 0) > 0;
+    console.error('Role validation failed after retries:', lastError);
+    return null;
   }, []);
 
   // Redirect only authorized staff/admin sessions
@@ -42,12 +56,14 @@ const StaffLogin = () => {
       const hasAccess = await hasKitchenAccess(session.user.id);
       if (!mounted) return;
 
-      if (hasAccess) {
+      if (hasAccess === true) {
         navigate('/admin/kitchen', { replace: true });
         return;
       }
 
-      await supabase.auth.signOut();
+      if (hasAccess === false) {
+        await supabase.auth.signOut();
+      }
     };
 
     supabase.auth
@@ -88,9 +104,15 @@ const StaffLogin = () => {
       if (data.session) {
         const hasAccess = await hasKitchenAccess(data.session.user.id);
 
-        if (!hasAccess) {
-          await supabase.auth.signOut();
-          throw new Error('You do not have kitchen staff access.');
+        if (hasAccess !== true) {
+          if (hasAccess === false) {
+            await supabase.auth.signOut();
+          }
+          throw new Error(
+            hasAccess === null
+              ? 'Access verification is temporarily unavailable. Please try again.'
+              : 'You do not have kitchen staff access.'
+          );
         }
 
         toast({

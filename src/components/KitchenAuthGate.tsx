@@ -34,25 +34,34 @@ const KitchenAuthGate = ({ children }: KitchenAuthGateProps) => {
       navigate('/staff/login', { replace: true });
     };
 
-    const checkRole = async (userId: string): Promise<boolean> => {
-      try {
-        const { data: roles, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId)
-          .in('role', ['staff', 'admin'])
-          .limit(1);
+    const checkRole = async (userId: string): Promise<boolean | null> => {
+      let lastError: unknown = null;
 
-        if (error) {
-          console.error('Role check error:', error);
-          return false;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          const { data: roles, error } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', userId)
+            .in('role', ['staff', 'admin'])
+            .limit(1);
+
+          if (error) {
+            lastError = error;
+          } else {
+            return (roles?.length ?? 0) > 0;
+          }
+        } catch (err) {
+          lastError = err;
         }
 
-        return (roles?.length ?? 0) > 0;
-      } catch (err) {
-        console.error('Role check exception:', err);
-        return false;
+        if (attempt < 2) {
+          await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+        }
       }
+
+      console.error('Role check failed after retries:', lastError);
+      return null;
     };
 
     const validateSessionAccess = async (activeSession: Session | null) => {
@@ -66,13 +75,16 @@ const KitchenAuthGate = ({ children }: KitchenAuthGateProps) => {
       const hasAccess = await checkRole(activeSession.user.id);
       if (!mounted) return;
 
-      if (hasAccess) {
+      if (hasAccess === true) {
         setAuthorized(true);
         finishLoading();
         return;
       }
 
-      await supabase.auth.signOut();
+      if (hasAccess === false) {
+        await supabase.auth.signOut();
+      }
+
       redirectToLogin();
     };
 

@@ -15,12 +15,13 @@ import { getSessionId } from '@/hooks/useSession';
  */
 const PageViewTracker = () => {
   const location = useLocation();
+  const isOperationalArea = location.pathname.startsWith('/admin') || location.pathname.startsWith('/staff');
   const { trackPageView } = useAnalytics();
-  const { sessionInfo, incrementPagesViewed } = useSession();
+  const { sessionInfo, incrementPagesViewed } = useSession(!isOperationalArea);
   const consent = useCookieConsent();
-  
+
   // Initialize essential tracking (no consent needed)
-  useEssentialTracking();
+  useEssentialTracking(!isOperationalArea);
 
   // Refs for engagement tracking
   const scrollDepthRef = useRef(0);
@@ -30,21 +31,21 @@ const PageViewTracker = () => {
 
   // Track scroll depth
   const updateScrollDepth = useCallback(() => {
-    if (!consent?.analytics) return;
-    
+    if (!consent?.analytics || isOperationalArea) return;
+
     const scrollTop = window.scrollY;
     const docHeight = document.documentElement.scrollHeight - window.innerHeight;
     const scrollPercent = docHeight > 0 ? Math.round((scrollTop / docHeight) * 100) : 0;
-    
+
     if (scrollPercent > scrollDepthRef.current) {
       scrollDepthRef.current = scrollPercent;
     }
-  }, [consent?.analytics]);
+  }, [consent?.analytics, isOperationalArea]);
 
   // Handle visibility change for accurate engagement time
   const handleVisibilityChange = useCallback(() => {
-    if (!consent?.analytics) return;
-    
+    if (!consent?.analytics || isOperationalArea) return;
+
     if (document.hidden) {
       // Page became hidden - add elapsed time
       totalEngagementTimeRef.current += Date.now() - engagementStartRef.current;
@@ -54,17 +55,17 @@ const PageViewTracker = () => {
       engagementStartRef.current = Date.now();
       isVisibleRef.current = true;
     }
-  }, [consent?.analytics]);
+  }, [consent?.analytics, isOperationalArea]);
 
   // Save engagement data before page unload or navigation
   const saveEngagementData = useCallback(async (pagePath: string) => {
-    if (!consent?.analytics) return;
-    
+    if (!consent?.analytics || isOperationalArea) return;
+
     // Calculate final engagement time
     if (isVisibleRef.current) {
       totalEngagementTimeRef.current += Date.now() - engagementStartRef.current;
     }
-    
+
     const visitorId = getVisitorId();
     const engagementTime = Math.floor(totalEngagementTimeRef.current / 1000);
     const scrollDepth = scrollDepthRef.current;
@@ -74,9 +75,9 @@ const PageViewTracker = () => {
         // Update the most recent page view with engagement data
         await supabase
           .from('page_views')
-          .update({ 
+          .update({
             engagement_time: engagementTime,
-            scroll_depth: scrollDepth
+            scroll_depth: scrollDepth,
           })
           .eq('visitor_id', visitorId)
           .eq('page_path', pagePath)
@@ -86,21 +87,21 @@ const PageViewTracker = () => {
         console.error('Failed to save engagement data:', err);
       }
     }
-  }, [consent?.analytics]);
+  }, [consent?.analytics, isOperationalArea]);
 
   // Track clicks (for consented users)
   const handleClick = useCallback(async (e: MouseEvent) => {
-    if (!consent?.analytics) return;
-    
+    if (!consent?.analytics || isOperationalArea) return;
+
     const target = e.target as HTMLElement;
-    const selector = target.tagName.toLowerCase() + 
+    const selector = target.tagName.toLowerCase() +
       (target.id ? `#${target.id}` : '') +
       (target.className ? `.${target.className.split(' ').join('.')}` : '');
-    
+
     const elementText = target.textContent?.slice(0, 50) || '';
     const visitorId = getVisitorId();
     const sessionId = getSessionId();
-    
+
     try {
       await supabase
         .from('page_interactions')
@@ -112,16 +113,16 @@ const PageViewTracker = () => {
           element_selector: selector.slice(0, 100),
           element_text: elementText,
           x_position: e.clientX,
-          y_position: e.clientY
+          y_position: e.clientY,
         });
-    } catch (err) {
+    } catch {
       // Silently fail - don't disrupt user experience
     }
-  }, [consent?.analytics, location.pathname]);
+  }, [consent?.analytics, isOperationalArea, location.pathname]);
 
   // Setup scroll tracking
   useEffect(() => {
-    if (!consent?.analytics) return;
+    if (!consent?.analytics || isOperationalArea) return;
 
     let scrollTimeout: NodeJS.Timeout;
     const throttledScroll = () => {
@@ -137,32 +138,34 @@ const PageViewTracker = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       clearTimeout(scrollTimeout);
     };
-  }, [consent?.analytics, updateScrollDepth, handleVisibilityChange]);
+  }, [consent?.analytics, isOperationalArea, updateScrollDepth, handleVisibilityChange]);
 
   // Setup click tracking
   useEffect(() => {
-    if (!consent?.analytics) return;
+    if (!consent?.analytics || isOperationalArea) return;
 
     // Only track clicks on interactive elements
     const handleInteractiveClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       const interactive = target.closest('a, button, [role="button"], input, select, textarea');
       if (interactive) {
-        handleClick(e);
+        void handleClick(e);
       }
     };
 
     document.addEventListener('click', handleInteractiveClick);
     return () => document.removeEventListener('click', handleInteractiveClick);
-  }, [consent?.analytics, handleClick]);
+  }, [consent?.analytics, isOperationalArea, handleClick]);
 
   // Track page views on route change
   useEffect(() => {
+    if (isOperationalArea) return;
+
     const prevPath = scrollDepthRef.current > 0 ? location.pathname : null;
-    
+
     // Save engagement data for previous page
     if (prevPath && consent?.analytics) {
-      saveEngagementData(prevPath);
+      void saveEngagementData(prevPath);
     }
 
     // Reset engagement tracking for new page
@@ -173,34 +176,42 @@ const PageViewTracker = () => {
 
     // Track the page view (only if analytics consent)
     trackPageView(location.pathname, document.title);
-    
+
     // Increment pages viewed in session
     if (sessionInfo?.sessionId) {
-      incrementPagesViewed(sessionInfo.sessionId);
+      void incrementPagesViewed(sessionInfo.sessionId);
     }
-  }, [location.pathname, trackPageView, sessionInfo, incrementPagesViewed, consent?.analytics, saveEngagementData]);
+  }, [
+    isOperationalArea,
+    location.pathname,
+    trackPageView,
+    sessionInfo,
+    incrementPagesViewed,
+    consent?.analytics,
+    saveEngagementData,
+  ]);
 
   // Save on page unload
   useEffect(() => {
+    if (isOperationalArea) return;
+
     const handleBeforeUnload = () => {
       if (consent?.analytics) {
-        // Use sendBeacon for reliability
         const visitorId = getVisitorId();
-        const engagementTime = isVisibleRef.current 
+        const engagementTime = isVisibleRef.current
           ? Math.floor((totalEngagementTimeRef.current + (Date.now() - engagementStartRef.current)) / 1000)
           : Math.floor(totalEngagementTimeRef.current / 1000);
-        
-        // Best effort save via beacon
+
         navigator.sendBeacon?.(
           `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/page_views?visitor_id=eq.${visitorId}&page_path=eq.${encodeURIComponent(location.pathname)}&order=viewed_at.desc&limit=1`,
-          JSON.stringify({ engagement_time: engagementTime, scroll_depth: scrollDepthRef.current })
+          JSON.stringify({ engagement_time: engagementTime, scroll_depth: scrollDepthRef.current }),
         );
       }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [consent?.analytics, location.pathname]);
+  }, [isOperationalArea, consent?.analytics, location.pathname]);
 
   // This component doesn't render anything
   return null;
