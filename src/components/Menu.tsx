@@ -13,7 +13,7 @@ const Menu = () => {
 
   // Show scroll-to-top button once user scrolls past the 20th visible card
   useEffect(() => {
-    const handleScroll = () => {
+    const updateScrollTopVisibility = () => {
       const twentiethCardEl = document.querySelector<HTMLElement>('[data-card-order="20"]');
 
       if (twentiethCardEl) {
@@ -25,9 +25,24 @@ const Menu = () => {
       }
     };
 
-    handleScroll();
+    let ticking = false;
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        updateScrollTopVisibility();
+        ticking = false;
+      });
+    };
+
+    updateScrollTopVisibility();
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('resize', updateScrollTopVisibility);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', updateScrollTopVisibility);
+    };
   }, [searchQuery, menuCards]);
 
   const scrollToTop = () => {
@@ -212,7 +227,7 @@ const Menu = () => {
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-24 sm:bottom-6 right-6 z-[70] w-12 h-12 rounded-full bg-[#c9a962] text-white shadow-lg flex items-center justify-center hover:bg-[#b8953a] transition-all duration-300 animate-in fade-in zoom-in"
+          className="fixed bottom-6 right-4 sm:right-6 z-[70] w-11 h-11 rounded-full bg-[#c9a962] text-white shadow-lg flex items-center justify-center hover:bg-[#b8953a] transition-all duration-300 animate-in fade-in zoom-in"
           aria-label="Scroll to top"
         >
           <ArrowUp className="w-5 h-5" />

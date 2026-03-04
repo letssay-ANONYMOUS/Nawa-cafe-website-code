@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ChefHat, Lock, Mail } from "lucide-react";
+import type { Session } from "@supabase/supabase-js";
 
 const StaffLogin = () => {
   const [email, setEmail] = useState("");
@@ -15,24 +16,62 @@ const StaffLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Redirect if already logged in
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate('/admin/kitchen');
-      }
-    };
-    checkSession();
+  const hasKitchenAccess = useCallback(async (userId: string): Promise<boolean> => {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .in('role', ['staff', 'admin'])
+      .limit(1);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        navigate('/admin/kitchen');
+    if (error) {
+      console.error('Role validation failed:', error);
+      return false;
+    }
+
+    return (data?.length ?? 0) > 0;
+  }, []);
+
+  // Redirect only authorized staff/admin sessions
+  useEffect(() => {
+    let mounted = true;
+
+    const routeIfAuthorized = async (session: Session | null) => {
+      if (!mounted || !session) return;
+
+      const hasAccess = await hasKitchenAccess(session.user.id);
+      if (!mounted) return;
+
+      if (hasAccess) {
+        navigate('/admin/kitchen', { replace: true });
+        return;
+      }
+
+      await supabase.auth.signOut();
+    };
+
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        void routeIfAuthorized(session);
+      })
+      .catch((err) => {
+        console.error('Staff login session check failed:', err);
+      });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        void routeIfAuthorized(session);
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [hasKitchenAccess, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,15 +86,7 @@ const StaffLogin = () => {
       if (error) throw error;
 
       if (data.session) {
-        // Check if user has staff or admin role
-        const { data: roles, error: roleError } = await (supabase as any)
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', data.session.user.id);
-
-        if (roleError) throw roleError;
-
-        const hasAccess = roles?.some((r: any) => r.role === 'staff' || r.role === 'admin');
+        const hasAccess = await hasKitchenAccess(data.session.user.id);
 
         if (!hasAccess) {
           await supabase.auth.signOut();
@@ -66,7 +97,7 @@ const StaffLogin = () => {
           title: "Welcome!",
           description: "Redirecting to kitchen dashboard...",
         });
-        navigate('/admin/kitchen');
+        navigate('/admin/kitchen', { replace: true });
       }
     } catch (error: any) {
       console.error('Login error:', error);

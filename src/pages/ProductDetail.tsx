@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -84,6 +85,15 @@ const ProductDetail = () => {
 
   const product = products.find(p => p.id === Number(id));
 
+  const handleBack = useCallback(() => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate('/store', { replace: true });
+  }, [navigate]);
+
   if (!product) {
     return (
       <div className="min-h-screen">
@@ -91,7 +101,7 @@ const ProductDetail = () => {
         <div className="pt-24 pb-16 px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-3xl font-bold mb-4">Product not found</h1>
-            <Button onClick={() => navigate('/store')}>
+            <Button onClick={handleBack}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Store
             </Button>
@@ -121,7 +131,7 @@ const ProductDetail = () => {
         <div className="max-w-6xl mx-auto">
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/store')}
+            onClick={handleBack}
             className="mb-6"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
