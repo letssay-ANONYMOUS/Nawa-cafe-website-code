@@ -242,13 +242,11 @@ const KitchenDashboard = () => {
 
           setOrders(prev => [newOrder, ...prev]);
           
-          // FOR TESTING: Trigger alert on PENDING orders (normally would be silent)
           if (newOrder.payment_status === 'pending') {
-            // Add to unacknowledged set - this triggers the alert sound
-            setUnacknowledgedOrders(prev => new Set([...prev, newOrder.id]));
+            // Pending orders appear silently - no alert sound
             setActiveView("pending");
             toast({
-              title: "📋 New Pending Order!",
+              title: "📋 New Pending Order",
               description: `Order ${newOrder.order_number} from ${newOrder.customer_name}`,
               className: "bg-yellow-50 border-yellow-300"
             });
@@ -276,17 +274,16 @@ const KitchenDashboard = () => {
           const updatedOrder = payload.new as Order;
           const oldOrder = payload.old as Partial<Order>;
           
-          // DISABLED FOR TESTING - Sound now triggers on PENDING orders instead
-          // To revert: Uncomment this block and remove setUnacknowledgedOrders from INSERT pending handler
-          // if (updatedOrder.payment_status === 'paid' && oldOrder.payment_status !== 'paid') {
-          //   setUnacknowledgedOrders(prev => new Set([...prev, updatedOrder.id]));
-          //   setActiveView("paid");
-          //   toast({
-          //     title: "💰 New Paid Order!",
-          //     description: `Order ${updatedOrder.order_number} from ${updatedOrder.customer_name} is ready to prepare!`,
-          //     className: "bg-green-50 border-green-300"
-          //   });
-          // }
+          // Trigger alert when order transitions to paid
+          if (updatedOrder.payment_status === 'paid' && oldOrder.payment_status !== 'paid') {
+            setUnacknowledgedOrders(prev => new Set([...prev, updatedOrder.id]));
+            setActiveView("paid");
+            toast({
+              title: "💰 New Paid Order!",
+              description: `Order ${updatedOrder.order_number} from ${updatedOrder.customer_name} is ready to prepare!`,
+              className: "bg-green-50 border-green-300"
+            });
+          }
           
           // Update order in state
           setOrders(prev => prev.map(order => 
