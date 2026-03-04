@@ -232,7 +232,7 @@ const Footer = () => {
           </div>
 
           {/* Contact Info */}
-          <div>
+          <div className="overflow-hidden">
             <h3 className="font-playfair text-xl font-semibold mb-4">Contact</h3>
             <div className="space-y-3 text-cream-200">
               <p className="flex items-center gap-2"><MapPin className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> Al Ain</p>
@@ -243,8 +243,8 @@ const Footer = () => {
               <a href="tel:0506584176" className="flex items-center gap-2 hover:text-cream-100 transition-colors">
                 <Phone className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> 0506584176
               </a>
-              <a href="mailto:nawacafe22@gmail.com" className="flex items-center gap-2 hover:text-cream-100 transition-colors">
-                <Mail className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> nawacafe22@gmail.com
+              <a href="mailto:nawacafe22@gmail.com" className="flex items-center gap-2 hover:text-cream-100 transition-colors overflow-hidden">
+                <Mail className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> <span className="truncate">nawacafe22@gmail.com</span>
               </a>
             </div>
           </div>

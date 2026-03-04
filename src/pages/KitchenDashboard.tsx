@@ -334,21 +334,21 @@ const KitchenDashboard = () => {
         <div className="flex-1 flex flex-col">
           {/* Header */}
           <header className="bg-card shadow-sm border-b sticky top-0 z-50">
-            <div className="px-4 py-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+            <div className="px-2 sm:px-4 py-2 sm:py-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                   <SidebarTrigger />
-                  <div>
-                    <h1 className="text-lg font-bold text-foreground">
+                  <div className="min-w-0">
+                    <h1 className="text-sm sm:text-lg font-bold text-foreground truncate">
                       {activeView === 'paid' ? '✅ Paid Orders' : '⏳ Pending Orders'}
                     </h1>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">
                       Last {dateRangeLabels[dateRange].toLowerCase()} • {currentOrders.length} orders
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0 flex-wrap justify-end">
                   {/* Date Range Selector */}
                   <div className="hidden md:flex gap-1 bg-muted rounded-lg p-1">
                     {(['1month', '2months', '3months', '4months'] as DateRangeOption[]).map((range) => (
@@ -488,7 +488,7 @@ const KitchenDashboard = () => {
           </header>
 
           {/* Content */}
-          <main className="flex-1 p-4">
+          <main className="flex-1 p-2 sm:p-4">
             {isLoading ? (
               <div className="flex items-center justify-center h-64">
                 <RefreshCw className="w-8 h-8 animate-spin text-primary" />

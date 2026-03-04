@@ -157,7 +157,7 @@ serve(async (req) => {
           total_amount: amount,
           payment_status: 'pending',
           payment_provider: 'ziina',
-          order_type: 'takeaway',
+          order_type: 'dine_in',
           ip_address: customerIp,
           customer_location: customerLocation,
         })

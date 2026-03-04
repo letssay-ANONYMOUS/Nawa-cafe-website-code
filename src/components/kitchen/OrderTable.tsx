@@ -90,9 +90,9 @@ export const OrderTable = ({
   const title = isPending ? 'Pending Orders' : 'Paid Orders';
 
   return (
-    <Card className="h-full">
+    <Card className="h-full overflow-hidden">
       <CardHeader className={`pb-3 ${headerColor}`}>
-        <CardTitle className="flex items-center gap-2 text-lg">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
           <span>{icon}</span>
           {title} ({orders.length})
         </CardTitle>
@@ -104,20 +104,20 @@ export const OrderTable = ({
             <p>No {type} orders</p>
           </div>
         ) : (
-          <div className="max-h-[calc(100vh-280px)] overflow-y-auto">
-            <Table>
+          <div className="max-h-[calc(100vh-280px)] overflow-x-auto overflow-y-auto">
+            <Table className="min-w-[500px] sm:min-w-0">
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="w-[100px]">
+                  <TableHead className="w-[80px] sm:w-[100px]">
                     <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      Date/Time
+                      <Calendar className="w-3 h-3 hidden sm:inline" />
+                      <span className="text-xs sm:text-sm">Time</span>
                     </div>
                   </TableHead>
                   <TableHead>
                     <div className="flex items-center gap-1">
-                      <Hash className="w-3 h-3" />
-                      Order #
+                      <Hash className="w-3 h-3 hidden sm:inline" />
+                      <span className="text-xs sm:text-sm">Order</span>
                     </div>
                   </TableHead>
                   <TableHead>
@@ -144,8 +144,8 @@ export const OrderTable = ({
                       Items
                     </div>
                   </TableHead>
-                  <TableHead className="hidden lg:table-cell">What They Ordered</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead className="hidden lg:table-cell text-xs sm:text-sm">What They Ordered</TableHead>
+                  <TableHead className="text-right text-xs sm:text-sm">Total</TableHead>
                   {isPaid && (
                     <TableHead className="hidden xl:table-cell">
                       <div className="flex items-center gap-1">
@@ -154,7 +154,7 @@ export const OrderTable = ({
                       </div>
                     </TableHead>
                   )}
-                  <TableHead className="w-[100px]">Action</TableHead>
+                  <TableHead className="w-[70px] sm:w-[100px]">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -188,9 +188,9 @@ export const OrderTable = ({
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="font-mono text-sm font-bold text-primary">{order.order_number}</span>
+                          <span className="font-mono text-xs sm:text-sm font-bold text-primary">{order.order_number}</span>
                         </TableCell>
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium text-xs sm:text-sm">
                           {order.customer_name}
                         </TableCell>
                         <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
@@ -214,7 +214,7 @@ export const OrderTable = ({
                         <TableCell className="hidden lg:table-cell text-sm max-w-[200px] truncate text-muted-foreground">
                           {getItemsPreview(order.items)}
                         </TableCell>
-                        <TableCell className="text-right font-semibold">
+                        <TableCell className="text-right font-semibold text-xs sm:text-sm">
                           AED {order.total_amount.toFixed(2)}
                         </TableCell>
                         {isPaid && (
@@ -254,7 +254,7 @@ export const OrderTable = ({
                           <TableCell colSpan={isPaid ? 10 : 8} className="p-4">
                             <div className="bg-card rounded-lg border p-4 space-y-4">
                               {/* Customer & Order Info */}
-                              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 text-sm">
+                              <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4 lg:grid-cols-6">
                                 <div>
                                   <span className="text-muted-foreground flex items-center gap-1">
                                     <Hash className="w-3 h-3" /> Order #
@@ -318,7 +318,7 @@ export const OrderTable = ({
                                 <div className="flex items-center gap-2">
                                   <span className="text-muted-foreground text-sm">Type:</span>
                                   <Badge variant="outline" className="font-medium">
-                                    {order.order_type === 'dine_in' ? '🍽️ Dine In' : '🥡 Takeaway'}
+                                    🍽️ Dine In
                                   </Badge>
                                 </div>
                                 <div className="flex items-center gap-2">
