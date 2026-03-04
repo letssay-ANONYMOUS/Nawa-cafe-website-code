@@ -11,20 +11,24 @@ const Menu = () => {
   const { data: menuCards, isLoading, error } = useMenuCards();
   const navigate = useNavigate();
 
-  // Show scroll-to-top button when user scrolls past card 20 area
+  // Show scroll-to-top button once user scrolls past the 20th visible card
   useEffect(() => {
     const handleScroll = () => {
-      const card20El = document.querySelector('[data-card-index="20"]');
-      if (card20El) {
-        const rect = card20El.getBoundingClientRect();
+      const twentiethCardEl = document.querySelector<HTMLElement>('[data-card-order="20"]');
+
+      if (twentiethCardEl) {
+        const rect = twentiethCardEl.getBoundingClientRect();
         setShowScrollTop(rect.top < 0);
       } else {
-        setShowScrollTop(window.scrollY > 1500);
+        // Fallback for very short/filtered lists
+        setShowScrollTop(window.scrollY > 600);
       }
     };
+
+    handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [searchQuery, menuCards]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -72,6 +76,8 @@ const Menu = () => {
       </section>
     );
   }
+
+  let visibleCardOrder = 0;
 
   return (
     <section className="min-h-screen bg-gradient-to-b from-[#4a5f4a]/30 via-[#5a6f5a]/20 to-[#4a5f4a]/30 backdrop-blur-sm">
@@ -150,13 +156,18 @@ const Menu = () => {
 
               {/* Cards Grid */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-6">
-                {filtered.map((card, idx) => (
-                  <Card
-                    key={card.id}
-                    data-card-index={card.id}
-                    onClick={() => navigate(`/menu/${card.id}`)}
-                    className="group overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-300 bg-transparent cursor-pointer"
-                  >
+                {filtered.map((card) => {
+                  visibleCardOrder += 1;
+                  const cardOrder = visibleCardOrder;
+
+                  return (
+                    <Card
+                      key={card.id}
+                      data-card-index={card.id}
+                      data-card-order={cardOrder}
+                      onClick={() => navigate(`/menu/${card.id}`)}
+                      className="group overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-300 bg-transparent cursor-pointer"
+                    >
                     {/* Image */}
                     <div className="relative overflow-hidden aspect-[4/3]">
                       <img
@@ -188,8 +199,9 @@ const Menu = () => {
                         </p>
                       </div>
                     </div>
-                  </Card>
-                ))}
+                    </Card>
+                  );
+                })}
               </div>
             </div>
           );
@@ -200,7 +212,7 @@ const Menu = () => {
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-[#c9a962] text-white shadow-lg flex items-center justify-center hover:bg-[#b8953a] transition-all duration-300 animate-in fade-in zoom-in"
+          className="fixed bottom-24 sm:bottom-6 right-6 z-[70] w-12 h-12 rounded-full bg-[#c9a962] text-white shadow-lg flex items-center justify-center hover:bg-[#b8953a] transition-all duration-300 animate-in fade-in zoom-in"
           aria-label="Scroll to top"
         >
           <ArrowUp className="w-5 h-5" />
