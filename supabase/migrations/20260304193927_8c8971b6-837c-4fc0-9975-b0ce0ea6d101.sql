@@ -1,0 +1,1 @@
+UPDATE public.menu_cards SET price = 'AED 3.50' WHERE id = 59;
