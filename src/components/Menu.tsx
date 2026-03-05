@@ -184,7 +184,7 @@ const Menu = () => {
                 viewport={{ once: true, margin: "-50px" }}
                 variants={{
                   hidden: {},
-                  visible: { transition: { staggerChildren: 0.08 } }
+                  visible: { transition: { staggerChildren: 0.03 } }
                 }}
                 className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-6"
               >
@@ -197,14 +197,14 @@ const Menu = () => {
                       key={card.id}
                       variants={{
                         hidden: { opacity: 0, y: 20 },
-                        visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+                        visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } }
                       }}
                     >
                       <Card
                         data-card-index={card.id}
                         data-card-order={cardOrder}
                         onClick={() => navigate(`/menu/${card.id}`)}
-                        className="group overflow-hidden border-0 shadow-lg transition-all duration-300 bg-transparent cursor-pointer hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(201,169,98,0.3)]"
+                        className="group overflow-hidden border-0 shadow-lg transition-all duration-300 bg-transparent cursor-pointer hover:shadow-[0_15px_30px_rgba(201,169,98,0.3)]"
                       >
                         {/* Image */}
                         <div className="relative overflow-hidden aspect-[4/3]">

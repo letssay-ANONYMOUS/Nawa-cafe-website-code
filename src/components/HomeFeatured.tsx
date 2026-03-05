@@ -67,7 +67,6 @@ const HomeFeatured = () => {
                   hidden: { opacity: 0, y: 30 },
                   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
                 }}
-                whileHover={{ y: -8 }}
                 className="rounded-2xl flex-shrink-0 w-[70vw] sm:w-auto snap-center transition-all duration-300 hover:shadow-[0_15px_30px_rgba(201,169,98,0.3)]"
               >
                 <Link
