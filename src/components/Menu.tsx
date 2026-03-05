@@ -11,13 +11,13 @@ const Menu = () => {
   const { data: menuCards, isLoading, error } = useMenuCards();
   const navigate = useNavigate();
 
-  // Show scroll-to-top button once user scrolls past the 20th visible card
+  // Show scroll-to-top button once user scrolls past the 10th visible card
   useEffect(() => {
     const updateScrollTopVisibility = () => {
-      const twentiethCardEl = document.querySelector<HTMLElement>('[data-card-order="20"]');
+      const tenthCardEl = document.querySelector<HTMLElement>('[data-card-order="10"]');
 
-      if (twentiethCardEl) {
-        const rect = twentiethCardEl.getBoundingClientRect();
+      if (tenthCardEl) {
+        const rect = tenthCardEl.getBoundingClientRect();
         setShowScrollTop(rect.top < 0);
       } else {
         // Fallback for very short/filtered lists
