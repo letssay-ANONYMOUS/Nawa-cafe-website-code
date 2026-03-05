@@ -11,17 +11,19 @@ const Menu = () => {
   const { data: menuCards, isLoading, error } = useMenuCards();
   const navigate = useNavigate();
 
-  // Show scroll-to-top button once user scrolls past the 10th visible card
+  // Show scroll-to-top button once user scrolls past the 10th card
   useEffect(() => {
     const updateScrollTopVisibility = () => {
-      const tenthCardEl = document.querySelector<HTMLElement>('[data-card-order="10"]');
+      // Use data-card-index='10' to find exactly the card labeled '10'
+      const tenthCardEl = document.querySelector<HTMLElement>('[data-card-index="10"]');
 
       if (tenthCardEl) {
+        // card is considered "scrolled beyond" when its bottom is near/past the top edge
         const rect = tenthCardEl.getBoundingClientRect();
-        setShowScrollTop(rect.top < 0);
+        setShowScrollTop(rect.bottom < 100);
       } else {
-        // Fallback for very short/filtered lists
-        setShowScrollTop(window.scrollY > 600);
+        // Fallback for when card 10 is filtered out or missing
+        setShowScrollTop(window.scrollY > 800);
       }
     };
 
@@ -53,13 +55,18 @@ const Menu = () => {
 
   const filterCards = (cards: MenuCard[]) => {
     if (!searchQuery.trim()) return cards;
-    const q = searchQuery.toLowerCase();
-    return cards.filter(
-      (card) =>
-        card.name?.toLowerCase().includes(q) ||
-        card.description?.toLowerCase().includes(q) ||
-        card.price?.toLowerCase().includes(q)
-    );
+
+    const searchTerms = searchQuery
+      .toLowerCase()
+      .trim()
+      .split(/\s+/) // split by spaces for multi-word accuracy
+      .filter(term => term.length > 0);
+
+    return cards.filter((card) => {
+      const searchableText = `${card.name || ''} ${card.description || ''} ${card.price || ''}`.toLowerCase();
+      // Ensure ALL search terms are found in the card's text
+      return searchTerms.every(term => searchableText.includes(term));
+    });
   };
 
   const scrollToSection = (sectionId: string) => {
@@ -73,7 +80,7 @@ const Menu = () => {
 
   if (isLoading) {
     return (
-      <section className="min-h-screen bg-gradient-to-b from-[#4a5f4a]/30 via-[#5a6f5a]/20 to-[#4a5f4a]/30 backdrop-blur-sm flex items-center justify-center">
+      <section className="min-h-screen bg-gradient-to-b from-[#4a5f4a]/30 via-[#5a6f5a]/20 to-[#4a5f4a]/30 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-[#c9a962] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-white text-lg">Loading menu...</p>
@@ -84,7 +91,7 @@ const Menu = () => {
 
   if (error) {
     return (
-      <section className="min-h-screen bg-gradient-to-b from-[#4a5f4a]/30 via-[#5a6f5a]/20 to-[#4a5f4a]/30 backdrop-blur-sm flex items-center justify-center">
+      <section className="min-h-screen bg-gradient-to-b from-[#4a5f4a]/30 via-[#5a6f5a]/20 to-[#4a5f4a]/30 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-400 text-lg">Failed to load menu. Please try again.</p>
         </div>
@@ -95,9 +102,9 @@ const Menu = () => {
   let visibleCardOrder = 0;
 
   return (
-    <section className="min-h-screen bg-gradient-to-b from-[#4a5f4a]/30 via-[#5a6f5a]/20 to-[#4a5f4a]/30 backdrop-blur-sm">
+    <section className="min-h-screen bg-gradient-to-b from-[#4a5f4a]/30 via-[#5a6f5a]/20 to-[#4a5f4a]/30">
       {/* Header with Search */}
-      <div className="bg-[#4a5f4a]/80 backdrop-blur-md py-3 px-3 sm:px-6 lg:px-8 sticky top-16 z-10">
+      <div className="bg-[#4a5f4a]/95 backdrop-blur-md py-3 px-3 sm:px-6 lg:px-8 sticky top-16 z-40 border-b border-white/10 shadow-sm">
         <div className="container mx-auto">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
             <h1 className="text-lg sm:text-2xl font-cinzel font-bold text-white whitespace-nowrap text-center sm:text-left">
@@ -183,37 +190,37 @@ const Menu = () => {
                       onClick={() => navigate(`/menu/${card.id}`)}
                       className="group overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-300 bg-transparent cursor-pointer"
                     >
-                    {/* Image */}
-                    <div className="relative overflow-hidden aspect-[4/3]">
-                      <img
-                        src={card.image_url || '/placeholder.svg'}
-                        alt={card.name || ''}
-                        loading="lazy"
-                        decoding="async"
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                      <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300" />
+                      {/* Image */}
+                      <div className="relative overflow-hidden aspect-[4/3]">
+                        <img
+                          src={card.image_url || '/placeholder.svg'}
+                          alt={card.name || ''}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300" />
 
-                      {/* Card Number Badge */}
-                      <div className="absolute top-2 left-2 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center shadow-lg z-10">
-                        <span className="text-white font-bold text-lg">{card.id}</span>
+                        {/* Card Number Badge */}
+                        <div className="absolute top-2 left-2 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center shadow-lg z-10">
+                          <span className="text-white font-bold text-lg">{card.id}</span>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Golden Footer */}
-                    <div className="bg-[#c9a962]/90 backdrop-blur-sm p-3 min-h-[5.5rem] flex flex-col justify-between">
-                      <h3 className="font-semibold text-white text-xs sm:text-sm md:text-base leading-tight mb-1 line-clamp-2">
-                        {card.name}
-                      </h3>
-                      <div className="flex items-center justify-between">
-                        <p className="text-white/90 font-bold text-sm sm:text-base md:text-lg">
-                          {card.price}
-                        </p>
-                        <p className="text-white/60 text-[10px] hidden md:block">
-                          Click for details
-                        </p>
+                      {/* Golden Footer */}
+                      <div className="bg-[#c9a962]/90 backdrop-blur-sm p-3 min-h-[5.5rem] flex flex-col justify-between">
+                        <h3 className="font-semibold text-white text-xs sm:text-sm md:text-base leading-tight mb-1 line-clamp-2">
+                          {card.name}
+                        </h3>
+                        <div className="flex items-center justify-between">
+                          <p className="text-white/90 font-bold text-sm sm:text-base md:text-lg">
+                            {card.price}
+                          </p>
+                          <p className="text-white/60 text-[10px] hidden md:block">
+                            Click for details
+                          </p>
+                        </div>
                       </div>
-                    </div>
                     </Card>
                   );
                 })}

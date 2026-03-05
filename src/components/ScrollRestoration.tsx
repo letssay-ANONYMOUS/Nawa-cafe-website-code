@@ -37,11 +37,17 @@ const ScrollRestoration = () => {
   const restoringRef = useRef(false);
 
   // Persist scroll while user scrolls on current route
+  const lastScrollY = useRef(window.scrollY);
+
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout>;
 
+    // Reset to current scroll position for the new pathname
+    lastScrollY.current = window.scrollY;
+
     const handleScroll = () => {
       if (restoringRef.current) return;
+      lastScrollY.current = window.scrollY;
 
       clearTimeout(timeout);
       timeout = setTimeout(() => {
@@ -56,7 +62,7 @@ const ScrollRestoration = () => {
       clearTimeout(timeout);
 
       if (!restoringRef.current) {
-        writeScrollPosition(pathname, window.scrollY);
+        writeScrollPosition(pathname, lastScrollY.current);
       }
     };
   }, [pathname]);
@@ -74,7 +80,7 @@ const ScrollRestoration = () => {
       restoringRef.current = true;
 
       let attempts = 0;
-      const maxAttempts = 12;
+      const maxAttempts = 60;
 
       const restoreUntilStable = () => {
         window.scrollTo(0, target);
