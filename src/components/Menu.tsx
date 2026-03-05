@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useMenuCards, menuSections, groupCardsBySections, type MenuCard } from '@/hooks/useMenuCards';
 import { Card } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 const Menu = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -177,54 +178,70 @@ const Menu = () => {
               </div>
 
               {/* Cards Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-6">
+              <motion.div
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-50px" }}
+                variants={{
+                  hidden: {},
+                  visible: { transition: { staggerChildren: 0.08 } }
+                }}
+                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-6"
+              >
                 {filtered.map((card) => {
                   visibleCardOrder += 1;
                   const cardOrder = visibleCardOrder;
 
                   return (
-                    <Card
+                    <motion.div
                       key={card.id}
-                      data-card-index={card.id}
-                      data-card-order={cardOrder}
-                      onClick={() => navigate(`/menu/${card.id}`)}
-                      className="group overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-300 bg-transparent cursor-pointer"
+                      variants={{
+                        hidden: { opacity: 0, y: 20 },
+                        visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+                      }}
                     >
-                      {/* Image */}
-                      <div className="relative overflow-hidden aspect-[4/3]">
-                        <img
-                          src={card.image_url || '/placeholder.svg'}
-                          alt={card.name || ''}
-                          loading="lazy"
-                          decoding="async"
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300" />
+                      <Card
+                        data-card-index={card.id}
+                        data-card-order={cardOrder}
+                        onClick={() => navigate(`/ menu / ${card.id} `)}
+                        className="group overflow-hidden border-0 shadow-lg transition-all duration-300 bg-transparent cursor-pointer hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(201,169,98,0.3)]"
+                      >
+                        {/* Image */}
+                        <div className="relative overflow-hidden aspect-[4/3]">
+                          <img
+                            src={card.image_url || '/placeholder.svg'}
+                            alt={card.name || ''}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          />
+                          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300" />
 
-                        {/* Card Number Badge */}
-                        <div className="absolute top-2 left-2 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center shadow-lg z-10">
-                          <span className="text-white font-bold text-lg">{card.id}</span>
+                          {/* Card Number Badge */}
+                          <div className="absolute top-2 left-2 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center shadow-lg z-10 transition-transform duration-300 group-hover:scale-110">
+                            <span className="text-white font-bold text-lg">{card.id}</span>
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Golden Footer */}
-                      <div className="bg-[#c9a962]/90 backdrop-blur-sm p-3 min-h-[5.5rem] flex flex-col justify-between">
-                        <h3 className="font-semibold text-white text-xs sm:text-sm md:text-base leading-tight mb-1 line-clamp-2">
-                          {card.name}
-                        </h3>
-                        <div className="flex items-center justify-between">
-                          <p className="text-white/90 font-bold text-sm sm:text-base md:text-lg">
-                            {card.price}
-                          </p>
-                          <p className="text-white/60 text-[10px] hidden md:block">
-                            Click for details
-                          </p>
+                        {/* Golden Footer */}
+                        <div className="bg-[#c9a962]/90 backdrop-blur-sm p-3 min-h-[5.5rem] flex flex-col justify-between transition-colors duration-300 group-hover:bg-[#c9a962]">
+                          <h3 className="font-semibold text-white text-xs sm:text-sm md:text-base leading-tight mb-1 line-clamp-2">
+                            {card.name}
+                          </h3>
+                          <div className="flex items-center justify-between">
+                            <p className="text-white/90 font-bold text-sm sm:text-base md:text-lg transition-all duration-300 group-hover:text-white">
+                              {card.price}
+                            </p>
+                            <p className="text-white/60 text-[10px] hidden md:block transition-all duration-300 group-hover:text-white/90">
+                              Click for details
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </Card>
+                      </Card>
+                    </motion.div>
                   );
                 })}
-              </div>
+              </motion.div>
             </div>
           );
         })}

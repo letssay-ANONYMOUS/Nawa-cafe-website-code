@@ -30,7 +30,13 @@ const HomeFeatured = () => {
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
-        <div className="text-center mb-8 sm:mb-16">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.7 }}
+          className="text-center mb-8 sm:mb-16"
+        >
           <span className="font-cinzel text-xs sm:text-sm tracking-[0.3em] uppercase text-coffee-400">
             Our Selections
           </span>
@@ -40,46 +46,57 @@ const HomeFeatured = () => {
           <p className="mt-3 sm:mt-4 text-muted-foreground max-w-2xl mx-auto text-sm sm:text-lg px-2">
             Every dish and drink at NAWA CAFÉ is a celebration of quality, from ethically sourced beans to locally inspired cuisine.
           </p>
-        </div>
+        </motion.div>
 
         {/* Featured cards - mobile horizontal scroll, desktop grid */}
-        <div className="sm:grid sm:grid-cols-3 sm:gap-8 mb-20">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+          variants={{
+            hidden: {},
+            visible: { transition: { staggerChildren: 0.2 } }
+          }}
+          className="sm:grid sm:grid-cols-3 sm:gap-8 mb-20"
+        >
           <div className="flex sm:contents gap-3 overflow-x-auto snap-x snap-mandatory pb-4 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
             {featured.map((item) => (
               <motion.div
                 key={item.title}
-                variants={cardHover}
-                initial="rest"
-                whileHover="hover"
-                className="rounded-2xl overflow-hidden flex-shrink-0 w-[70vw] sm:w-auto snap-center"
+                variants={{
+                  hidden: { opacity: 0, y: 30 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
+                }}
+                whileHover={{ y: -8 }}
+                className="rounded-2xl flex-shrink-0 w-[70vw] sm:w-auto snap-center transition-all duration-300 hover:shadow-[0_15px_30px_rgba(201,169,98,0.3)]"
               >
-              <Link
-                to="/menu"
-                className="group relative block aspect-[3/4] overflow-hidden rounded-2xl"
-              >
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                  <h3 className="font-cinzel text-lg sm:text-2xl font-semibold text-white mb-1 sm:mb-2">
-                    {item.title}
-                  </h3>
-                  <p className="text-cream-200 text-xs sm:text-sm leading-relaxed sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-500">
-                    {item.description}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2 sm:mt-3 text-cream-400 text-xs sm:text-sm font-medium sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-500">
-                    Explore <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
+                <Link
+                  to="/menu"
+                  className="group relative block aspect-[3/4] overflow-hidden rounded-2xl"
+                >
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                    <h3 className="font-cinzel text-lg sm:text-2xl font-semibold text-white mb-1 sm:mb-2">
+                      {item.title}
+                    </h3>
+                    <p className="text-cream-200 text-xs sm:text-sm leading-relaxed sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-500">
+                      {item.description}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2 sm:mt-3 text-cream-400 text-xs sm:text-sm font-medium sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-500">
+                      Explore <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                    </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
               </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
 
         {/* Full-width food spread banner */}
         <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden h-[280px] sm:h-[400px] shadow-xl">
