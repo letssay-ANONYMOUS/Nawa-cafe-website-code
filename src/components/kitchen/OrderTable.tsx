@@ -3,14 +3,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
   ChevronDown,
   ChevronUp,
   Bell,
@@ -104,334 +96,273 @@ export const OrderTable = ({
             <p>No {type} orders</p>
           </div>
         ) : (
-          <div className="max-h-[calc(100vh-280px)] overflow-x-auto overflow-y-auto">
-            <Table className="min-w-[500px] sm:min-w-0">
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="w-[80px] sm:w-[100px]">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3 hidden sm:inline" />
-                      <span className="text-xs sm:text-sm">Time</span>
-                    </div>
-                  </TableHead>
-                  <TableHead>
-                    <div className="flex items-center gap-1">
-                      <Hash className="w-3 h-3 hidden sm:inline" />
-                      <span className="text-xs sm:text-sm">Order</span>
-                    </div>
-                  </TableHead>
-                  <TableHead>
-                    <div className="flex items-center gap-1">
-                      <User className="w-3 h-3" />
-                      Customer
-                    </div>
-                  </TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    <div className="flex items-center gap-1">
-                      <Phone className="w-3 h-3" />
-                      Phone
-                    </div>
-                  </TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      Location
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-center">
-                    <div className="flex items-center gap-1 justify-center">
-                      <ShoppingBag className="w-3 h-3" />
-                      Items
-                    </div>
-                  </TableHead>
-                  <TableHead className="hidden lg:table-cell text-xs sm:text-sm">What They Ordered</TableHead>
-                  <TableHead className="text-right text-xs sm:text-sm">Total</TableHead>
-                  {isPaid && (
-                    <TableHead className="hidden xl:table-cell">
-                      <div className="flex items-center gap-1">
-                        <Receipt className="w-3 h-3" />
-                        Invoice
-                      </div>
-                    </TableHead>
-                  )}
-                  <TableHead className="w-[70px] sm:w-[100px]">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orders.map((order) => {
-                  const isUnacked = unacknowledged.has(order.id);
-                  const isExpanded = expandedOrder === order.id;
-                  const totalItems = getTotalItemCount(order.items);
-                  
-                  return (
-                    <>
-                      <TableRow
-                        key={order.id}
-                        className={`cursor-pointer transition-all ${
-                          isUnacked 
-                            ? 'bg-red-50 dark:bg-red-950/20 animate-pulse border-l-4 border-l-red-500' 
-                            : 'hover:bg-muted/50'
+          <div className="max-h-[calc(100vh-250px)] overflow-y-auto pr-1 sm:pr-2">
+            <div className="flex flex-col gap-3 p-2 sm:p-4">
+              {orders.map((order) => {
+                const isUnacked = unacknowledged.has(order.id);
+                const isExpanded = expandedOrder === order.id;
+                const totalItems = getTotalItemCount(order.items);
+
+                return (
+                  <div key={order.id} className="flex flex-col gap-2">
+                    {/* Main Order Card (Responsive Row) */}
+                    <div
+                      className={`relative flex flex-col md:grid md:grid-cols-[minmax(80px,1fr)_minmax(100px,1.5fr)_minmax(120px,2fr)_minmax(120px,2fr)_minmax(80px,1fr)_minmax(100px,1fr)] gap-3 p-4 rounded-xl border cursor-pointer transition-all ${isUnacked
+                        ? 'bg-red-50/50 dark:bg-red-950/20 shadow-md border-red-200 dark:border-red-800'
+                        : 'bg-card hover:bg-muted/50 hover:shadow-sm'
                         }`}
-                        onClick={() => toggleExpand(order.id)}
-                      >
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-1">
-                            {isExpanded ? (
-                              <ChevronUp className="w-3 h-3 text-muted-foreground" />
-                            ) : (
-                              <ChevronDown className="w-3 h-3 text-muted-foreground" />
-                            )}
-                            <div className="flex flex-col">
-                              <span className="text-xs text-muted-foreground">{formatDate(order.created_at)}</span>
-                              <span className="font-semibold">{formatTime(order.created_at)}</span>
-                            </div>
+                      onClick={() => toggleExpand(order.id)}
+                    >
+                      {/* Left Accent Bar for Unacked */}
+                      {isUnacked && (
+                        <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-red-500 rounded-l-xl animate-pulse" />
+                      )}
+
+                      {/* Mobile Top Row: Time & Order Number */}
+                      <div className="flex items-center justify-between md:hidden pb-2 border-b border-border/50">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded text-sm">
+                            {order.order_number}
+                          </span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <span className="font-semibold text-sm">{formatTime(order.created_at)}</span>
+                          <span className="text-[10px] text-muted-foreground">{formatDate(order.created_at)}</span>
+                        </div>
+                      </div>
+
+                      {/* Desktop Column 1: Time (Hidden on Mobile) */}
+                      <div className="hidden md:flex flex-col justify-center">
+                        <span className="font-semibold">{formatTime(order.created_at)}</span>
+                        <span className="text-xs text-muted-foreground">{formatDate(order.created_at)}</span>
+                      </div>
+
+                      {/* Desktop Column 2: Order Number (Hidden on Mobile) */}
+                      <div className="hidden md:flex items-center">
+                        <span className="font-mono font-bold text-primary bg-primary/10 px-2 py-1 rounded text-sm lg:text-base">
+                          {order.order_number}
+                        </span>
+                      </div>
+
+                      {/* Column 3: Customer Details */}
+                      <div className="flex flex-col justify-center gap-1">
+                        <div className="flex items-center gap-1.5 line-clamp-1">
+                          <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          <span className="font-medium text-sm sm:text-base">{order.customer_name}</span>
+                        </div>
+                        {order.customer_phone && (
+                          <div className="flex items-center gap-1.5 line-clamp-1">
+                            <Phone className="w-3 h-3 text-muted-foreground shrink-0" />
+                            <span className="text-xs sm:text-sm text-muted-foreground">{order.customer_phone}</span>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-mono text-xs sm:text-sm font-bold text-primary">{order.order_number}</span>
-                        </TableCell>
-                        <TableCell className="font-medium text-xs sm:text-sm">
-                          {order.customer_name}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                          {order.customer_phone}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell text-sm">
-                          {(order as any).customer_location ? (
-                            <span className="flex items-center gap-1 text-muted-foreground">
-                              <MapPin className="w-3 h-3 text-primary" />
-                              {(order as any).customer_location}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant="secondary" className="font-bold">
-                            {totalItems}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell text-sm max-w-[200px] truncate text-muted-foreground">
-                          {getItemsPreview(order.items)}
-                        </TableCell>
-                        <TableCell className="text-right font-semibold text-xs sm:text-sm">
-                          AED {order.total_amount.toFixed(2)}
-                        </TableCell>
-                        {isPaid && (
-                          <TableCell className="hidden xl:table-cell">
-                            {order.payment_reference ? (
-                              <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
-                                {order.payment_reference.slice(0, 12)}...
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground text-xs">-</span>
-                            )}
-                          </TableCell>
                         )}
-                        <TableCell onClick={(e) => e.stopPropagation()}>
+                      </div>
+
+                      {/* Column 4: Location & Status */}
+                      <div className="flex flex-col justify-center gap-1">
+                        {(order as any).customer_location ? (
+                          <div className="flex items-start gap-1.5 line-clamp-2">
+                            <MapPin className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+                            <span className="text-xs sm:text-sm leading-tight">{(order as any).customer_location}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5">
+                            <MapPin className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
+                            <span className="text-xs sm:text-sm text-muted-foreground/50">Dine-in / Pickup</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Column 5: Items Summary */}
+                      <div className="flex items-center justify-between md:flex-col md:items-start md:justify-center gap-1">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="font-bold shrink-0">
+                            {totalItems} items
+                          </Badge>
+                          <span className="font-semibold text-sm md:hidden">
+                            AED {order.total_amount.toFixed(2)}
+                          </span>
+                        </div>
+                        <span className="text-xs text-muted-foreground truncate max-w-[150px] hidden lg:block">
+                          {getItemsPreview(order.items)}
+                        </span>
+                      </div>
+
+                      {/* Column 6: Actions & Total (Desktop) */}
+                      <div className="flex items-center justify-between md:flex-col md:items-end md:justify-center gap-2 mt-2 md:mt-0 pt-2 md:pt-0 border-t border-border/50 md:border-0">
+                        <div className="flex items-center gap-2">
                           {isUnacked ? (
                             <Button
                               size="sm"
                               variant="destructive"
-                              className="animate-pulse"
-                              onClick={() => onAcknowledge?.(order.id)}
+                              className="animate-pulse h-8 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onAcknowledge?.(order.id);
+                              }}
                             >
-                              <Bell className="w-3 h-3 mr-1" />
-                              ACK
+                              <Bell className="w-3 h-3 mr-1" /> ACK
                             </Button>
                           ) : (
-                            <Badge variant="outline" className={isPaid ? "bg-green-50 text-green-700 border-green-300" : "bg-yellow-50 text-yellow-700 border-yellow-300"}>
-                              <Check className="w-3 h-3 mr-1" />
-                              {isPaid ? 'Done' : 'Seen'}
+                            <Badge variant="outline" className={`h-6 ${isPaid ? "bg-green-50 text-green-700 border-green-300" : "bg-yellow-50 text-yellow-700 border-yellow-300"}`}>
+                              <Check className="w-3 h-3 mr-1" /> {isPaid ? 'Paid' : 'Seen'}
                             </Badge>
                           )}
-                        </TableCell>
-                      </TableRow>
-                      
-                      {/* Expanded Details */}
-                      {isExpanded && (
-                        <TableRow className="bg-muted/30">
-                          <TableCell colSpan={isPaid ? 10 : 8} className="p-4">
-                            <div className="bg-card rounded-lg border p-4 space-y-4">
-                              {/* Customer & Order Info */}
-                              <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4 lg:grid-cols-6">
-                                <div>
-                                  <span className="text-muted-foreground flex items-center gap-1">
-                                    <Hash className="w-3 h-3" /> Order #
-                                  </span>
-                                  <p className="font-mono font-bold text-primary">{order.order_number}</p>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground flex items-center gap-1">
-                                    <User className="w-3 h-3" /> Visitor ID
-                                  </span>
-                                  <p className="font-mono text-xs truncate max-w-[100px]" title={order.visitor_id}>
-                                    {order.visitor_id.slice(0, 8)}...
-                                  </p>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground flex items-center gap-1">
-                                    <Calendar className="w-3 h-3" /> Date
-                                  </span>
-                                  <p className="font-medium">{formatDate(order.created_at)}</p>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground flex items-center gap-1">
-                                    <Clock className="w-3 h-3" /> Time
-                                  </span>
-                                  <p className="font-medium">{formatTime(order.created_at)}</p>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground flex items-center gap-1">
-                                    <Phone className="w-3 h-3" /> Phone
-                                  </span>
-                                  <p className="font-medium">{order.customer_phone}</p>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Email</span>
-                                  <p className="font-medium truncate">{order.customer_email || '-'}</p>
-                                </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-right">
+                          <span className="font-bold hidden md:block">AED {order.total_amount.toFixed(2)}</span>
+                          {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Expanded Details Panel */}
+                    {isExpanded && (
+                      <div className="ml-2 md:ml-8 border-l-2 border-primary/20 pl-4 py-2 animate-in slide-in-from-top-2">
+                        <div className="bg-card rounded-xl border p-4 sm:p-5 space-y-5 shadow-sm">
+                          {/* Customer & Order Info */}
+                          <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3 lg:grid-cols-5">
+                            <div>
+                              <span className="text-muted-foreground flex items-center gap-1.5 mb-1 text-xs uppercase tracking-wider">
+                                <Hash className="w-3 h-3" /> Order #
+                              </span>
+                              <p className="font-mono font-bold text-primary">{order.order_number}</p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground flex items-center gap-1.5 mb-1 text-xs uppercase tracking-wider">
+                                <Calendar className="w-3 h-3" /> Date
+                              </span>
+                              <p className="font-medium">{formatDate(order.created_at)}</p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground flex items-center gap-1.5 mb-1 text-xs uppercase tracking-wider">
+                                <Clock className="w-3 h-3" /> Time
+                              </span>
+                              <p className="font-medium">{formatTime(order.created_at)}</p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground flex items-center gap-1.5 mb-1 text-xs uppercase tracking-wider">
+                                <Phone className="w-3 h-3" /> Phone
+                              </span>
+                              <p className="font-medium">{order.customer_phone}</p>
+                            </div>
+                            <div className="col-span-2 sm:col-span-1">
+                              <span className="text-muted-foreground flex items-center gap-1.5 mb-1 text-xs uppercase tracking-wider">
+                                <MapPin className="w-3 h-3" /> Full Location
+                              </span>
+                              <p className="font-medium text-sm leading-snug">
+                                {(order as any).customer_location || 'Dine-in / Pickup'}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Payment Info */}
+                          <div className="flex flex-wrap gap-4 items-center bg-muted/40 p-3 rounded-lg border">
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground text-xs uppercase tracking-wider">Status:</span>
+                              <Badge className={isPaid ? 'bg-green-500' : 'bg-yellow-500'}>
+                                {order.payment_status}
+                              </Badge>
+                            </div>
+                            {order.payment_method && (
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground text-xs uppercase tracking-wider">Method:</span>
+                                <Badge variant="secondary" className="flex items-center gap-1">
+                                  <CreditCard className="w-3 h-3" />
+                                  {order.payment_method}
+                                </Badge>
                               </div>
-
-                              {/* Location & IP Info */}
-                              {((order as any).customer_location || (order as any).ip_address) && (
-                                <div className="flex flex-wrap gap-4 items-center border-t py-3">
-                                  {(order as any).customer_location && (
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-muted-foreground text-sm flex items-center gap-1">
-                                        <MapPin className="w-3 h-3" /> Location:
-                                      </span>
-                                      <span className="font-medium">{(order as any).customer_location}</span>
-                                    </div>
-                                  )}
-                                  {(order as any).ip_address && (
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-muted-foreground text-sm">IP Address:</span>
-                                      <span className="font-mono text-xs bg-muted px-2 py-1 rounded">{(order as any).ip_address}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* Order Type & Payment Info */}
-                              <div className="flex flex-wrap gap-4 items-center border-t border-b py-3">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-muted-foreground text-sm">Type:</span>
-                                  <Badge variant="outline" className="font-medium">
-                                    🍽️ Dine In
-                                  </Badge>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-muted-foreground text-sm">Status:</span>
-                                  <Badge className={isPaid ? 'bg-green-500' : 'bg-yellow-500'}>
-                                    {order.payment_status}
-                                  </Badge>
-                                </div>
-                                {order.payment_method && (
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-muted-foreground text-sm">Method:</span>
-                                    <Badge variant="secondary" className="flex items-center gap-1">
-                                      <CreditCard className="w-3 h-3" />
-                                      {order.payment_method}
-                                    </Badge>
-                                  </div>
-                                )}
-                                {order.payment_provider && (
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-muted-foreground text-sm">Provider:</span>
-                                    <span className="font-medium">{order.payment_provider}</span>
-                                  </div>
-                                )}
-                                {isPaid && order.payment_reference && (
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-muted-foreground text-sm flex items-center gap-1">
-                                      <Receipt className="w-3 h-3" /> Invoice:
-                                    </span>
-                                    <span className="font-mono text-xs bg-primary/10 px-2 py-1 rounded text-primary">
-                                      {order.payment_reference}
-                                    </span>
-                                  </div>
-                                )}
-                                {order.paid_at && (
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-muted-foreground text-sm">Paid at:</span>
-                                    <span className="font-medium">
-                                      {formatDate(order.paid_at)} {formatTime(order.paid_at)}
-                                    </span>
-                                  </div>
-                                )}
+                            )}
+                            {isPaid && order.payment_reference && (
+                              <div className="flex items-center gap-2 w-full sm:w-auto">
+                                <span className="text-muted-foreground text-xs uppercase tracking-wider flex items-center gap-1">
+                                  <Receipt className="w-3 h-3" /> Ref:
+                                </span>
+                                <span className="font-mono text-xs bg-background px-2 py-1 flex-1 sm:flex-none border rounded text-primary truncate max-w-[200px]">
+                                  {order.payment_reference}
+                                </span>
                               </div>
+                            )}
+                          </div>
 
-                              {/* Order Items */}
-                              <div>
-                                <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                                  <ShoppingBag className="w-4 h-4" />
-                                  Order Items ({getTotalItemCount(order.items)} total)
-                                </h4>
-                                <div className="grid gap-2">
-                                  {order.items.map((item) => (
-                                    <div
-                                      key={item.id}
-                                      className="flex items-start justify-between p-3 bg-muted/50 rounded-lg"
-                                    >
-                                      <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-bold text-primary">{item.quantity}x</span>
-                                          <span className="font-medium">{item.item_name}</span>
-                                          {item.item_category && (
-                                            <Badge variant="outline" className="text-xs">
-                                              {item.item_category}
-                                            </Badge>
-                                          )}
-                                        </div>
+                          {/* Order Items List */}
+                          <div>
+                            <h4 className="font-semibold text-sm mb-3 flex items-center gap-2 border-b pb-2">
+                              <ShoppingBag className="w-4 h-4 text-primary" />
+                              Order Items <Badge variant="secondary" className="ml-2">{getTotalItemCount(order.items)}</Badge>
+                            </h4>
+                            <div className="grid gap-2 outline outline-1 outline-border rounded-lg bg-background p-1">
+                              {order.items.map((item, i) => (
+                                <div
+                                  key={item.id}
+                                  className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 gap-2 ${i !== 0 ? 'border-t' : ''}`}
+                                >
+                                  <div className="flex-1">
+                                    <div className="flex items-start gap-3">
+                                      <div className="bg-primary/10 text-primary font-bold px-2.5 py-1 rounded mt-0.5">
+                                        {item.quantity}x
+                                      </div>
+                                      <div>
+                                        <span className="font-semibold text-base block leading-tight mb-1">{item.item_name}</span>
+                                        {item.item_category && (
+                                          <Badge variant="outline" className="text-[10px] uppercase tracking-wider">
+                                            {item.item_category}
+                                          </Badge>
+                                        )}
                                         {item.extras && (
-                                          <p className="text-sm text-muted-foreground mt-1">
-                                            ➕ Extras: {item.extras}
+                                          <p className="text-xs text-muted-foreground mt-1.5 flex items-start gap-1.5 bg-muted/50 p-1.5 rounded">
+                                            <span className="text-primary mt-0.5">+</span> {item.extras}
                                           </p>
                                         )}
                                         {item.notes && (
-                                          <p className="text-sm text-primary mt-1 italic bg-primary/10 px-2 py-1 rounded">
-                                            📝 Note: {item.notes}
+                                          <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1.5 italic bg-yellow-50 dark:bg-yellow-950/30 p-1.5 border border-yellow-200 dark:border-yellow-900/50 rounded flex items-start gap-1.5">
+                                            <span className="mt-0.5">📝</span> {item.notes}
                                           </p>
                                         )}
                                       </div>
-                                      <span className="font-semibold text-sm">
-                                        AED {item.total_price.toFixed(2)}
-                                      </span>
                                     </div>
-                                  ))}
+                                  </div>
+                                  <span className="font-semibold text-sm sm:text-base whitespace-nowrap self-end sm:self-center bg-muted px-3 py-1.5 rounded-md">
+                                    AED {item.total_price.toFixed(2)}
+                                  </span>
                                 </div>
-                              </div>
-
-                              {/* Order Notes */}
-                              {(order.extra_notes || order.notes) && (
-                                <div className="bg-yellow-50 dark:bg-yellow-950/30 p-3 rounded-lg border border-yellow-200 dark:border-yellow-900">
-                                  <h4 className="font-semibold text-sm mb-1 flex items-center gap-2">
-                                    <FileText className="w-4 h-4" />
-                                    Customer Notes
-                                  </h4>
-                                  <p className="text-sm">{order.extra_notes || order.notes}</p>
-                                </div>
-                              )}
-
-                              {/* Summary */}
-                              <div className="bg-muted/50 p-3 rounded-lg flex justify-between items-center">
-                                <span className="font-semibold">Subtotal:</span>
-                                <span>AED {order.subtotal.toFixed(2)}</span>
-                              </div>
-                              <div className="bg-primary/10 p-3 rounded-lg flex justify-between items-center">
-                                <span className="font-bold text-lg">Total:</span>
-                                <span className="font-bold text-lg text-primary">AED {order.total_amount.toFixed(2)}</span>
-                              </div>
+                              ))}
                             </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                          </div>
+
+                          {/* Customer Notes Focus */}
+                          {(order.extra_notes || order.notes) && (
+                            <div className="bg-yellow-50 dark:bg-yellow-950/30 p-4 rounded-xl border border-yellow-200 dark:border-yellow-900 relative overflow-hidden">
+                              <div className="absolute top-0 left-0 w-1.5 bottom-0 bg-yellow-400" />
+                              <h4 className="font-bold text-yellow-900 dark:text-yellow-400 text-sm mb-1.5 flex items-center gap-2">
+                                <FileText className="w-4 h-4" />
+                                Customer Notes
+                              </h4>
+                              <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200/90 leading-relaxed uppercase tracking-wide">
+                                {order.extra_notes || order.notes}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Totals Summary */}
+                          <div className="flex flex-col sm:flex-row gap-2 justify-end pt-2 border-t mt-6">
+                            <div className="bg-muted/50 px-4 py-2.5 rounded-lg flex justify-between items-center sm:min-w-[150px]">
+                              <span className="font-semibold text-muted-foreground text-sm">Subtotal</span>
+                              <span className="font-medium">AED {order.subtotal.toFixed(2)}</span>
+                            </div>
+                            <div className="bg-primary px-4 py-2.5 rounded-lg flex justify-between items-center sm:min-w-[180px] shadow-sm text-primary-foreground">
+                              <span className="font-bold">Total Final</span>
+                              <span className="font-bold text-lg">AED {order.total_amount.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </CardContent>
