@@ -24,16 +24,16 @@ const Header = () => {
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 transform-gpu ${isHome
-        ? 'bg-black/30 backdrop-blur-sm border-b border-white/10'
-        : 'bg-white/95 backdrop-blur-sm border-b border-coffee-200 shadow-sm'
+      ? 'bg-black/30 backdrop-blur-sm border-b border-white/10'
+      : 'bg-white/95 backdrop-blur-sm border-b border-coffee-200 shadow-sm'
       }`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center">
             <img
-              src="/nawa-logo.jpg"
+              src="/nawa-logo.png"
               alt="Nawa Cafe Logo"
-              className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 hover:scale-105"
+              className="h-12 sm:h-16 w-auto object-contain transition-all duration-300 hover:scale-105 drop-shadow-md mix-blend-normal"
             />
           </Link>
 
@@ -44,12 +44,12 @@ const Header = () => {
                 key={item.path}
                 to={item.path}
                 className={`font-medium transition-colors duration-200 ${isHome
-                    ? isActive(item.path)
-                      ? 'text-cream-400 border-b-2 border-cream-400 pb-1'
-                      : 'text-cream-200 hover:text-cream-400'
-                    : isActive(item.path)
-                      ? 'text-coffee-900 border-b-2 border-coffee-600 pb-1'
-                      : 'text-coffee-700 hover:text-coffee-900'
+                  ? isActive(item.path)
+                    ? 'text-cream-400 border-b-2 border-cream-400 pb-1'
+                    : 'text-cream-200 hover:text-cream-400'
+                  : isActive(item.path)
+                    ? 'text-coffee-900 border-b-2 border-coffee-600 pb-1'
+                    : 'text-coffee-700 hover:text-coffee-900'
                   }`}
               >
                 {item.label}
@@ -67,8 +67,8 @@ const Header = () => {
               </Button>
             </Link>
             <Button className={`px-6 py-2 rounded-full transition-all duration-300 transform hover:scale-105 ${isHome
-                ? 'bg-cream-400 hover:bg-cream-500 text-coffee-800'
-                : 'bg-coffee-600 hover:bg-coffee-700 text-white'
+              ? 'bg-cream-400 hover:bg-cream-500 text-coffee-800'
+              : 'bg-coffee-600 hover:bg-coffee-700 text-white'
               }`}>
               Order Now
             </Button>

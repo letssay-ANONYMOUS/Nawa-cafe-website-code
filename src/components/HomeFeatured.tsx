@@ -9,16 +9,19 @@ const featured = [
     title: 'Specialty Coffee',
     description: 'Single-origin beans roasted to perfection, crafted by our expert baristas.',
     image: '/menu-images/coffee-1.jpg',
+    targetSection: 'coffee',
   },
   {
     title: 'Artisan Breakfast',
     description: 'Start your morning with our signature avocado toast, eggs, and fresh pastries.',
     image: '/menu-images/card-5-avocado-toast.jpg',
+    targetSection: 'nawa-breakfast',
   },
   {
     title: 'Sweet Indulgence',
     description: 'Handcrafted desserts and fluffy pancakes made with the finest ingredients.',
     image: '/menu-images/dessert-1.jpg',
+    targetSection: 'pastries-desserts',
   },
 ];
 
@@ -70,7 +73,7 @@ const HomeFeatured = () => {
                 className="rounded-2xl flex-shrink-0 w-[70vw] sm:w-auto snap-center transition-all duration-300 hover:shadow-[0_15px_30px_rgba(201,169,98,0.3)]"
               >
                 <Link
-                  to={`/menu#${item.title.toLowerCase().replace(' ', '-')}`}
+                  to={`/menu#${item.targetSection}`}
                   className="group relative block aspect-[3/4] overflow-hidden rounded-2xl"
                 >
                   <motion.div
