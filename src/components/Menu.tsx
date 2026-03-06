@@ -216,11 +216,6 @@ const Menu = () => {
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                           />
                           <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300" />
-
-                          {/* Card Number Badge */}
-                          <div className="absolute top-2 left-2 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center shadow-lg z-10 transition-transform duration-300 group-hover:scale-110">
-                            <span className="text-white font-bold text-lg">{card.id}</span>
-                          </div>
                         </div>
 
                         {/* Golden Footer */}
