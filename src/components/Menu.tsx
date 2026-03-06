@@ -184,7 +184,7 @@ const Menu = () => {
                 viewport={{ once: true, margin: "-50px" }}
                 variants={{
                   hidden: {},
-                  visible: { transition: { staggerChildren: 0.03 } }
+                  visible: { transition: { staggerChildren: 0.02 } }
                 }}
                 className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-6"
               >
@@ -196,8 +196,8 @@ const Menu = () => {
                     <motion.div
                       key={card.id}
                       variants={{
-                        hidden: { opacity: 0, y: 20 },
-                        visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } }
+                        hidden: { opacity: 0, y: -30 },
+                        visible: { opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } }
                       }}
                     >
                       <Card
