@@ -33,7 +33,7 @@ const Header = () => {
             <img
               src="/nawa-logo.png"
               alt="Nawa Cafe Logo"
-              className="h-12 sm:h-16 w-auto object-contain transition-all duration-300 hover:scale-105 drop-shadow-md mix-blend-normal"
+              className="h-10 w-auto object-contain"
             />
           </Link>
 
