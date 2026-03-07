@@ -73,10 +73,10 @@ export const CookieConsent = () => {
     <div className="fixed bottom-0 left-0 right-0 z-50 p-2 sm:p-3 animate-in slide-in-from-bottom-5 duration-300 touch-manipulation">
       <div className="max-w-3xl mx-auto bg-card border border-border rounded-lg shadow-lg px-4 py-3 sm:px-5 sm:py-3">
         {/* Desktop: single row layout */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
           <Cookie className="w-4 h-4 text-primary flex-shrink-0 hidden sm:block" />
           
-          <p className="text-xs text-muted-foreground flex-1 min-w-0 leading-snug">
+          <p className="text-xs text-muted-foreground sm:flex-1 sm:min-w-0 leading-snug">
             We use cookies to enhance your experience and analyze traffic.{' '}
             <button
               onClick={() => setShowDetails(!showDetails)}
@@ -90,7 +90,7 @@ export const CookieConsent = () => {
             <Button 
               onClick={handleAcceptAll}
               size="sm"
-              className="bg-primary hover:bg-primary/90 min-h-[36px] px-3 text-xs touch-manipulation"
+              className="bg-primary hover:bg-primary/90 min-h-[44px] sm:min-h-[36px] px-3 text-xs touch-manipulation"
             >
               Accept
             </Button>
@@ -98,14 +98,14 @@ export const CookieConsent = () => {
               onClick={handleAcceptEssential}
               variant="outline"
               size="sm"
-              className="min-h-[36px] px-3 text-xs touch-manipulation"
+              className="min-h-[44px] sm:min-h-[36px] px-3 text-xs touch-manipulation"
             >
               Essential Only
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 touch-manipulation"
+              className="h-10 w-10 sm:h-8 sm:w-8 touch-manipulation"
               onClick={handleDecline}
               aria-label="Close"
             >
