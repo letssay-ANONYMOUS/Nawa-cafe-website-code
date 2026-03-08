@@ -33,7 +33,7 @@ const Home = () => {
         >
           <motion.div variants={fadeUp}><Header /></motion.div>
           <motion.div variants={fadeUp}><Hero /></motion.div>
-          <motion.div variants={fadeUp}><HomeFeatured /></motion.div>
+          <HomeFeatured />
           <motion.div variants={fadeUp}><HomeStory /></motion.div>
           <motion.div variants={fadeUp}><HomeExperience /></motion.div>
           <motion.div variants={fadeUp}><HomeVisit /></motion.div>
