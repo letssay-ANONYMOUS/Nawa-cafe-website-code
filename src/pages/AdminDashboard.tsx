@@ -51,14 +51,12 @@ const AdminDashboard = () => {
           return;
         }
 
-        const { data: roles } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .in('role', ['staff', 'admin'])
-          .limit(1);
+        const [staffRes, adminRes] = await Promise.all([
+          supabase.rpc('has_role', { _user_id: session.user.id, _role: 'staff' }),
+          supabase.rpc('has_role', { _user_id: session.user.id, _role: 'admin' }),
+        ]);
 
-        if (!roles || roles.length === 0) {
+        if (staffRes.data !== true && adminRes.data !== true) {
           await supabase.auth.signOut();
           if (mounted) navigate('/staff/login', { replace: true });
           return;
