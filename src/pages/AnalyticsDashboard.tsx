@@ -257,8 +257,8 @@ const AnalyticsDashboard = () => {
     setIsRefreshing(false);
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate('/staff/login');
   };
 
