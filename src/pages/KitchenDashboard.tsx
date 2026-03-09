@@ -94,19 +94,20 @@ const KitchenDashboard = () => {
   }, [initAudioContext]);
 
   // ──────────────────────────────────────────────
-  // PARALLEL BOOT: auth check + data load at once
+  // SEQUENTIAL BOOT: auth check THEN data load
   // ──────────────────────────────────────────────
   useEffect(() => {
     mountedRef.current = true;
 
-    // 1) Auth check (runs in parallel with data load)
-    const checkAuth = async () => {
+    const bootDashboard = async () => {
       try {
+        // 1) Auth check
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error || !session) {
           if (mountedRef.current) navigate('/staff/login', { replace: true });
           return;
         }
+
         const [staffRes, adminRes] = await Promise.all([
           supabase.rpc('has_role', { _user_id: session.user.id, _role: 'staff' }),
           supabase.rpc('has_role', { _user_id: session.user.id, _role: 'admin' }),
@@ -117,15 +118,11 @@ const KitchenDashboard = () => {
           if (mountedRef.current) navigate('/staff/login', { replace: true });
           return;
         }
-        if (mountedRef.current) setAuthState('authorized');
-      } catch {
-        if (mountedRef.current) navigate('/staff/login', { replace: true });
-      }
-    };
 
-    // 2) Data load (starts immediately, RLS enforces access)
-    const loadData = async () => {
-      try {
+        if (!mountedRef.current) return;
+        setAuthState('authorized');
+
+        // 2) Data load (ONLY if auth succeeds)
         const startDate = getDateFromRange(dateRange);
 
         // Fire orders + settings queries in parallel
@@ -173,24 +170,24 @@ const KitchenDashboard = () => {
           setOrders([]);
         }
       } catch (err) {
-        console.error('Error loading orders:', err);
+        console.error('Error in kitchen boot sequence:', err);
         if (mountedRef.current) {
-          toast({ variant: "destructive", title: "Error", description: "Failed to load orders" });
+          navigate('/staff/login', { replace: true });
         }
       } finally {
         if (mountedRef.current) setIsLoading(false);
       }
     };
 
-    // Fire both in parallel
-    checkAuth();
-    loadData();
+    bootDashboard();
 
     // Auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT' && mountedRef.current) {
-        setAuthState('unauthorized');
-        navigate('/staff/login', { replace: true });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        if (mountedRef.current) {
+          setAuthState('unauthorized');
+          navigate('/staff/login', { replace: true });
+        }
       }
     });
 
@@ -243,33 +240,42 @@ const KitchenDashboard = () => {
 
   // Realtime subscription
   useEffect(() => {
+    // Flag to prevent toast spam on mass updates
+    let lastToastTime = 0;
+
     const channel = supabase
       .channel('kitchen-orders')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' },
         async (payload) => {
+          const newOrderData = payload.new as Order;
           const { data: itemsData } = await supabase
             .from('order_items')
             .select('*')
-            .eq('order_id', payload.new.id);
+            .eq('order_id', newOrderData.id);
 
-          const newOrder: OrderWithItems = { ...payload.new as Order, items: itemsData || [] };
-          setOrders(prev => [newOrder, ...prev]);
+          const newOrder: OrderWithItems = { ...newOrderData, items: itemsData || [] };
+          setOrders(prev => {
+            if (prev.some(o => o.id === newOrder.id)) return prev;
+            return [newOrder, ...prev];
+          });
 
-          if (newOrder.payment_status === 'pending') {
-            setActiveView("pending");
-            toast({
-              title: "📋 New Pending Order",
-              description: `Order ${newOrder.order_number} from ${newOrder.customer_name}`,
-              className: "bg-yellow-50 border-yellow-300",
-            });
-          } else if (newOrder.payment_status === 'paid') {
-            setUnacknowledgedOrders(prev => new Set([...prev, newOrder.id]));
-            setActiveView("paid");
-            toast({
-              title: "💰 New Paid Order!",
-              description: `Order ${newOrder.order_number} from ${newOrder.customer_name}`,
-              className: "bg-green-50 border-green-300",
-            });
+          const now = Date.now();
+          if (now - lastToastTime > 1000) {
+            lastToastTime = now;
+            if (newOrder.payment_status === 'pending') {
+              toast({
+                title: "📋 New Pending Order",
+                description: `Order ${newOrder.order_number} from ${newOrder.customer_name}`,
+                className: "bg-yellow-50 border-yellow-300",
+              });
+            } else if (newOrder.payment_status === 'paid') {
+              setUnacknowledgedOrders(prev => new Set([...Array.from(prev), newOrder.id]));
+              toast({
+                title: "💰 New Paid Order!",
+                description: `Order ${newOrder.order_number} from ${newOrder.customer_name}`,
+                className: "bg-green-50 border-green-300",
+              });
+            }
           }
         }
       )
@@ -288,9 +294,12 @@ const KitchenDashboard = () => {
           const updatedOrder = payload.new as Order;
           const oldOrder = payload.old as Partial<Order>;
 
+          // Only trigger Paid alerts if it transitioned from pending -> paid
           if (updatedOrder.payment_status === 'paid' && oldOrder.payment_status !== 'paid') {
-            setUnacknowledgedOrders(prev => new Set([...prev, updatedOrder.id]));
-            setActiveView("paid");
+            setUnacknowledgedOrders(prev => new Set([...Array.from(prev), updatedOrder.id]));
+
+            // Only force active view change if they aren't actively looking at something else
+            setActiveView(prev => prev === 'pending' ? 'paid' : prev);
 
             const { data: itemsData } = await supabase
               .from('order_items')
@@ -303,11 +312,15 @@ const KitchenDashboard = () => {
                 : order
             ));
 
-            toast({
-              title: "💰 New Paid Order!",
-              description: `Order ${updatedOrder.order_number} from ${updatedOrder.customer_name} is ready to prepare!`,
-              className: "bg-green-50 border-green-300",
-            });
+            const now = Date.now();
+            if (now - lastToastTime > 1000) {
+              lastToastTime = now;
+              toast({
+                title: "💰 New Paid Order!",
+                description: `Order ${updatedOrder.order_number} from ${updatedOrder.customer_name} is ready to prepare!`,
+                className: "bg-green-50 border-green-300",
+              });
+            }
           } else {
             setOrders(prev => prev.map(order =>
               order.id === updatedOrder.id ? { ...order, ...updatedOrder } : order
@@ -452,7 +465,7 @@ const KitchenDashboard = () => {
                     <div className="flex flex-col gap-1">
                       {Array.from(unacknowledgedOrders).map((orderId) => {
                         const order = orders.find(o => o.id === orderId);
-                        const orderNum = order?.order_number?.split('-').pop() || orderId.slice(0, 6);
+                        const orderNum = order?.order_number?.split('-').pop() || String(orderId).slice(0, 6);
                         return (
                           <Button
                             key={orderId}
