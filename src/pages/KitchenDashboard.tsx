@@ -238,6 +238,41 @@ const KitchenDashboard = () => {
     loadOrders();
   }, [dateRange, loadOrders]);
 
+  // Bulletproof the iPad sleep-wake cycle & Fallback Polling
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      // Whenever the screen wakes back up, fetch fresh data instantly
+      // because WebSockets drop while the iPad screen is off/sleeping.
+      if (document.visibilityState === 'visible' && authState === 'authorized') {
+        loadOrders();
+      }
+    };
+
+    const handleOnline = () => {
+      if (authState === 'authorized') {
+        loadOrders();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("online", handleOnline);
+
+    // Fallback Polling: Ensure the kitchen never misses an order even if 
+    // the iPad's WebSocket connection secretly drops without throwing an error.
+    // Re-fetches orders silently every 5 minutes.
+    const fallbackInterval = setInterval(() => {
+      if (document.visibilityState === 'visible' && authState === 'authorized') {
+        loadOrders();
+      }
+    }, 5 * 60 * 1000);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("online", handleOnline);
+      clearInterval(fallbackInterval);
+    };
+  }, [loadOrders, authState]);
+
   // Realtime subscription
   useEffect(() => {
     // Flag to prevent toast spam on mass updates
