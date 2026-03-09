@@ -59,9 +59,9 @@ const CateringPage = () => {
           <h2 className="font-playfair text-3xl md:text-4xl font-bold text-coffee-900 text-center mb-10">
             Perfect For Every Occasion
           </h2>
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 max-w-3xl mx-auto px-0">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 max-w-5xl mx-auto px-0">
             {occasions.map((item, index) => (
-              <div key={index} className="relative rounded-2xl overflow-hidden aspect-square sm:aspect-[3/2] group cursor-pointer">
+              <div key={index} className="relative rounded-2xl overflow-hidden aspect-square group cursor-pointer">
                 <img 
                   src={item.image} 
                   alt={item.title} 
