@@ -18,19 +18,17 @@ const StaffLogin = () => {
 
   const hasKitchenAccess = useCallback(async (userId: string): Promise<boolean | null> => {
     try {
-      // Perform a single, fast verification query without artificial timeouts
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .in('role', ['staff', 'admin'])
-        .limit(1);
+      // Use security definer function to bypass RLS timing issues
+      const [staffResult, adminResult] = await Promise.all([
+        supabase.rpc('has_role', { _user_id: userId, _role: 'staff' }),
+        supabase.rpc('has_role', { _user_id: userId, _role: 'admin' }),
+      ]);
 
-      if (error) {
-        console.error('Role validation error:', error);
+      if (staffResult.error && adminResult.error) {
+        console.error('Role validation error:', staffResult.error, adminResult.error);
         return null;
       }
-      return (data?.length ?? 0) > 0;
+      return staffResult.data === true || adminResult.data === true;
     } catch (err) {
       console.error('Role validation exception:', err);
       return null;

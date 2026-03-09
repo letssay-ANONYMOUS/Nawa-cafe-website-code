@@ -28,15 +28,12 @@ const KitchenAuthGate = ({ children }: KitchenAuthGateProps) => {
           return;
         }
 
-        const { data: roles, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .in('role', ['staff', 'admin'])
-          .limit(1);
+        const [staffRes, adminRes] = await Promise.all([
+          supabase.rpc('has_role', { _user_id: session.user.id, _role: 'staff' }),
+          supabase.rpc('has_role', { _user_id: session.user.id, _role: 'admin' }),
+        ]);
 
-        if (error || !roles || roles.length === 0) {
-          // They are logged in but have no kitchen role. Expel them.
+        if (staffRes.data !== true && adminRes.data !== true) {
           await supabase.auth.signOut();
           if (mountedRef.current) {
             setLoading(false);
