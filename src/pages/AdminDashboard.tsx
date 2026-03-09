@@ -112,16 +112,8 @@ const AdminDashboard = () => {
   };
 
   const handleLogout = async () => {
-    try {
-      await supabase.functions.invoke('admin-logout');
-      toast({
-        title: 'Success',
-        description: 'Logged out successfully',
-      });
-      navigate('/admin/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+    await supabase.auth.signOut();
+    navigate('/staff/login');
   };
 
   const handleCreate = () => {
