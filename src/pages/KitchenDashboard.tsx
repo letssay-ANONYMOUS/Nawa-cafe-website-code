@@ -94,35 +94,14 @@ const KitchenDashboard = () => {
   }, [initAudioContext]);
 
   // ──────────────────────────────────────────────
-  // SEQUENTIAL BOOT: auth check THEN data load
+  // DATA LOAD (Auth is already handled by KitchenAuthGate)
   // ──────────────────────────────────────────────
   useEffect(() => {
     mountedRef.current = true;
 
-    const bootDashboard = async () => {
+    const loadDashboardData = async () => {
       try {
-        // 1) Auth check
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error || !session) {
-          if (mountedRef.current) navigate('/staff/login', { replace: true });
-          return;
-        }
-
-        const [staffRes, adminRes] = await Promise.all([
-          supabase.rpc('has_role', { _user_id: session.user.id, _role: 'staff' }),
-          supabase.rpc('has_role', { _user_id: session.user.id, _role: 'admin' }),
-        ]);
-
-        if (staffRes.data !== true && adminRes.data !== true) {
-          await supabase.auth.signOut();
-          if (mountedRef.current) navigate('/staff/login', { replace: true });
-          return;
-        }
-
-        if (!mountedRef.current) return;
-        setAuthState('authorized');
-
-        // 2) Data load (ONLY if auth succeeds)
+        setAuthState('authorized'); // Gate already authorized us
         const startDate = getDateFromRange(dateRange);
 
         // Fire orders + settings queries in parallel
@@ -179,7 +158,7 @@ const KitchenDashboard = () => {
       }
     };
 
-    bootDashboard();
+    loadDashboardData();
 
     // Auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
