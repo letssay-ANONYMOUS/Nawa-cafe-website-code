@@ -25,6 +25,7 @@ interface MenuItem {
 const AdminDashboard = () => {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [formData, setFormData] = useState({
@@ -40,28 +41,52 @@ const AdminDashboard = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    checkAuth();
-    loadItems();
-  }, []);
+    let mounted = true;
 
-  const checkAuth = async () => {
-    const token = sessionStorage.getItem('admin_session');
-    if (!token) {
-      navigate('/admin/login');
-      return;
-    }
-    try {
-      const { data, error } = await supabase.functions.invoke('admin-session', {
-        headers: { 'x-admin-token': token },
-      });
-      if (error || !data?.authenticated) {
-        sessionStorage.removeItem('admin_session');
-        navigate('/admin/login');
+    const checkAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error || !session) {
+          if (mounted) navigate('/staff/login', { replace: true });
+          return;
+        }
+
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .in('role', ['staff', 'admin'])
+          .limit(1);
+
+        if (!roles || roles.length === 0) {
+          await supabase.auth.signOut();
+          if (mounted) navigate('/staff/login', { replace: true });
+          return;
+        }
+
+        if (mounted) {
+          setAuthChecked(true);
+          loadItems();
+        }
+      } catch {
+        if (mounted) navigate('/staff/login', { replace: true });
       }
-    } catch (error) {
-      navigate('/admin/login');
-    }
-  };
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT' && mounted) {
+        setAuthChecked(false);
+        navigate('/staff/login', { replace: true });
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const loadItems = async () => {
     const token = sessionStorage.getItem('admin_session');
@@ -87,16 +112,8 @@ const AdminDashboard = () => {
   };
 
   const handleLogout = async () => {
-    try {
-      await supabase.functions.invoke('admin-logout');
-      toast({
-        title: 'Success',
-        description: 'Logged out successfully',
-      });
-      navigate('/admin/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+    await supabase.auth.signOut();
+    navigate('/staff/login');
   };
 
   const handleCreate = () => {
@@ -242,6 +259,14 @@ const AdminDashboard = () => {
       });
     }
   };
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-8">

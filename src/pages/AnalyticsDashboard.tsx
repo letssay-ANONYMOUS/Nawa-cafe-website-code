@@ -46,8 +46,6 @@ interface AnonymousVisitor {
   last_seen_at: string;
 }
 
-const ADMIN_SESSION_KEY = 'admin_session';
-
 const AnalyticsDashboard = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -65,33 +63,53 @@ const AnalyticsDashboard = () => {
   const [visitors, setVisitors] = useState<AnonymousVisitor[]>([]);
   const [dateRange, setDateRange] = useState<'today' | '7days' | '30days'>('today');
 
-  // Check authentication - use admin_session key like StaffLogin
+  // Proper auth check using Supabase Auth + role verification
   useEffect(() => {
-    const checkAuth = () => {
-      const token = sessionStorage.getItem(ADMIN_SESSION_KEY);
-      if (!token) {
-        navigate('/staff/login');
-        return;
-      }
-      
-      // Check if token is expired (8 hours)
-      const parts = token.split(':');
-      if (parts.length >= 1) {
-        const timestamp = parseInt(parts[0], 10);
-        const now = Date.now();
-        const eightHours = 8 * 60 * 60 * 1000;
-        
-        if (now - timestamp > eightHours) {
-          sessionStorage.removeItem(ADMIN_SESSION_KEY);
-          navigate('/staff/login');
+    let mounted = true;
+
+    const checkAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error || !session) {
+          if (mounted) navigate('/staff/login', { replace: true });
           return;
         }
+
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .in('role', ['staff', 'admin'])
+          .limit(1);
+
+        if (!roles || roles.length === 0) {
+          await supabase.auth.signOut();
+          if (mounted) navigate('/staff/login', { replace: true });
+          return;
+        }
+
+        if (mounted) {
+          setIsAuthenticated(true);
+          setIsLoading(false);
+        }
+      } catch {
+        if (mounted) navigate('/staff/login', { replace: true });
       }
-      
-      setIsAuthenticated(true);
-      setIsLoading(false);
     };
+
     checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT' && mounted) {
+        setIsAuthenticated(false);
+        navigate('/staff/login', { replace: true });
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   // Fetch analytics data
@@ -239,8 +257,8 @@ const AnalyticsDashboard = () => {
     setIsRefreshing(false);
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate('/staff/login');
   };
 

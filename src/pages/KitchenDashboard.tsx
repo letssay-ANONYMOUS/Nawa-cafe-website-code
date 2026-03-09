@@ -369,17 +369,15 @@ const KitchenDashboard = () => {
   };
 
   // ──────────────────────────────────────────────
-  // RENDER: show spinner only while auth is checking AND data loading
+  // RENDER: block all content until auth is confirmed
   // ──────────────────────────────────────────────
-  if (authState === 'checking' && isLoading) {
+  if (authState !== 'authorized') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <RefreshCw className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
-
-  if (authState === 'unauthorized') return null;
 
   const paidOrders = orders.filter(o => o.payment_status === 'paid');
   const pendingOrders = orders.filter(o => o.payment_status === 'pending');
