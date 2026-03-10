@@ -284,9 +284,13 @@ const KitchenDashboard = () => {
         }
       )
       .subscribe();
+    };
+
+    setupRealtime();
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
       stopAlert();
     };
   }, [stopAlert, toast]);
