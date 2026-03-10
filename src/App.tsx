@@ -55,7 +55,7 @@ const App = () => (
             <LocationTracker />
             {/* Subtle fixed watermark logo */}
             <div
-              className="fixed inset-0 pointer-events-none z-[9999] flex items-center justify-center"
+              className="fixed inset-0 pointer-events-none z-[1] flex items-center justify-center"
               aria-hidden="true"
             >
               <img
