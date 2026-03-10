@@ -155,6 +155,34 @@ export interface UseKitchenAlertOptions {
 }
 
 /**
+ * Utility to forcefully prevent iOS/Android devices from sleeping 
+ * by injecting an invisible HTML5 video into the DOM.
+ */
+const createAndPlayWakeLockVideo = () => {
+  let wakeVideo = document.getElementById('nawa-wake-lock-video') as HTMLVideoElement;
+  if (!wakeVideo) {
+    wakeVideo = document.createElement('video');
+    wakeVideo.id = 'nawa-wake-lock-video';
+    wakeVideo.setAttribute('playsinline', '');
+    wakeVideo.setAttribute('muted', '');
+    wakeVideo.setAttribute('loop', '');
+
+    // Extremely small, silent base64 video to trick iOS and Android into not sleeping
+    wakeVideo.src = 'data:video/mp4;base64,AAAAHGZ0eXBpc29tAAACAGlzb21pc28yYXZjMQAAAAhmcmVlAAAAG21kYXQAAAGzABAHAAABthAHAAABthAHAAAAF21vb3YAAABsbXZoZAAAAADamfI92pnyPQEA...';
+    wakeVideo.style.position = 'absolute';
+    wakeVideo.style.width = '1px';
+    wakeVideo.style.height = '1px';
+    wakeVideo.style.opacity = '0';
+    wakeVideo.style.pointerEvents = 'none';
+    document.body.appendChild(wakeVideo);
+  }
+
+  try {
+    wakeVideo.play().catch(() => { });
+  } catch (e) { }
+};
+
+/**
  * Continuous kitchen alert system with:
  * - Tighter synth loop (500ms interval) for built-in sounds
  * - HTML5 Audio with loop=true for custom audio URLs
@@ -162,15 +190,15 @@ export interface UseKitchenAlertOptions {
  */
 export const useKitchenAlert = (options: UseKitchenAlertOptions | string = 'chime') => {
   // Support both old string API and new options object
-  const config: UseKitchenAlertOptions = typeof options === 'string' 
+  const config: UseKitchenAlertOptions = typeof options === 'string'
     ? { soundId: options }
     : options;
-  
-  const { 
-    soundId = 'chime', 
-    customAudioUrl, 
+
+  const {
+    soundId = 'chime',
+    customAudioUrl,
     maxDuration = 150000, // 2.5 minutes
-    onTimeout 
+    onTimeout
   } = config;
 
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -223,7 +251,10 @@ export const useKitchenAlert = (options: UseKitchenAlertOptions | string = 'chim
         audio.loop = true;
         audio.volume = 1.0;
         htmlAudioRef.current = audio;
-        
+
+        // Wake Lock Hack
+        createAndPlayWakeLockVideo();
+
         audio.play().catch(err => {
           console.error('Failed to play custom audio:', err);
           // Fallback to synth if audio fails
@@ -249,7 +280,10 @@ export const useKitchenAlert = (options: UseKitchenAlertOptions | string = 'chim
   const startSynthLoop = useCallback(() => {
     // Play immediately
     playSynthSound();
-    
+
+    // Wake Lock Hack
+    createAndPlayWakeLockVideo();
+
     // Then repeat every 500ms (tighter loop for continuous feel)
     intervalRef.current = setInterval(() => {
       playSynthSound();
@@ -263,20 +297,20 @@ export const useKitchenAlert = (options: UseKitchenAlertOptions | string = 'chim
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-    
+
     // Stop HTML5 audio
     if (htmlAudioRef.current) {
       htmlAudioRef.current.pause();
       htmlAudioRef.current.currentTime = 0;
       htmlAudioRef.current = null;
     }
-    
+
     // Clear safety timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    
+
     setIsPlaying(false);
   }, []);
 
@@ -291,7 +325,7 @@ export const useKitchenAlert = (options: UseKitchenAlertOptions | string = 'chim
       try {
         const audio = new Audio(url);
         audio.volume = 1.0;
-        
+
         audio.oncanplaythrough = () => {
           audio.play()
             .then(() => {
@@ -303,7 +337,7 @@ export const useKitchenAlert = (options: UseKitchenAlertOptions | string = 'chim
             })
             .catch(() => resolve(false));
         };
-        
+
         audio.onerror = () => resolve(false);
         audio.load();
       } catch {
@@ -319,7 +353,7 @@ export const useKitchenAlert = (options: UseKitchenAlertOptions | string = 'chim
         const audio = new Audio(url);
         audio.loop = true;
         audio.volume = 1.0;
-        
+
         audio.oncanplaythrough = () => {
           audio.play()
             .then(() => {
@@ -331,7 +365,7 @@ export const useKitchenAlert = (options: UseKitchenAlertOptions | string = 'chim
             })
             .catch(() => resolve(false));
         };
-        
+
         audio.onerror = () => resolve(false);
         audio.load();
       } catch {
