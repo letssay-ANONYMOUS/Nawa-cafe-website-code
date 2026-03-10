@@ -186,13 +186,20 @@ const KitchenDashboard = () => {
     };
   }, [loadOrders]);
 
-  // Realtime subscription
+  // Realtime subscription — wait for auth session to be ready
   useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
     // Flag to prevent toast spam on mass updates
     let lastToastTime = 0;
 
-    const channel = supabase
-      .channel('kitchen-orders')
+    const setupRealtime = async () => {
+      // Ensure the auth token is fully available before subscribing
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelled || !session) return;
+
+      channel = supabase
+        .channel('kitchen-orders')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' },
         async (payload) => {
           const newOrderData = payload.new as Order;
@@ -277,9 +284,13 @@ const KitchenDashboard = () => {
         }
       )
       .subscribe();
+    };
+
+    setupRealtime();
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
       stopAlert();
     };
   }, [stopAlert, toast]);
