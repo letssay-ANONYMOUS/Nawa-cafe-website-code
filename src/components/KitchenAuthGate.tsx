@@ -70,11 +70,24 @@ const KitchenAuthGate = ({ children }: KitchenAuthGateProps) => {
           navigate('/staff/login', { replace: true });
         }
       }
+      // Re-verify on token refresh (session restored from localStorage)
+      if (event === 'TOKEN_REFRESHED' && !authorized) {
+        void verifyAccess();
+      }
     });
+
+    // Re-verify session when tab becomes visible (iPad sleep/wake)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && mountedRef.current) {
+        void verifyAccess();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
       mountedRef.current = false;
       subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [navigate]);
 

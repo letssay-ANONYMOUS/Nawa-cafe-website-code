@@ -118,6 +118,17 @@ const KitchenDashboard = () => {
   const loadOrders = useCallback(async () => {
     setIsLoading(true);
     try {
+      // Ensure session is alive before fetching (handles refresh after sleep/expiry)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        const { error: refreshErr } = await supabase.auth.refreshSession();
+        if (refreshErr) {
+          console.warn('Session refresh failed, redirecting to login');
+          navigate('/staff/login', { replace: true });
+          return;
+        }
+      }
+
       const startDate = getDateFromRange(dateRange);
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')

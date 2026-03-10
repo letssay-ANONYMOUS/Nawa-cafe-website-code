@@ -21,38 +21,54 @@ interface AdminContextType {
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
+/** Fire-and-forget role check – never awaited inside onAuthStateChange */
+function checkRoleAndSet(
+  userId: string,
+  setIsAdmin: (v: boolean) => void,
+) {
+  supabase
+    .rpc('has_role', { _user_id: userId, _role: 'admin' })
+    .then(({ data: isAdmin }) => {
+      if (isAdmin) {
+        setIsAdmin(true);
+        return;
+      }
+      return supabase
+        .rpc('has_role', { _user_id: userId, _role: 'staff' })
+        .then(({ data: isStaff }) => {
+          if (isStaff) setIsAdmin(true);
+        });
+    })
+    .catch((err) => console.error('Role check failed:', err));
+}
+
 export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [pendingChanges, setPendingChanges] = useState<PendingChange[]>([]);
 
   useEffect(() => {
-    // Check if there's an existing session with admin/staff role
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    // 1. Restore session from localStorage first
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        const { data: roles } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id);
-        const hasAccess = roles?.some(r => r.role === 'staff' || r.role === 'admin');
-        if (hasAccess) setIsAdmin(true);
-      }
-    };
-    checkSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT') {
-        setIsAdmin(false);
-        setPendingChanges([]);
-      } else if (event === 'SIGNED_IN' && session?.user) {
-        const { data: roles } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id);
-        const hasAccess = roles?.some(r => r.role === 'staff' || r.role === 'admin');
-        if (hasAccess) setIsAdmin(true);
+        checkRoleAndSet(session.user.id, setIsAdmin);
       }
     });
+
+    // 2. Listen for auth changes – NO async/await inside callback
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          setIsAdmin(false);
+          setPendingChanges([]);
+        } else if (
+          (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') &&
+          session?.user
+        ) {
+          // Fire-and-forget – avoids deadlock
+          checkRoleAndSet(session.user.id, setIsAdmin);
+        }
+      },
+    );
 
     return () => subscription.unsubscribe();
   }, []);
