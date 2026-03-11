@@ -20,14 +20,46 @@ const KitchenAuthGate = ({ children }: KitchenAuthGateProps) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const mountedRef = useRef(true);
+  const refreshingRef = useRef(false); // prevent concurrent refreshes
 
   useEffect(() => {
     mountedRef.current = true;
 
+    /**
+     * Get a valid session. If the cached token is expired, refresh it ONCE.
+     * This is the ONLY place in the app that calls refreshSession().
+     */
+    const getValidSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) return null;
+
+      // Check if token is expired or about to expire (within 60s)
+      const expiresAt = session.expires_at ?? 0;
+      const nowSec = Math.floor(Date.now() / 1000);
+
+      if (nowSec >= expiresAt - 60) {
+        // Token expired or about to — refresh it, but only one call at a time
+        if (refreshingRef.current) return session; // another refresh in flight, use cached
+        refreshingRef.current = true;
+        try {
+          const { data: { session: refreshed }, error } = await supabase.auth.refreshSession();
+          if (error || !refreshed) {
+            console.warn('KitchenAuthGate: Token refresh failed', error?.message);
+            return null; // session is dead
+          }
+          return refreshed;
+        } finally {
+          refreshingRef.current = false;
+        }
+      }
+
+      return session; // token still valid
+    };
+
     const verifyAccess = async () => {
       try {
-        // getSession() returns the cached session; the client auto-refreshes it.
-        const { data: { session } } = await supabase.auth.getSession();
+        const session = await getValidSession();
 
         if (!session) {
           if (mountedRef.current) {
@@ -81,9 +113,8 @@ const KitchenAuthGate = ({ children }: KitchenAuthGateProps) => {
         }
       }
       if (event === 'TOKEN_REFRESHED') {
-        // Token was auto-refreshed by the client; re-verify role if needed
-        if (!authorized && mountedRef.current) {
-          void verifyAccess();
+        if (mountedRef.current) {
+          setAuthorized(true); // token refreshed = still valid
         }
       }
     });
