@@ -179,7 +179,7 @@ const KitchenDashboard = () => {
       if (document.visibilityState === 'visible') {
         loadOrders();
       }
-    }, 5 * 60 * 1000);
+    }, 60 * 1000);
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
