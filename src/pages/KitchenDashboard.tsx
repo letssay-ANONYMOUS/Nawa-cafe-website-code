@@ -115,11 +115,9 @@ const KitchenDashboard = () => {
   }, []);
 
   // Reload orders when date range changes (after initial load)
-  const loadOrders = useCallback(async () => {
+  const loadOrders = useCallback(async (retryCount = 0) => {
     setIsLoading(true);
     try {
-      // KitchenAuthGate already guarantees a valid session.
-      // The Supabase client auto-refreshes the token; no manual refresh here.
       const startDate = getDateFromRange(dateRange);
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
@@ -145,7 +143,16 @@ const KitchenDashboard = () => {
       }
     } catch (error) {
       console.error('Error loading orders:', error);
-      toast({ variant: "destructive", title: "Error", description: "Failed to load orders" });
+      // Retry with backoff: 5s, 15s, 30s
+      const backoffs = [5000, 15000, 30000];
+      if (retryCount < backoffs.length && mountedRef.current) {
+        console.log(`Retrying loadOrders in ${backoffs[retryCount] / 1000}s (attempt ${retryCount + 1}/3)`);
+        setTimeout(() => {
+          if (mountedRef.current) loadOrders(retryCount + 1);
+        }, backoffs[retryCount]);
+      } else {
+        toast({ variant: "destructive", title: "Error", description: "Failed to load orders" });
+      }
     } finally {
       setIsLoading(false);
     }
