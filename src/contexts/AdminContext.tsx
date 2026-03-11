@@ -62,7 +62,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           setIsAdmin(false);
           setPendingChanges([]);
         } else if (
-          (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') &&
+          event === 'SIGNED_IN' &&
           session?.user
         ) {
           // Fire-and-forget – avoids deadlock

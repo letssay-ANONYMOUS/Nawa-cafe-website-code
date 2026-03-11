@@ -292,7 +292,18 @@ const KitchenDashboard = () => {
           }
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.warn(`Realtime channel ${status}, reconnecting in 3s...`, err);
+            setTimeout(() => {
+              if (cancelled) return;
+              if (channel) supabase.removeChannel(channel);
+              channel = null;
+              setupRealtime();
+              loadOrders();
+            }, 3000);
+          }
+        });
     };
 
     setupRealtime();
@@ -302,7 +313,7 @@ const KitchenDashboard = () => {
       if (channel) supabase.removeChannel(channel);
       stopAlert();
     };
-  }, [stopAlert, toast]);
+  }, [stopAlert, toast, loadOrders]);
 
   // Alert sound based on unacknowledged orders
   useEffect(() => {
