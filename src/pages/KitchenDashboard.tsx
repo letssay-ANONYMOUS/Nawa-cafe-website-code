@@ -472,7 +472,7 @@ const KitchenDashboard = () => {
                     <Switch id="sound" checked={soundEnabled} onCheckedChange={setSoundEnabled} />
                   </div>
 
-                  <Button variant="outline" size="icon" onClick={loadOrders} disabled={isLoading}>
+                  <Button variant="outline" size="icon" onClick={() => loadOrders()} disabled={isLoading}>
                     <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                   </Button>
 
