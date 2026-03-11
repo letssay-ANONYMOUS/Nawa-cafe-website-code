@@ -50,6 +50,10 @@ serve(async (req) => {
       const nearest = distances[0];
       customerLocation = `${nearest.name} — ${nearest.distance.toFixed(1)} km`;
       console.log("GPS branch detection:", customerLocation, `(coords: ${latitude}, ${longitude})`);
+    } else if (selectedBranch) {
+      // Manual branch selection fallback
+      customerLocation = `${selectedBranch} (manual)`;
+      console.log("Manual branch selection:", customerLocation);
     } else if (customerIp && customerIp !== "127.0.0.1") {
       // Fallback to IP geolocation
       try {
