@@ -20,6 +20,7 @@ const CheckoutPage = () => {
   const navigate = useNavigate();
   const { trackCheckoutStart, trackCheckoutComplete } = useAnalytics();
   const [loading, setLoading] = useState(false);
+  const [customerCoords, setCustomerCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -36,7 +37,26 @@ const CheckoutPage = () => {
     }
   }, []);
 
-  
+  // Request browser geolocation for branch detection
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCustomerCoords({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+          console.log('Customer location acquired:', position.coords.latitude, position.coords.longitude);
+        },
+        (err) => {
+          console.log('Geolocation denied or unavailable:', err.message);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+  }, []);
+
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -64,6 +84,8 @@ const CheckoutPage = () => {
           customerName: formData.name,
           phoneNumber: formData.phone,
           visitorId: getVisitorId(),
+          latitude: customerCoords?.latitude ?? null,
+          longitude: customerCoords?.longitude ?? null,
           orderItems: cartItems.map(item => ({
             name: item.name,
             quantity: item.quantity,

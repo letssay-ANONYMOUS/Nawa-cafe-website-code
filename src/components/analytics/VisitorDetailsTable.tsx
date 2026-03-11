@@ -26,6 +26,7 @@ interface VisitorDetail {
   ip_address: string | null;
   timezone: string | null;
   os: string | null;
+  screen_resolution: string | null;
   last_seen_at: string;
   created_at: string;
   pages: PageDetail[];
@@ -192,6 +193,7 @@ export const VisitorDetailsTable = ({ dateRange }: VisitorDetailsTableProps) => 
           ip_address: v.ip_address,
           timezone: v.timezone,
           os: v.os,
+          screen_resolution: v.screen_resolution,
           last_seen_at: v.last_seen_at,
           created_at: v.created_at,
           pages: visitorPages,
@@ -211,11 +213,13 @@ export const VisitorDetailsTable = ({ dateRange }: VisitorDetailsTableProps) => 
   };
 
   const handleExportCSV = () => {
-    const headers = ['Visitor ID', 'Device', 'Browser', 'IP', 'Pages Visited', 'Time on Site', 'Cart Items', 'Ordered', 'Consent', 'Last Seen'];
+    const headers = ['Visitor ID', 'Device', 'Browser', 'OS', 'Screen', 'IP', 'Pages Visited', 'Time on Site', 'Cart Items', 'Ordered', 'Consent', 'Last Seen'];
     const rows = visitors.map(v => [
       v.visitor_id.slice(-8),
       v.device_type || '-',
-      getBrowserName(v.browser),
+      `${getBrowserName(v.browser)}${v.browser_version ? ' ' + v.browser_version : ''}`,
+      v.os || '-',
+      v.screen_resolution || '-',
       v.ip_address || '-',
       v.pages.length,
       formatTime(v.total_time),
@@ -273,6 +277,8 @@ export const VisitorDetailsTable = ({ dateRange }: VisitorDetailsTableProps) => 
                 <TableHead className="w-[80px]">ID</TableHead>
                 <TableHead>Device</TableHead>
                 <TableHead>Browser</TableHead>
+                <TableHead>OS</TableHead>
+                <TableHead>Screen</TableHead>
                 <TableHead>IP</TableHead>
                 <TableHead>Pages</TableHead>
                 <TableHead>Time</TableHead>
@@ -285,7 +291,7 @@ export const VisitorDetailsTable = ({ dateRange }: VisitorDetailsTableProps) => 
             <TableBody>
               {displayedVisitors.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={13} className="text-center text-muted-foreground py-8">
                     No visitors found
                   </TableCell>
                 </TableRow>
@@ -303,7 +309,13 @@ export const VisitorDetailsTable = ({ dateRange }: VisitorDetailsTableProps) => 
                         </div>
                       </TableCell>
                       <TableCell className="text-xs">
-                        {getBrowserName(visitor.browser)}
+                        {getBrowserName(visitor.browser)}{visitor.browser_version ? ` ${visitor.browser_version}` : ''}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {visitor.os || '-'}
+                      </TableCell>
+                      <TableCell className="text-xs font-mono">
+                        {visitor.screen_resolution || '-'}
                       </TableCell>
                       <TableCell className="text-xs font-mono">
                         {maskIp(visitor.ip_address)}
@@ -362,10 +374,9 @@ export const VisitorDetailsTable = ({ dateRange }: VisitorDetailsTableProps) => 
                     {/* Expanded row for page details */}
                     {expandedVisitor === visitor.visitor_id && (
                       <TableRow>
-                        <TableCell colSpan={10} className="bg-muted/30 p-4">
+                        <TableCell colSpan={13} className="bg-muted/30 p-4">
                           <div className="space-y-3">
                             <div className="flex gap-4 text-xs">
-                              <span><strong>OS:</strong> {visitor.os || '-'}</span>
                               <span><strong>Timezone:</strong> {visitor.timezone || '-'}</span>
                               <span><strong>Full IP:</strong> {visitor.ip_address || '-'}</span>
                               {visitor.has_order && (

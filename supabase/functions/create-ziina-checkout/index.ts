@@ -20,28 +20,51 @@ serve(async (req) => {
     const customerIp = cfConnectingIp || (forwardedFor ? forwardedFor.split(",")[0].trim() : null) || realIp || null;
     console.log("Customer IP:", customerIp);
 
-    // Resolve IP to district-level location
+    const { customerName, phoneNumber, orderItems, additionalNotes, visitorId, latitude, longitude } = await req.json();
+
+    // ===== BRANCH DETECTION =====
+    // Two Nawa Cafe branches in Al Ain
+    const BRANCHES = [
+      { name: "Stadhazza Branch", lat: 24.2167, lon: 55.7708 },
+      { name: "Municipality Branch", lat: 24.2075, lon: 55.7447 },
+    ];
+
+    function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
     let customerLocation = "Unknown";
-    if (customerIp && customerIp !== "127.0.0.1") {
+    if (typeof latitude === "number" && typeof longitude === "number") {
+      // GPS coordinates available — calculate nearest branch
+      const distances = BRANCHES.map(b => ({
+        name: b.name,
+        distance: haversineKm(latitude, longitude, b.lat, b.lon),
+      }));
+      distances.sort((a, b) => a.distance - b.distance);
+      const nearest = distances[0];
+      customerLocation = `${nearest.name} — ${nearest.distance.toFixed(1)} km`;
+      console.log("GPS branch detection:", customerLocation, `(coords: ${latitude}, ${longitude})`);
+    } else if (customerIp && customerIp !== "127.0.0.1") {
+      // Fallback to IP geolocation
       try {
         const geoRes = await fetch(`http://ip-api.com/json/${customerIp}?fields=status,city,regionName,country,district,zip,lat,lon`);
         const geo = await geoRes.json();
         if (geo.status === "success") {
-          // Build granular location: district > city > region > country
           const parts = [geo.district, geo.city, geo.regionName, geo.country].filter(Boolean);
-          // Remove duplicates (e.g. if district == city)
           const unique = [...new Set(parts)];
           customerLocation = unique.join(", ") || "Unknown";
-          console.log("Geolocation resolved:", customerLocation);
-        } else {
-          console.warn("Geolocation failed for IP:", customerIp);
+          console.log("IP geolocation fallback:", customerLocation);
         }
       } catch (geoErr) {
         console.warn("Geolocation API error:", geoErr);
       }
     }
-
-    const { customerName, phoneNumber, orderItems, additionalNotes, visitorId } = await req.json();
 
     console.log("Checkout request:", { customerName, phoneNumber, itemCount: orderItems?.length, visitorId });
 
