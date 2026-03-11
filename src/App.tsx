@@ -1,6 +1,6 @@
 
 import { Toaster } from "@/components/ui/toaster";
-import nawaWatermark from "@/assets/nawa-watermark.png";
+
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -53,18 +53,6 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <LocationTracker />
-            {/* Subtle fixed watermark logo */}
-            <div
-              className="fixed inset-0 pointer-events-none z-[1] flex items-center justify-center"
-              aria-hidden="true"
-            >
-              <img
-                src={nawaWatermark}
-                alt=""
-                className="w-[60vw] max-w-[500px] opacity-[0.03] select-none"
-                draggable={false}
-              />
-            </div>
             <GoogleAnalytics />
             <PageViewTracker />
             <ScrollRestoration />

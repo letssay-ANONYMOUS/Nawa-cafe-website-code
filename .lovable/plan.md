@@ -2,22 +2,35 @@
 
 ## Problem
 
-The user wants the invisible Nawa watermark logo removed from the center of the screen. Currently, `src/App.tsx` renders a fixed watermark with 3% opacity (`opacity-[0.03]`) that sits behind all content but is still visible enough to be distracting.
+Two race conditions cause the kitchen login to intermittently fail or loop:
 
-## Solution
+**Race 1 — Double navigation in StaffLogin:**
+When `handleLogin` calls `signInWithPassword`, it triggers the `SIGNED_IN` auth event. Both `handleLogin` AND the `onAuthStateChange` listener then race to check the role and navigate to `/admin/kitchen` simultaneously. This causes double role-checks and double navigations.
 
-Remove the watermark `<div>` block entirely from `src/App.tsx`.
+**Race 2 — One-shot `authResolved` flag in KitchenAuthGate:**
+When the gate mounts, both `getSession()` and `onAuthStateChange(INITIAL_SESSION)` fire near-simultaneously. The `authResolved` flag means whichever resolves first wins — if `getSession` returns before the session is fully restored (returning null), it redirects to login and locks out the `SIGNED_IN` event that arrives moments later. On re-login, this creates the refresh loop.
 
-**File to change:**
+**Race 3 — Awaiting inside `onAuthStateChange`:**
+Per Supabase docs, awaiting async operations inside `onAuthStateChange` can block subsequent auth event processing, causing deadlocks.
 
-| File | Change |
-|------|--------|
-| `src/App.tsx` | Remove the entire watermark `<div>` block (lines with the fixed inset-0 watermark logo) |
+## Plan
 
-The watermark is the block with:
-- `fixed inset-0 pointer-events-none z-[1]`
-- `nawaWatermark` image
-- `opacity-[0.03]`
+### 1. Rewrite StaffLogin — remove auth listener entirely
 
-Removing this will eliminate the centered logo without affecting any other UI elements.
+- Remove `onAuthStateChange` subscription and the `routeIfAuthorized` useEffect
+- On mount: call `getSession()` → if session exists and has role, redirect. Otherwise show form. Simple, no listener.
+- On form submit: `signInWithPassword` → check role → navigate. Single path, no races.
+
+### 2. Rewrite KitchenAuthGate — remove one-shot flag, avoid awaiting in listener
+
+- Remove the `authResolved` one-shot flag
+- Use `getSession()` as the primary session restore mechanism
+- In `onAuthStateChange`: do NOT await. Use `setTimeout(0, () => validateSessionAccess(...))` to defer without blocking auth event processing
+- Allow state to be re-set on subsequent `SIGNED_IN` events (no one-shot blocking)
+- Keep the safety timeout but make it clearable on success
+- On `SIGNED_OUT`: reset state and redirect immediately
+
+### Files changed
+- `src/components/KitchenAuthGate.tsx`
+- `src/pages/StaffLogin.tsx`
 
