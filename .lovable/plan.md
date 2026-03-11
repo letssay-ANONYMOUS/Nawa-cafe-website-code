@@ -2,40 +2,35 @@
 
 ## Problem
 
-The GPS-based branch detection code is in place, but when customers deny the browser location prompt (or it times out), the fallback IP geolocation only returns "Al Ain City" — not which branch they're near. Since both branches are in the same city, IP geolocation can never distinguish between them.
+Two race conditions cause the kitchen login to intermittently fail or loop:
 
-The current flow silently falls back without telling the customer or staff that exact location wasn't available.
+**Race 1 — Double navigation in StaffLogin:**
+When `handleLogin` calls `signInWithPassword`, it triggers the `SIGNED_IN` auth event. Both `handleLogin` AND the `onAuthStateChange` listener then race to check the role and navigate to `/admin/kitchen` simultaneously. This causes double role-checks and double navigations.
+
+**Race 2 — One-shot `authResolved` flag in KitchenAuthGate:**
+When the gate mounts, both `getSession()` and `onAuthStateChange(INITIAL_SESSION)` fire near-simultaneously. The `authResolved` flag means whichever resolves first wins — if `getSession` returns before the session is fully restored (returning null), it redirects to login and locks out the `SIGNED_IN` event that arrives moments later. On re-login, this creates the refresh loop.
+
+**Race 3 — Awaiting inside `onAuthStateChange`:**
+Per Supabase docs, awaiting async operations inside `onAuthStateChange` can block subsequent auth event processing, causing deadlocks.
 
 ## Plan
 
-### 1. Make location permission more prominent on checkout
+### 1. Rewrite StaffLogin — remove auth listener entirely
 
-Instead of silently requesting GPS in the background, show a visible UI prompt explaining **why** location is needed ("to identify your nearest branch"). If the customer hasn't granted permission yet, show a button they can tap to trigger the location request. This increases the grant rate significantly.
+- Remove `onAuthStateChange` subscription and the `routeIfAuthorized` useEffect
+- On mount: call `getSession()` → if session exists and has role, redirect. Otherwise show form. Simple, no listener.
+- On form submit: `signInWithPassword` → check role → navigate. Single path, no races.
 
-**File:** `src/pages/CheckoutPage.tsx`
-- Add a location status indicator near the top of the checkout form
-- Show one of three states:
-  - "Locating..." (pending)
-  - "Stadhazza Branch" or "Municipality Branch" with a green checkmark (acquired)
-  - "Location not available — please select your branch" with a manual dropdown fallback (denied/timeout)
-- Add a `<Select>` dropdown with the two branches as a **manual fallback** so staff always know the branch even if GPS fails
-- Pass the selected branch name to the edge function when GPS is unavailable
+### 2. Rewrite KitchenAuthGate — remove one-shot flag, avoid awaiting in listener
 
-### 2. Update edge function to accept manual branch selection
+- Remove the `authResolved` one-shot flag
+- Use `getSession()` as the primary session restore mechanism
+- In `onAuthStateChange`: do NOT await. Use `setTimeout(0, () => validateSessionAccess(...))` to defer without blocking auth event processing
+- Allow state to be re-set on subsequent `SIGNED_IN` events (no one-shot blocking)
+- Keep the safety timeout but make it clearable on success
+- On `SIGNED_OUT`: reset state and redirect immediately
 
-**File:** `supabase/functions/create-ziina-checkout/index.ts`
-- Accept a new optional field `selectedBranch` from the request body
-- Priority: GPS coords > manual selection > IP fallback
-- If `selectedBranch` is provided and no GPS, use it directly (e.g., "Stadhazza Branch (manual)")
-
-### 3. No database or kitchen UI changes needed
-
-The `customer_location` field already exists on the `orders` table and is already displayed in `OrderTable.tsx`. Once the value is correct, it will show the branch name automatically.
-
-### Files to change
-
-| File | Change |
-|------|--------|
-| `src/pages/CheckoutPage.tsx` | Add visible location status + manual branch selector fallback |
-| `supabase/functions/create-ziina-checkout/index.ts` | Accept `selectedBranch` field, use as fallback |
+### Files changed
+- `src/components/KitchenAuthGate.tsx`
+- `src/pages/StaffLogin.tsx`
 

@@ -6,13 +6,21 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Lock } from 'lucide-react';
+import { Lock, MapPin, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { getVisitorId } from '@/hooks/useVisitorId';
 import { useAnalytics } from '@/hooks/useAnalytics';
+
+type LocationStatus = 'pending' | 'acquired' | 'denied';
+
+const BRANCHES = [
+  { value: 'Stadhazza Branch', label: 'Stadhazza Branch' },
+  { value: 'Municipality Branch', label: 'Municipality Branch' },
+];
 
 const CheckoutPage = () => {
   const { toast } = useToast();
@@ -21,6 +29,9 @@ const CheckoutPage = () => {
   const { trackCheckoutStart, trackCheckoutComplete } = useAnalytics();
   const [loading, setLoading] = useState(false);
   const [customerCoords, setCustomerCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>('pending');
+  const [detectedBranch, setDetectedBranch] = useState<string | null>(null);
+  const [selectedBranch, setSelectedBranch] = useState<string>('');
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -37,26 +48,48 @@ const CheckoutPage = () => {
     }
   }, []);
 
+  // Haversine to detect nearest branch client-side for UI feedback
+  const detectBranch = (lat: number, lon: number) => {
+    const branches = [
+      { name: 'Stadhazza Branch', lat: 24.2167, lon: 55.7708 },
+      { name: 'Municipality Branch', lat: 24.2075, lon: 55.7447 },
+    ];
+    let nearest = branches[0];
+    let minDist = Infinity;
+    for (const b of branches) {
+      const R = 6371;
+      const dLat = (b.lat - lat) * Math.PI / 180;
+      const dLon = (b.lon - lon) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) *
+        Math.sin(dLon / 2) ** 2;
+      const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      if (d < minDist) { minDist = d; nearest = b; }
+    }
+    return nearest.name;
+  };
+
   // Request browser geolocation for branch detection
   useEffect(() => {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setCustomerCoords({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-          console.log('Customer location acquired:', position.coords.latitude, position.coords.longitude);
-        },
-        (err) => {
-          console.log('Geolocation denied or unavailable:', err.message);
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
+    if (!('geolocation' in navigator)) {
+      setLocationStatus('denied');
+      return;
     }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setCustomerCoords({ latitude, longitude });
+        setDetectedBranch(detectBranch(latitude, longitude));
+        setLocationStatus('acquired');
+        console.log('Customer location acquired:', latitude, longitude);
+      },
+      (err) => {
+        console.log('Geolocation denied or unavailable:', err.message);
+        setLocationStatus('denied');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   }, []);
-
-
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -74,11 +107,20 @@ const CheckoutPage = () => {
       });
       return;
     }
+
+    // Require branch selection if GPS wasn't available
+    if (!customerCoords && !selectedBranch) {
+      toast({
+        title: "Branch Required",
+        description: "Please select which branch you're ordering from.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setLoading(true);
 
     try {
-      // Create Ziina payment intent
       const { data, error } = await supabase.functions.invoke('create-ziina-checkout', {
         body: {
           customerName: formData.name,
@@ -86,6 +128,7 @@ const CheckoutPage = () => {
           visitorId: getVisitorId(),
           latitude: customerCoords?.latitude ?? null,
           longitude: customerCoords?.longitude ?? null,
+          selectedBranch: !customerCoords ? selectedBranch : null,
           orderItems: cartItems.map(item => ({
             name: item.name,
             quantity: item.quantity,
@@ -113,21 +156,17 @@ const CheckoutPage = () => {
         throw new Error('No redirect URL received from Ziina');
       }
 
-      // Track checkout completion
       trackCheckoutComplete({
         orderId: data.paymentId || 'unknown',
         total: total,
         itemCount: itemCount
       });
 
-      // Open Ziina Checkout in a new tab (Ziina blocks iframe embedding)
       console.log('Opening Ziina payment:', data.url);
       const paymentWindow = window.open(data.url, '_blank', 'noopener');
       if (!paymentWindow) {
-        // If popup was blocked, fall back to direct navigation
         window.location.href = data.url;
       } else {
-        // Reset loading state since user will complete payment in new tab
         setLoading(false);
         toast({
           title: "Payment page opened",
@@ -140,7 +179,7 @@ const CheckoutPage = () => {
       setLoading(false);
       toast({
         title: "Payment Error",
-        description: error.message || "Unable to process payment. Please try again.",
+        description: (error as Error).message || "Unable to process payment. Please try again.",
         variant: "destructive",
       });
     }
@@ -174,6 +213,47 @@ const CheckoutPage = () => {
                     <div className="flex items-center gap-2 mb-6">
                       <Lock className="w-5 h-5 text-green-600" />
                       <span className="text-sm text-coffee-600">Secure payment powered by Ziina</span>
+                    </div>
+
+                    {/* Branch Location Status */}
+                    <div className="mb-6 rounded-lg border border-coffee-200 p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <MapPin className="w-5 h-5 text-coffee-600" />
+                        <span className="font-medium text-coffee-800">Branch Location</span>
+                      </div>
+
+                      {locationStatus === 'pending' && (
+                        <div className="flex items-center gap-2 text-sm text-coffee-500">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Detecting your nearest branch…</span>
+                        </div>
+                      )}
+
+                      {locationStatus === 'acquired' && detectedBranch && (
+                        <div className="flex items-center gap-2 text-sm text-green-700">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span className="font-medium">{detectedBranch}</span>
+                        </div>
+                      )}
+
+                      {locationStatus === 'denied' && (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 text-sm text-amber-700">
+                            <AlertCircle className="w-4 h-4" />
+                            <span>Location not available — please select your branch</span>
+                          </div>
+                          <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select your branch" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {BRANCHES.map(b => (
+                                <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
