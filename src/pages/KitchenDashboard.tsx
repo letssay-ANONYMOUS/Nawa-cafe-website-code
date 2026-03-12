@@ -455,8 +455,20 @@ const KitchenDashboard = () => {
                     </div>
                   )}
 
+                  {isPlaying && unacknowledgedOrders.size === 0 && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => { stopAlert(); toast({ title: "Test Alert Stopped" }); }}
+                      className="flex items-center gap-2 animate-pulse shadow-lg"
+                    >
+                      <VolumeX className="w-4 h-4" />
+                      <span className="text-xs sm:text-sm font-semibold">Stop Test</span>
+                    </Button>
+                  )}
+
                   {!isPlaying && (
-                    <Button variant="outline" size="sm" onClick={() => { startAlert(); toast({ title: "Testing Continuous Alert", description: "Alert will loop for 2.5 minutes or until you click Stop.", duration: 5000 }); }} className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => { startAlert(); toast({ title: "Testing Alert", description: `Playing "${selectedSound === 'custom' ? 'Custom/NAWA' : selectedSound}" sound. Click Stop to silence.`, duration: 5000 }); }} className="flex items-center gap-2">
                       <Volume2 className="w-4 h-4" />
                       <span className="text-xs hidden sm:inline">Test Alert</span>
                     </Button>
