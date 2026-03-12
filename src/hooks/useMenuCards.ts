@@ -18,7 +18,7 @@ export interface MenuSection {
 }
 
 export const menuSections: MenuSection[] = [
-  { id: 'nawa-breakfast', name: 'NAWA Breakfast', startId: 1, endId: 23 },
+  { id: 'nawa-breakfast', name: 'NAWA Breakfast', startId: 1, endId: 19 },
   { id: 'coffee', name: 'COFFEE', startId: 24, endId: 42 },
   { id: 'cold-beverages', name: 'Cold Beverages', startId: 43, endId: 58 },
   { id: 'manual-brew', name: 'MANUAL BREW', startId: 59, endId: 63 },
@@ -39,8 +39,7 @@ export const menuSections: MenuSection[] = [
   { id: 'matcha', name: 'Matcha', startId: 143, endId: 150 },
   { id: 'nawa-special-tea', name: 'NAWA Special Tea', startId: 151, endId: 154 },
   { id: 'savoury', name: 'Savoury', startId: 155, endId: 157 },
-  { id: 'croissants-bakery', name: 'Croissants & Bakery', startId: 158, endId: 165 },
-  { id: 'cookies', name: 'Cookies', startId: 166, endId: 167 },
+  { id: 'croissants-bakery', name: 'Croissants & Bakery', startId: 158, endId: 169 },
 ];
 
 async function fetchMenuCards(): Promise<MenuCard[]> {

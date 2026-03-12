@@ -1,26 +1,36 @@
 
 
-## Plan: Remove Duplicate Croissants & Move Egg/Feta to Croissants Section
+## Problem
 
-### What's happening
+Two race conditions cause the kitchen login to intermittently fail or loop:
 
-**IDs 20 & 21** (Plain Croissant, Mix Cheese Croissant) are duplicates of IDs 158 & 159 in the Croissants section. They need to be deleted.
+**Race 1 — Double navigation in StaffLogin:**
+When `handleLogin` calls `signInWithPassword`, it triggers the `SIGNED_IN` auth event. Both `handleLogin` AND the `onAuthStateChange` listener then race to check the role and navigate to `/admin/kitchen` simultaneously. This causes double role-checks and double navigations.
 
-**IDs 22 & 23** (Feta Cheese Croissant, Egg Croissant) need to move from Breakfast to the Croissants section. Since the menu uses contiguous ID ranges, we'll delete them from the current position and re-insert them as IDs 168 & 169.
+**Race 2 — One-shot `authResolved` flag in KitchenAuthGate:**
+When the gate mounts, both `getSession()` and `onAuthStateChange(INITIAL_SESSION)` fire near-simultaneously. The `authResolved` flag means whichever resolves first wins — if `getSession` returns before the session is fully restored (returning null), it redirects to login and locks out the `SIGNED_IN` event that arrives moments later. On re-login, this creates the refresh loop.
 
-### Database changes (using insert/delete tool, not migration)
+**Race 3 — Awaiting inside `onAuthStateChange`:**
+Per Supabase docs, awaiting async operations inside `onAuthStateChange` can block subsequent auth event processing, causing deadlocks.
 
-1. **Delete IDs 20, 21** — remove duplicate croissants from Breakfast
-2. **Delete IDs 22, 23** — remove from Breakfast (will re-insert at bottom of Croissants)
-3. **Insert ID 168** — Feta Cheese Croissant (AED 25.00, same image)
-4. **Insert ID 169** — Egg Croissant (AED 32.00, same image)
+## Plan
 
-### Code change: `src/hooks/useMenuCards.ts`
+### 1. Rewrite StaffLogin — remove auth listener entirely
 
-Update section ranges:
-- **NAWA Breakfast**: endId `23` → `19`
-- **Croissants & Bakery**: endId `165` → `169` (now includes cookies 166-167 and the moved croissants 168-169)
-- **Remove** the standalone `Cookies` section (IDs 166-167 are now absorbed into Croissants & Bakery)
+- Remove `onAuthStateChange` subscription and the `routeIfAuthorized` useEffect
+- On mount: call `getSession()` → if session exists and has role, redirect. Otherwise show form. Simple, no listener.
+- On form submit: `signInWithPassword` → check role → navigate. Single path, no races.
 
-### No other files change. Zero kitchen impact.
+### 2. Rewrite KitchenAuthGate — remove one-shot flag, avoid awaiting in listener
+
+- Remove the `authResolved` one-shot flag
+- Use `getSession()` as the primary session restore mechanism
+- In `onAuthStateChange`: do NOT await. Use `setTimeout(0, () => validateSessionAccess(...))` to defer without blocking auth event processing
+- Allow state to be re-set on subsequent `SIGNED_IN` events (no one-shot blocking)
+- Keep the safety timeout but make it clearable on success
+- On `SIGNED_OUT`: reset state and redirect immediately
+
+### Files changed
+- `src/components/KitchenAuthGate.tsx`
+- `src/pages/StaffLogin.tsx`
 
