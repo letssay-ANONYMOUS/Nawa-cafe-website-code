@@ -346,8 +346,10 @@ serve(async (req) => {
     webhookUrl.searchParams.append('paymentIntentId', ziinaData.id);
     webhookUrl.searchParams.append('orderNumber', orderData.order_number);
 
-    // Fire and forget webhook
-    fetch(webhookUrl.toString(), { method: 'GET' }).catch(e => console.warn('Webhook failed:', e));
+    // Fire and forget webhook (only if URL is configured)
+    if (n8nUrl) {
+      fetch(webhookUrl.toString(), { method: 'GET' }).catch(e => console.warn('Webhook failed:', e));
+    }
 
     return new Response(
       JSON.stringify({
