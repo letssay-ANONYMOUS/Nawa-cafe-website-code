@@ -59,7 +59,16 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const body = await req.json();
-    const { id, action, ...itemData } = body;
+    const { id, action } = body;
+
+    // Whitelist allowed fields to prevent injection of arbitrary columns
+    const allowedFields = ['title', 'description', 'price', 'category', 'subcategory', 'image_url', 'published', 'display_order', 'card_number', 'tags', 'options'];
+    const itemData: Record<string, unknown> = {};
+    for (const field of allowedFields) {
+      if (field in body) {
+        itemData[field] = body[field];
+      }
+    }
 
     if (!id) {
       return new Response(

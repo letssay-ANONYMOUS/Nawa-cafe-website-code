@@ -14,7 +14,7 @@ interface AdminPasswordModalProps {
 }
 
 export const AdminPasswordModal = ({ open, onOpenChange }: AdminPasswordModalProps) => {
-  const [email, setEmail] = useState('nawacafe22@gmail.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { setIsAdmin } = useAdmin();
