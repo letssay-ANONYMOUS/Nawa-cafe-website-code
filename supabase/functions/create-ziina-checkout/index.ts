@@ -330,26 +330,6 @@ serve(async (req) => {
       console.error("Error updating order with payment reference:", updateError);
     }
 
-    // Send order to n8n webhook (non-blocking)
-    const n8nUrl = Deno.env.get('N8N_WEBHOOK_URL');
-    if (!n8nUrl) {
-      console.warn('N8N_WEBHOOK_URL secret not set, skipping webhook');
-    }
-    const webhookUrl = new URL(n8nUrl || 'https://example.com/placeholder');
-    webhookUrl.searchParams.append('customerName', customerName || '');
-    webhookUrl.searchParams.append('phoneNumber', phoneNumber || '');
-    webhookUrl.searchParams.append('time', new Date().toLocaleString('en-AE', { timeZone: 'Asia/Dubai' }));
-    webhookUrl.searchParams.append('totalAmount', String(amount));
-    webhookUrl.searchParams.append('currency', 'AED');
-    webhookUrl.searchParams.append('items', JSON.stringify(orderItems || []));
-    webhookUrl.searchParams.append('notes', additionalNotes || '');
-    webhookUrl.searchParams.append('paymentIntentId', ziinaData.id);
-    webhookUrl.searchParams.append('orderNumber', orderData.order_number);
-
-    // Fire and forget webhook (only if URL is configured)
-    if (n8nUrl) {
-      fetch(webhookUrl.toString(), { method: 'GET' }).catch(e => console.warn('Webhook failed:', e));
-    }
 
     return new Response(
       JSON.stringify({
