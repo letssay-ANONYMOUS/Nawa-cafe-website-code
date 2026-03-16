@@ -33,6 +33,10 @@ import NotFound from "./pages/NotFound";
 import MenuItemDetail from "./pages/MenuItemDetail";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import ProductDetail from "./pages/ProductDetail";
+import MaintenanceGate from "./components/MaintenanceGate";
+
+// ⚡ MAINTENANCE MODE — set to false to re-enable the site
+const MAINTENANCE_MODE = true;
 
 const queryClient = new QueryClient({
   defaultOptions: {
