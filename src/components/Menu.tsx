@@ -211,8 +211,9 @@ const Menu = () => {
                           <img
                             src={card.image_url || '/placeholder.svg'}
                             alt={card.name || ''}
-                            loading="lazy"
+                            loading={cardOrder <= 8 ? "eager" : "lazy"}
                             decoding="async"
+                            fetchPriority={cardOrder <= 4 ? "high" : "auto"}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                           />
                           <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300" />
