@@ -22,6 +22,7 @@ import LocationsPage from "./pages/LocationsPage";
 import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import PaymentSuccessPage from "./pages/PaymentSuccessPage";
+import PaymentPendingPage from "./pages/PaymentPendingPage";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import KitchenDashboard from "./pages/KitchenDashboard";
@@ -96,6 +97,7 @@ const App = () => {
                 <Route path="/locations" element={<LocationsPage />} />
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
+                <Route path="/payment-pending" element={<PaymentPendingPage />} />
                 <Route path="/payment-success" element={<PaymentSuccessPage />} />
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin" element={<AdminDashboard />} />

@@ -335,6 +335,7 @@ serve(async (req) => {
       JSON.stringify({
         url: ziinaData.redirect_url,
         paymentIntentId: ziinaData.id,
+        orderId: orderData.id,
         orderNumber: orderData.order_number,
       }),
       {
