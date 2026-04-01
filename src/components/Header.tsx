@@ -111,8 +111,7 @@ const Header = () => {
               className={`transition-all duration-300 ${isMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'}`}
               style={{ transitionDelay: isMenuOpen ? `${(navItems.length + 1) * 40}ms` : '0ms' }}
             >
-              <Button className={`px-6 py-2 rounded-full w-fit ${isHome ? 'bg-cream-400 hover:bg-cream-500 text-coffee-800' : 'bg-coffee-600 hover:bg-coffee-700 text-white'
-                }`}>
+              <Button className="px-6 py-2 rounded-full w-fit bg-coffee-600 hover:bg-coffee-700 text-white">
                 Order Now
               </Button>
             </div>
