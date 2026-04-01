@@ -1,4 +1,4 @@
-import { Coffee, Star, Save, LogOut, Loader2, MapPin, Phone, Mail } from 'lucide-react';
+import { Star, Save, LogOut, Loader2, MapPin, Phone, Mail } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { AdminPasswordModal } from './AdminPasswordModal';
 import { useAdmin } from '@/contexts/AdminContext';
