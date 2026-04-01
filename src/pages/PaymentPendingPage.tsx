@@ -10,6 +10,13 @@ const PaymentPendingPage = () => {
   const orderId = searchParams.get('order_id');
   const [paymentUrl] = useState(() => sessionStorage.getItem('ziina_payment_url'));
 
+  // Auto-open payment page on mount
+  useEffect(() => {
+    if (paymentUrl) {
+      window.open(paymentUrl, '_blank', 'noopener,noreferrer');
+    }
+  }, []);
+
   // Poll for payment status
   useEffect(() => {
     if (!orderId) return;
@@ -30,12 +37,6 @@ const PaymentPendingPage = () => {
     return () => clearInterval(interval);
   }, [orderId, navigate]);
 
-  const openPayment = () => {
-    if (paymentUrl) {
-      window.open(paymentUrl, '_blank', 'noopener,noreferrer');
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-cream-50">
       <div className="text-center max-w-md mx-auto px-4">
@@ -50,13 +51,15 @@ const PaymentPendingPage = () => {
         </p>
 
         {paymentUrl && (
-          <Button
-            onClick={openPayment}
-            className="bg-coffee-600 hover:bg-coffee-700 mb-4 gap-2"
-          >
-            <ExternalLink className="w-4 h-4" />
-            Open Payment Page
-          </Button>
+          <p className="text-sm text-coffee-500 mb-4">
+            Payment page didn't open?{' '}
+            <button
+              onClick={() => window.open(paymentUrl, '_blank', 'noopener,noreferrer')}
+              className="underline text-coffee-700 font-medium"
+            >
+              Click here to open it
+            </button>
+          </p>
         )}
 
         <div className="mt-6">
