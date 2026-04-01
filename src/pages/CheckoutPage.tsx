@@ -165,9 +165,12 @@ const CheckoutPage = () => {
       });
 
       console.log('Opening Ziina payment:', data.url);
-      const paymentWindow = window.open(data.url, '_blank', 'noopener');
+      // Use top-level navigation to escape any iframe sandbox (e.g. Lovable preview)
+      const top = window.top || window;
+      const paymentWindow = top.open(data.url, '_blank', 'noopener');
       if (!paymentWindow) {
-        window.location.href = data.url;
+        // Fallback: navigate at top level so Ziina doesn't get blocked by X-Frame-Options
+        top.location.href = data.url;
       } else {
         setLoading(false);
         toast({
