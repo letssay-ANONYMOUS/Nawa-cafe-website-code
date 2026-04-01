@@ -22,9 +22,10 @@ const About = () => {
   const offerings = [
     "Signature Coffee Blends & Beverages",
     "Artisan Desserts & Croissants",
-    "Authentic Italian dishes, Pizza, Pasta, Risotto",
+    "Authentic Spanish Dishes, Paella De Marisco",
     "Burgers and Fresh Salads",
-    "Chef-Inspired Daily Specials"
+    "Chef-Inspired Daily Specials",
+    "Gourmet Pizza, Pasta & Risotto"
   ];
 
   const renderStars = (rating: number) => {
