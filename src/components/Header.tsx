@@ -86,9 +86,7 @@ const Header = () => {
                 to={item.path}
                 onClick={() => setIsMenuOpen(false)}
                 className={`font-medium py-2 text-left transition-all duration-300 ${isMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
-                  } ${isHome
-                    ? isActive(item.path) ? 'text-cream-400 font-semibold' : 'text-cream-200 hover:text-cream-400'
-                    : isActive(item.path) ? 'text-coffee-900 font-semibold' : 'text-coffee-700 hover:text-coffee-900'
+                  } ${isActive(item.path) ? 'text-coffee-900 font-semibold' : 'text-coffee-700 hover:text-coffee-900'
                   }`}
                 style={{ transitionDelay: isMenuOpen ? `${index * 40}ms` : '0ms' }}
               >
