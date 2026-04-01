@@ -76,8 +76,7 @@ const Header = () => {
 
         {/* Mobile Navigation */}
         <div
-          className={`md:hidden fixed top-16 left-0 right-0 ${isHome ? 'bg-black/90 backdrop-blur-md' : 'bg-white/95 backdrop-blur-sm border-b border-coffee-200'
-            } shadow-lg z-50 overflow-hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0 border-b-0 shadow-none'
+          className={`md:hidden fixed top-16 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-coffee-200 shadow-lg z-50 overflow-hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0 border-b-0 shadow-none'
             }`}
         >
           <nav className="flex flex-col space-y-4 p-4">
