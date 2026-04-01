@@ -6,9 +6,9 @@ import { cardHover } from '@/lib/motionVariants';
 
 const featured = [
   {
-    title: 'Specialty Coffee',
-    description: 'Single-origin beans roasted to perfection, crafted by our expert baristas.',
-    image: '/menu-images/coffee-1.jpg',
+    title: 'Nawa Signature Latte',
+    description: 'Our signature latte with golden caramel art, served in handcrafted ceramic.',
+    image: '/menu-images/nawa-signature-latte.png',
     targetSection: 'coffee',
   },
   {
