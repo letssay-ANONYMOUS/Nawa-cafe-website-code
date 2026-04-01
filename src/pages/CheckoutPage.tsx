@@ -165,19 +165,37 @@ const CheckoutPage = () => {
       });
 
       console.log('Opening Ziina payment:', data.url);
-      // Use top-level navigation to escape any iframe sandbox (e.g. Lovable preview)
-      const top = window.top || window;
-      const paymentWindow = top.open(data.url, '_blank', 'noopener');
-      if (!paymentWindow) {
-        // Fallback: navigate at top level so Ziina doesn't get blocked by X-Frame-Options
-        top.location.href = data.url;
-      } else {
-        setLoading(false);
-        toast({
-          title: "Payment page opened",
-          description: "Complete your payment in the new tab. You'll be redirected back after payment.",
-        });
-      }
+      
+      // Try to open payment in a new tab, with safe cross-origin fallbacks
+      const openPayment = (url: string) => {
+        // Attempt 1: window.open from current frame
+        const w = window.open(url, '_blank', 'noopener,noreferrer');
+        if (w) return true;
+        
+        // Attempt 2: try top-level window.open (may throw in cross-origin iframe)
+        try {
+          if (window.top && window.top !== window) {
+            const w2 = window.top.open(url, '_blank', 'noopener,noreferrer');
+            if (w2) return true;
+            // Last resort: redirect the top frame
+            window.top.location.href = url;
+            return true;
+          }
+        } catch {
+          // Cross-origin access denied — fall through
+        }
+        
+        // Attempt 3: navigate current window directly
+        window.location.assign(url);
+        return true;
+      };
+      
+      openPayment(data.url);
+      setLoading(false);
+      toast({
+        title: "Payment page opened",
+        description: "Complete your payment in the new tab. You'll be redirected back after payment.",
+      });
 
     } catch (error) {
       console.error('Error creating payment:', error);
