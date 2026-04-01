@@ -38,7 +38,9 @@ const CheckoutPage = () => {
     notes: '',
   });
 
-  const total = getCartTotal();
+  const subtotal = getCartTotal();
+  const discount = subtotal * 0.15;
+  const total = subtotal - discount;
   const itemCount = getCartCount();
 
   // Track checkout start when page loads with items
