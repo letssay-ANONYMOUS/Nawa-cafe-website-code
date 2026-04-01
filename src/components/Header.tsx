@@ -97,8 +97,7 @@ const Header = () => {
               className={`transition-all duration-300 ${isMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'}`}
               style={{ transitionDelay: isMenuOpen ? `${navItems.length * 40}ms` : '0ms' }}
             >
-              <Button variant="outline" size="sm" className={`rounded-full w-fit gap-2 relative ${isHome ? 'border-cream-400 text-cream-400' : ''
-                }`}>
+              <Button variant="outline" size="sm" className="rounded-full w-fit gap-2 relative">
                 <ShoppingCart className="h-4 w-4" />
                 Cart
                 {cartCount > 0 && (
