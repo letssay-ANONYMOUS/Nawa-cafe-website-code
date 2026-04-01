@@ -164,38 +164,16 @@ const CheckoutPage = () => {
         itemCount: itemCount
       });
 
-      console.log('Opening Ziina payment:', data.url);
-      
-      // Try to open payment in a new tab, with safe cross-origin fallbacks
-      const openPayment = (url: string) => {
-        // Attempt 1: window.open from current frame
-        const w = window.open(url, '_blank', 'noopener,noreferrer');
-        if (w) return true;
-        
-        // Attempt 2: try top-level window.open (may throw in cross-origin iframe)
-        try {
-          if (window.top && window.top !== window) {
-            const w2 = window.top.open(url, '_blank', 'noopener,noreferrer');
-            if (w2) return true;
-            // Last resort: redirect the top frame
-            window.top.location.href = url;
-            return true;
-          }
-        } catch {
-          // Cross-origin access denied — fall through
-        }
-        
-        // Attempt 3: navigate current window directly
-        window.location.assign(url);
-        return true;
-      };
-      
-      openPayment(data.url);
+      // Store payment URL for the pending page, then navigate
+      sessionStorage.setItem('ziina_payment_url', data.url);
+
+      // Try opening Ziina in a new tab
+      window.open(data.url, '_blank', 'noopener,noreferrer');
+
       setLoading(false);
-      toast({
-        title: "Payment page opened",
-        description: "Complete your payment in the new tab. You'll be redirected back after payment.",
-      });
+
+      // Navigate to the pending page that polls for payment status
+      navigate(`/payment-pending?order_id=${data.orderId || 'unknown'}`);
 
     } catch (error) {
       console.error('Error creating payment:', error);
