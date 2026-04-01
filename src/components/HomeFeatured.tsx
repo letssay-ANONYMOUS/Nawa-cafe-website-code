@@ -20,7 +20,7 @@ const featured = [
   {
     title: 'Sweet Indulgence',
     description: 'Handcrafted desserts and fluffy pancakes made with the finest ingredients.',
-    image: '/menu-images/dessert-1.jpg',
+    image: '/menu-images/molten-nawa-cookie.png',
     targetSection: 'pastries-desserts',
   },
 ];

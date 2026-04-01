@@ -136,7 +136,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="sm:col-span-2">
             <div className="flex items-center space-x-2 mb-3 sm:mb-4">
-              <img src="/nawa-logo.png" alt="Nawa Cafe Logo" className="h-8 sm:h-10 w-auto object-contain brightness-0 invert" />
+              <img src="/nawa-logo.png" alt="Nawa Cafe Logo" className="h-8 sm:h-10 w-auto object-contain" />
               <span className="font-playfair text-xl sm:text-2xl font-bold">
                 NAWA CAFÉ
               </span>
