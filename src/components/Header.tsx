@@ -58,10 +58,7 @@ const Header = () => {
                 )}
               </Button>
             </Link>
-            <Button className={`px-6 py-2 rounded-full transition-all duration-300 transform hover:scale-105 ${isHome
-              ? 'bg-cream-400 hover:bg-cream-500 text-coffee-800'
-              : 'bg-coffee-600 hover:bg-coffee-700 text-white'
-              }`}>
+            <Button className="px-6 py-2 rounded-full transition-all duration-300 transform hover:scale-105 bg-coffee-600 hover:bg-coffee-700 text-white">
               Order Now
             </Button>
           </nav>
