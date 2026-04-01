@@ -97,6 +97,7 @@ const App = () => {
                 <Route path="/locations" element={<LocationsPage />} />
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
+                <Route path="/payment-pending" element={<PaymentPendingPage />} />
                 <Route path="/payment-success" element={<PaymentSuccessPage />} />
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin" element={<AdminDashboard />} />
