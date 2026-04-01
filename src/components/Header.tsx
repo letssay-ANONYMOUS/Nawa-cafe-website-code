@@ -49,8 +49,7 @@ const Header = () => {
               </Link>
             ))}
             <Link to="/cart">
-              <Button variant="outline" size="icon" className={`rounded-full relative ${isHome ? 'border-cream-400 text-cream-400 hover:bg-cream-400/20' : ''
-                }`}>
+              <Button variant="outline" size="icon" className="rounded-full relative">
                 <ShoppingCart className="h-5 w-5" />
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-coffee-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
