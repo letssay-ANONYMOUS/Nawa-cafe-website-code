@@ -344,8 +344,16 @@ const CheckoutPage = () => {
                             </div>
                           ))}
                         </div>
-                        <div className="border-t border-coffee-200 pt-4">
-                          <div className="flex justify-between text-lg font-semibold text-coffee-800">
+                        <div className="border-t border-coffee-200 pt-4 space-y-2">
+                          <div className="flex justify-between text-sm text-coffee-700">
+                            <span>Subtotal</span>
+                            <span>AED {subtotal.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm text-green-600 font-medium">
+                            <span>Discount (15%)</span>
+                            <span>-AED {discount.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-lg font-semibold text-coffee-800 border-t border-coffee-200 pt-2">
                             <span>Total</span>
                             <span>AED {total.toFixed(2)}</span>
                           </div>
