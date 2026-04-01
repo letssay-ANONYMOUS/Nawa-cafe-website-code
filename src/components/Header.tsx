@@ -68,9 +68,9 @@ const Header = () => {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden flex flex-col space-y-1 w-6 h-6"
           >
-            <span className={`w-full h-0.5 transition-all duration-300 ${isHome ? 'bg-cream-400' : 'bg-coffee-700'} ${isMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`}></span>
-            <span className={`w-full h-0.5 transition-all duration-300 ${isHome ? 'bg-cream-400' : 'bg-coffee-700'} ${isMenuOpen ? 'opacity-0' : ''}`}></span>
-            <span className={`w-full h-0.5 transition-all duration-300 ${isHome ? 'bg-cream-400' : 'bg-coffee-700'} ${isMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></span>
+            <span className={`w-full h-0.5 transition-all duration-300 bg-coffee-700 ${isMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`}></span>
+            <span className={`w-full h-0.5 transition-all duration-300 bg-coffee-700 ${isMenuOpen ? 'opacity-0' : ''}`}></span>
+            <span className={`w-full h-0.5 transition-all duration-300 bg-coffee-700 ${isMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></span>
           </button>
         </div>
 
