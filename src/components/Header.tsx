@@ -40,11 +40,7 @@ const Header = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`font-medium transition-colors duration-200 ${isHome
-                  ? isActive(item.path)
-                    ? 'text-cream-400 border-b-2 border-cream-400 pb-1'
-                    : 'text-cream-200 hover:text-cream-400'
-                  : isActive(item.path)
+                className={`font-medium transition-colors duration-200 ${isActive(item.path)
                     ? 'text-coffee-900 border-b-2 border-coffee-600 pb-1'
                     : 'text-coffee-700 hover:text-coffee-900'
                   }`}
