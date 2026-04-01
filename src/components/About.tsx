@@ -24,7 +24,8 @@ const About = () => {
     "Artisan Desserts & Croissants",
     "Authentic Italian dishes, Pizza, Pasta, Risotto",
     "Burgers and Fresh Salads",
-    "Chef-Inspired Daily Specials"
+    "Chef-Inspired Daily Specials",
+    "Authentic Spanish Dishes, Paella De Marisco"
   ];
 
   const renderStars = (rating: number) => {
