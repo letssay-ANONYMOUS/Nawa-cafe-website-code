@@ -1,4 +1,4 @@
-import { Coffee, Star, Save, LogOut, Loader2, MapPin, Phone, Mail } from 'lucide-react';
+import { Star, Save, LogOut, Loader2, MapPin, Phone, Mail } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { AdminPasswordModal } from './AdminPasswordModal';
 import { useAdmin } from '@/contexts/AdminContext';
@@ -136,7 +136,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="sm:col-span-2">
             <div className="flex items-center space-x-2 mb-3 sm:mb-4">
-              <Coffee className="h-6 w-6 sm:h-8 sm:w-8 text-cream-400" />
+              <img src="/nawa-logo.png" alt="Nawa Cafe Logo" className="h-8 sm:h-10 w-auto object-contain brightness-0 invert" />
               <span className="font-playfair text-xl sm:text-2xl font-bold">
                 NAWA CAFÉ
               </span>
@@ -243,8 +243,8 @@ const Footer = () => {
               <a href="tel:0506584176" className="flex items-center gap-2 hover:text-cream-100 transition-colors">
                 <Phone className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> 0506584176
               </a>
-              <a href="mailto:nawacafe22@gmail.com" className="flex items-center gap-2 hover:text-cream-100 transition-colors overflow-hidden">
-                <Mail className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> <span className="truncate">nawacafe22@gmail.com</span>
+              <a href="mailto:support@nawacafe.com" className="flex items-center gap-2 hover:text-cream-100 transition-colors overflow-hidden">
+                <Mail className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> <span className="truncate">support@nawacafe.com</span>
               </a>
             </div>
           </div>
