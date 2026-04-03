@@ -21,6 +21,8 @@ import { useKitchenAlert } from "@/hooks/useKitchenAlert";
 import { OrderTable } from "@/components/kitchen/OrderTable";
 import { KitchenSidebar, type KitchenView } from "@/components/kitchen/KitchenSidebar";
 import { SoundPicker } from "@/components/kitchen/SoundPicker";
+import { StockManager } from "@/components/kitchen/StockManager";
+import { SoundPicker } from "@/components/kitchen/SoundPicker";
 import type { Tables } from '@/integrations/supabase/types';
 
 type Order = Tables<'orders'>;
