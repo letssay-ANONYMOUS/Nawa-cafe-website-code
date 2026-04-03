@@ -116,6 +116,11 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
           <span className="text-3xl font-bold text-coffee-600">AED {product.price}</span>
           <span className="text-coffee-600">{product.volume}</span>
         </div>
+        {stock !== null && stock !== undefined && (
+          <div className={`mt-2 text-sm font-semibold ${stock === 0 ? 'text-red-600' : stock < 5 ? 'text-yellow-600' : 'text-green-600'}`}>
+            {stock === 0 ? '● Out of Stock' : `● ${stock} in stock`}
+          </div>
+        )}
       </CardContent>
       
       <CardFooter className="flex gap-2">

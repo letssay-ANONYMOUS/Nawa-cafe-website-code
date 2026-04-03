@@ -93,9 +93,18 @@ export function StockManager() {
         {products.map((product) => (
           <Card key={product.id} className="border">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium leading-tight">
-                {product.product_name}
-              </CardTitle>
+              <div className="flex items-center gap-3">
+                {PRODUCT_IMAGES[product.product_key] && (
+                  <img
+                    src={PRODUCT_IMAGES[product.product_key]}
+                    alt={product.product_name}
+                    className="w-12 h-12 rounded object-cover flex-shrink-0"
+                  />
+                )}
+                <CardTitle className="text-sm font-medium leading-tight">
+                  {product.product_name}
+                </CardTitle>
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between">
