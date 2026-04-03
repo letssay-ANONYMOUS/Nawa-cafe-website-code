@@ -1,4 +1,4 @@
-import { CreditCard, Clock, ChefHat } from "lucide-react";
+import { CreditCard, Clock, ChefHat, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Sidebar,
