@@ -38,6 +38,13 @@ const navItems = [
     color: "text-yellow-600",
     bgColor: "bg-yellow-50 dark:bg-yellow-950/30",
   },
+  {
+    id: "stock" as const,
+    title: "Store Stock",
+    icon: Package,
+    color: "text-blue-600",
+    bgColor: "bg-blue-50 dark:bg-blue-950/30",
+  },
 ];
 
 export function KitchenSidebar({
