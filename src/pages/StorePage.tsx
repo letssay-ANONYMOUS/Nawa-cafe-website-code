@@ -90,6 +90,23 @@ const StorePage = () => {
   ];
 
   const [products, setProducts] = useState(initialProducts);
+  const [stockMap, setStockMap] = useState<Record<number, number>>({});
+
+  useEffect(() => {
+    const loadStock = async () => {
+      const { data } = await supabase
+        .from('store_products')
+        .select('product_key, stock_quantity');
+      if (data) {
+        const map: Record<number, number> = {};
+        (data as unknown as { product_key: number; stock_quantity: number }[]).forEach(p => {
+          map[p.product_key] = p.stock_quantity;
+        });
+        setStockMap(map);
+      }
+    };
+    loadStock();
+  }, []);
 
   const handleAddNew = () => {
     setEditingCard(null);
