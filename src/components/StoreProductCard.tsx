@@ -76,6 +76,11 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
         <Badge className="absolute top-4 right-4 bg-coffee-600 text-white border-0">
           {product.badge}
         </Badge>
+        {stock !== null && stock !== undefined && (
+          <Badge className={`absolute bottom-4 right-4 border-0 ${stock === 0 ? 'bg-red-600 text-white' : stock < 5 ? 'bg-yellow-500 text-white' : 'bg-green-600 text-white'}`}>
+            {stock === 0 ? 'Out of Stock' : `${stock} in stock`}
+          </Badge>
+        )}
         {isAdmin && (
           <div className="absolute top-4 left-4 flex gap-2">
             <Button
