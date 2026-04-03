@@ -21,6 +21,7 @@ interface Product {
 
 interface StoreProductCardProps {
   product: Product;
+  stock?: number | null;
   onEdit?: () => void;
   onDelete?: () => void;
 }
