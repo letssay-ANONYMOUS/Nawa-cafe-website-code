@@ -57,7 +57,11 @@ export function KitchenSidebar({
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
-  const getCount = (id: KitchenView) => (id === "paid" ? paidCount : pendingCount);
+  const getCount = (id: KitchenView) => {
+    if (id === "paid") return paidCount;
+    if (id === "pending") return pendingCount;
+    return null;
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r">
