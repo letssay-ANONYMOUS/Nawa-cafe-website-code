@@ -21,11 +21,12 @@ interface Product {
 
 interface StoreProductCardProps {
   product: Product;
+  stock?: number | null;
   onEdit?: () => void;
   onDelete?: () => void;
 }
 
-const StoreProductCard = ({ product, onEdit, onDelete }: StoreProductCardProps) => {
+const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCardProps) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { isAdmin } = useAdmin();
@@ -75,6 +76,11 @@ const StoreProductCard = ({ product, onEdit, onDelete }: StoreProductCardProps) 
         <Badge className="absolute top-4 right-4 bg-coffee-600 text-white border-0">
           {product.badge}
         </Badge>
+        {stock !== null && stock !== undefined && (
+          <Badge className={`absolute bottom-4 right-4 border-0 ${stock === 0 ? 'bg-red-600 text-white' : stock < 5 ? 'bg-yellow-500 text-white' : 'bg-green-600 text-white'}`}>
+            {stock === 0 ? 'Out of Stock' : `${stock} in stock`}
+          </Badge>
+        )}
         {isAdmin && (
           <div className="absolute top-4 left-4 flex gap-2">
             <Button
@@ -121,9 +127,10 @@ const StoreProductCard = ({ product, onEdit, onDelete }: StoreProductCardProps) 
         <Button 
           className="flex-1 bg-coffee-600 hover:bg-coffee-700 text-white rounded-full"
           onClick={handleAddToCart}
+          disabled={stock === 0}
         >
           <ShoppingCart className="w-4 h-4 mr-2" />
-          Add to Cart
+          {stock === 0 ? 'Out of Stock' : 'Add to Cart'}
         </Button>
         <Button 
           variant="outline" 

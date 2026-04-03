@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { useAdmin } from '@/contexts/AdminContext';
 import { AdminCardModal } from '@/components/AdminCardModal';
 import { AdminDeleteConfirm } from '@/components/AdminDeleteConfirm';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const StorePage = () => {
 
@@ -89,6 +90,23 @@ const StorePage = () => {
   ];
 
   const [products, setProducts] = useState(initialProducts);
+  const [stockMap, setStockMap] = useState<Record<number, number>>({});
+
+  useEffect(() => {
+    const loadStock = async () => {
+      const { data } = await supabase
+        .from('store_products')
+        .select('product_key, stock_quantity');
+      if (data) {
+        const map: Record<number, number> = {};
+        (data as unknown as { product_key: number; stock_quantity: number }[]).forEach(p => {
+          map[p.product_key] = p.stock_quantity;
+        });
+        setStockMap(map);
+      }
+    };
+    loadStock();
+  }, []);
 
   const handleAddNew = () => {
     setEditingCard(null);
@@ -216,6 +234,7 @@ const StorePage = () => {
               <StoreProductCard 
                 key={product.id} 
                 product={product}
+                stock={stockMap[product.id] ?? null}
                 onEdit={() => handleEdit(product)}
                 onDelete={() => handleDelete(product)}
               />

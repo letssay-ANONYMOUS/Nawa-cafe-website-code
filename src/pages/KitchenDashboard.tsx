@@ -21,6 +21,7 @@ import { useKitchenAlert } from "@/hooks/useKitchenAlert";
 import { OrderTable } from "@/components/kitchen/OrderTable";
 import { KitchenSidebar, type KitchenView } from "@/components/kitchen/KitchenSidebar";
 import { SoundPicker } from "@/components/kitchen/SoundPicker";
+import { StockManager } from "@/components/kitchen/StockManager";
 import type { Tables } from '@/integrations/supabase/types';
 
 type Order = Tables<'orders'>;
@@ -501,7 +502,9 @@ const KitchenDashboard = () => {
           </header>
 
           <main className="flex-1 p-2 sm:p-4">
-            {isLoading ? (
+            {activeView === 'stock' ? (
+              <StockManager />
+            ) : isLoading ? (
               <div className="flex items-center justify-center h-64">
                 <RefreshCw className="w-8 h-8 animate-spin text-primary" />
               </div>
@@ -518,7 +521,7 @@ const KitchenDashboard = () => {
             ) : (
               <OrderTable
                 orders={currentOrders}
-                type={activeView}
+                type={activeView as "paid" | "pending"}
                 unacknowledged={unacknowledgedOrders}
                 onAcknowledge={handleAcknowledge}
               />

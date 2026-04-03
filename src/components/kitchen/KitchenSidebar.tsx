@@ -1,4 +1,4 @@
-import { CreditCard, Clock, ChefHat } from "lucide-react";
+import { CreditCard, Clock, ChefHat, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Sidebar,
@@ -13,7 +13,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-export type KitchenView = "paid" | "pending";
+export type KitchenView = "paid" | "pending" | "stock";
 
 interface KitchenSidebarProps {
   activeView: KitchenView;
@@ -38,6 +38,13 @@ const navItems = [
     color: "text-yellow-600",
     bgColor: "bg-yellow-50 dark:bg-yellow-950/30",
   },
+  {
+    id: "stock" as const,
+    title: "Store Stock",
+    icon: Package,
+    color: "text-blue-600",
+    bgColor: "bg-blue-50 dark:bg-blue-950/30",
+  },
 ];
 
 export function KitchenSidebar({
@@ -50,7 +57,11 @@ export function KitchenSidebar({
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
-  const getCount = (id: KitchenView) => (id === "paid" ? paidCount : pendingCount);
+  const getCount = (id: KitchenView) => {
+    if (id === "paid") return paidCount;
+    if (id === "pending") return pendingCount;
+    return null;
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r">
