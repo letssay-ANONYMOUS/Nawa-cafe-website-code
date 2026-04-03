@@ -14,6 +14,19 @@ const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const [stock, setStock] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    supabase
+      .from('store_products')
+      .select('stock_quantity')
+      .eq('product_key', Number(id))
+      .maybeSingle()
+      .then(({ data }) => {
+        setStock(data?.stock_quantity ?? null);
+      });
+  }, [id]);
 
   const products = [
     {
