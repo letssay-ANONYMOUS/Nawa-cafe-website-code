@@ -76,7 +76,7 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
         <Badge className="absolute top-4 right-4 bg-coffee-600 text-white border-0">
           {product.badge}
         </Badge>
-        {isAdmin && (
+        {isAdmin && onEdit && onDelete && (
           <div className="absolute top-4 left-4 flex gap-2">
             <Button
               size="icon"
