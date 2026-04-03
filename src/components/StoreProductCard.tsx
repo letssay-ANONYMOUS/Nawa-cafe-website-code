@@ -127,9 +127,10 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
         <Button 
           className="flex-1 bg-coffee-600 hover:bg-coffee-700 text-white rounded-full"
           onClick={handleAddToCart}
+          disabled={stock === 0}
         >
           <ShoppingCart className="w-4 h-4 mr-2" />
-          Add to Cart
+          {stock === 0 ? 'Out of Stock' : 'Add to Cart'}
         </Button>
         <Button 
           variant="outline" 
