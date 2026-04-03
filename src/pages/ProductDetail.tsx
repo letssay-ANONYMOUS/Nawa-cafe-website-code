@@ -192,9 +192,15 @@ const ProductDetail = () => {
                   {product.description}
                 </p>
                 
-                <div className="text-4xl font-bold text-coffee-600 mb-8">
+                <div className="text-4xl font-bold text-coffee-600 mb-4">
                   AED {product.price}
                 </div>
+                {stock !== null && (
+                  <div className={`text-lg font-semibold mb-8 ${stock === 0 ? 'text-red-600' : stock < 5 ? 'text-yellow-600' : 'text-green-600'}`}>
+                    {stock === 0 ? '● Out of Stock' : `● ${stock} in stock`}
+                  </div>
+                )}
+                {stock === null && <div className="mb-8" />}
               </div>
 
               <div className="space-y-4">
@@ -202,9 +208,10 @@ const ProductDetail = () => {
                   size="lg" 
                   className="w-full bg-coffee-600 hover:bg-coffee-700 text-white rounded-full text-lg py-6"
                   onClick={handleAddToCart}
+                  disabled={stock === 0}
                 >
                   <ShoppingCart className="w-5 h-5 mr-2" />
-                  Add to Cart
+                  {stock === 0 ? 'Out of Stock' : 'Add to Cart'}
                 </Button>
                 
                 <div className="border-t border-coffee-200 pt-6">
