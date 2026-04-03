@@ -234,6 +234,7 @@ const StorePage = () => {
               <StoreProductCard 
                 key={product.id} 
                 product={product}
+                stock={stockMap[product.id] ?? null}
                 onEdit={() => handleEdit(product)}
                 onDelete={() => handleDelete(product)}
               />

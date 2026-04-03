@@ -26,7 +26,7 @@ interface StoreProductCardProps {
   onDelete?: () => void;
 }
 
-const StoreProductCard = ({ product, onEdit, onDelete }: StoreProductCardProps) => {
+const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCardProps) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { isAdmin } = useAdmin();
