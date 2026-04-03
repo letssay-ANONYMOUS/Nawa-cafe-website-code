@@ -13,7 +13,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-export type KitchenView = "paid" | "pending";
+export type KitchenView = "paid" | "pending" | "stock";
 
 interface KitchenSidebarProps {
   activeView: KitchenView;
