@@ -6,6 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Minus, RefreshCw, Package } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+const PRODUCT_IMAGES: Record<number, string> = {
+  1: '/olive-oils/premium-evoo.jpg',
+  2: '/olive-oils/organic-estate.jpg',
+  3: '/olive-oils/garlic-herb.jpg',
+  4: '/olive-oils/early-harvest.jpg',
+  5: '/olive-oils/lemon-infused.jpg',
+  6: '/olive-oils/gift-set.jpg',
+};
+
 interface StoreProduct {
   id: string;
   product_key: number;
