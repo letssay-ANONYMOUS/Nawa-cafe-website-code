@@ -9,6 +9,7 @@ import { useAdmin } from '@/contexts/AdminContext';
 import { AdminCardModal } from '@/components/AdminCardModal';
 import { AdminDeleteConfirm } from '@/components/AdminDeleteConfirm';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const StorePage = () => {
 
