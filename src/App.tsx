@@ -35,6 +35,9 @@ import MenuItemDetail from "./pages/MenuItemDetail";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import ProductDetail from "./pages/ProductDetail";
 import MaintenanceGate from "./components/MaintenanceGate";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import RefundPolicyPage from "./pages/RefundPolicyPage";
+import TermsConditionsPage from "./pages/TermsConditionsPage";
 
 // ⚡ MAINTENANCE MODE — set to false to re-enable the site
 const MAINTENANCE_MODE = false;
@@ -104,6 +107,9 @@ const App = () => {
                 <Route path="/admin/kitchen" element={<KitchenAuthGate><KitchenDashboard /></KitchenAuthGate>} />
                 <Route path="/staff/login" element={<StaffLogin />} />
                 <Route path="/visitors" element={<AnalyticsDashboard />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                <Route path="/refund-policy" element={<RefundPolicyPage />} />
+                <Route path="/terms-conditions" element={<TermsConditionsPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
