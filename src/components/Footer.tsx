@@ -297,15 +297,15 @@ const Footer = () => {
             </div>
             
           <div className="flex flex-wrap gap-4 sm:space-x-6 justify-center sm:justify-end">
-              <button className="text-cream-300 hover:text-cream-100 transition-colors duration-200 text-xs sm:text-sm">
+              <Link to="/privacy-policy" className="text-cream-300 hover:text-cream-100 transition-colors duration-200 text-xs sm:text-sm">
                 Privacy Policy
-              </button>
-              <button className="text-cream-300 hover:text-cream-100 transition-colors duration-200 text-xs sm:text-sm">
-                Terms of Service
-              </button>
-              <button className="text-cream-300 hover:text-cream-100 transition-colors duration-200 text-xs sm:text-sm">
-                Cookie Policy
-              </button>
+              </Link>
+              <Link to="/terms-conditions" className="text-cream-300 hover:text-cream-100 transition-colors duration-200 text-xs sm:text-sm">
+                Terms &amp; Conditions
+              </Link>
+              <Link to="/refund-policy" className="text-cream-300 hover:text-cream-100 transition-colors duration-200 text-xs sm:text-sm">
+                Refund Policy
+              </Link>
             </div>
           </div>
         </div>
