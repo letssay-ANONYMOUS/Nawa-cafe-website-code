@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { Coffee } from "lucide-react";
 import {
   overlayVariants,
   overlayLogoVariants,
@@ -27,7 +26,7 @@ const PageLoaderOverlay = () => {
         exit="exit"
         className="relative flex flex-col items-center gap-4"
       >
-        <Coffee className="w-12 h-12 text-cream-400" />
+        <img src="/nawacafe-logo.png" alt="Nawa Café" className="w-20 h-20 object-contain" />
         <h1 className="font-playfair text-3xl md:text-4xl font-bold text-cream-100 tracking-wide">
           NAWA CAFÉ
         </h1>
