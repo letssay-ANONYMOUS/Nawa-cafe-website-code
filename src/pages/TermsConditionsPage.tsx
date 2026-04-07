@@ -1,12 +1,17 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 const TermsConditionsPage = () => {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-coffee-900 text-cream-100">
       <Header />
       <main className="container mx-auto px-5 sm:px-6 lg:px-8 py-16 sm:py-20 max-w-3xl">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-cream-300 hover:text-cream-100 transition-colors mb-6 text-sm">
+          <ArrowLeft className="w-4 h-4" /> Back
+        </button>
         <h1 className="font-playfair text-3xl sm:text-4xl font-bold mb-2">Terms &amp; Conditions</h1>
         <p className="text-cream-300 mb-8">Effective Date: April 7, 2026</p>
 
