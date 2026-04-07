@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { Coffee } from "lucide-react";
 import {
   overlayVariants,
   overlayLogoVariants,
