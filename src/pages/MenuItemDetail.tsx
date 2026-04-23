@@ -100,7 +100,7 @@ const MenuItemDetail = () => {
       scale: 1,
       transition: {
         x: { duration: 0.34, ease: [0.22, 1, 0.36, 1] },
-        opacity: { duration: 0.22, ease: 'easeOut' },
+        opacity: { duration: 0.22, ease: [0.22, 1, 0.36, 1] },
         scale: { duration: 0.34, ease: [0.22, 1, 0.36, 1] },
       },
     },
@@ -110,7 +110,7 @@ const MenuItemDetail = () => {
       scale: 0.98,
       transition: {
         x: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
-        opacity: { duration: 0.18, ease: 'easeInOut' },
+        opacity: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
         scale: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
       },
     }),
