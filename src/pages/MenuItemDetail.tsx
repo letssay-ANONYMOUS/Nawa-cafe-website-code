@@ -8,7 +8,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { useMenuItems, toMenuCardItem } from '@/hooks/useMenuItems';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, type Variants } from 'framer-motion';
 
 interface OptionChoice {
   name: string;
@@ -88,7 +88,7 @@ const MenuItemDetail = () => {
     navigate(`/menu/${targetCardNumber}`);
   };
 
-  const detailPageVariants = {
+  const detailPageVariants: Variants = {
     enter: (direction: number) => ({
       x: direction >= 0 ? 80 : -80,
       opacity: 0,
@@ -99,9 +99,8 @@ const MenuItemDetail = () => {
       opacity: 1,
       scale: 1,
       transition: {
-        x: { duration: 0.34, ease: [0.22, 1, 0.36, 1] },
-        opacity: { duration: 0.22, ease: [0.22, 1, 0.36, 1] },
-        scale: { duration: 0.34, ease: [0.22, 1, 0.36, 1] },
+        duration: 0.34,
+        ease: 'easeOut',
       },
     },
     exit: (direction: number) => ({
@@ -109,9 +108,8 @@ const MenuItemDetail = () => {
       opacity: 0,
       scale: 0.98,
       transition: {
-        x: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
-        opacity: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
-        scale: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
+        duration: 0.28,
+        ease: 'easeInOut',
       },
     }),
   };
