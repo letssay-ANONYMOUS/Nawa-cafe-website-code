@@ -15,13 +15,14 @@ export interface MenuSection {
   name: string;
   startId: number;
   endId: number;
+  cardIds?: number[];
 }
 
 export const menuSections: MenuSection[] = [
   { id: 'nawa-breakfast', name: 'NAWA Breakfast', startId: 1, endId: 19 },
   { id: 'coffee', name: 'COFFEE', startId: 24, endId: 42 },
   { id: 'cold-beverages', name: 'Cold Beverages', startId: 43, endId: 58 },
-  { id: 'manual-brew', name: 'MANUAL BREW', startId: 59, endId: 63 },
+  { id: 'manual-brew', name: 'MANUAL BREW', startId: 59, endId: 173, cardIds: [59, 60, 61, 62, 63, 170, 171, 172, 173] },
   { id: 'lunch-dinner', name: 'Lunch & Dinner', startId: 64, endId: 66 },
   { id: 'appetisers', name: 'Appetisers', startId: 67, endId: 73 },
   { id: 'pasta', name: 'Pasta', startId: 74, endId: 76 },
@@ -70,9 +71,9 @@ export function groupCardsBySections(cards: MenuCard[]): Record<string, MenuCard
   const grouped: Record<string, MenuCard[]> = {};
 
   for (const section of menuSections) {
-    grouped[section.id] = cards.filter(
-      (card) => card.id >= section.startId && card.id <= section.endId
-    );
+    grouped[section.id] = section.cardIds
+      ? cards.filter((card) => section.cardIds?.includes(card.id))
+      : cards.filter((card) => card.id >= section.startId && card.id <= section.endId);
   }
 
   return grouped;
