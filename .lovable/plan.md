@@ -1,39 +1,27 @@
 
+Update the initial loading overlay so the first brown screen shows the actual Nawa Café logo instead of the coffee emoji / broken placeholder.
 
-## Plan: Kitchen Stock Images, Store Card Security, and Product Detail Stock Display
+What to change:
+1. Fix the logo asset path in `src/components/PageLoaderOverlay.tsx`
+   - The component currently uses `/nawacafe-logo.png`
+   - The available public assets are `public/nawa-logo.png` and `public/nawa-logo.jpg`
+   - Change the image source to `/nawa-logo.png` so the real logo loads correctly
 
-### 1. Add product images to Kitchen StockManager cards
-Show the product image on each stock management card so staff can visually identify products. The images will use the same paths as the store page products (e.g., `/olive-oils/premium-evoo.jpg`). A small image thumbnail will be added to each card header.
+2. Keep the existing loading animation behavior
+   - Preserve the brown fullscreen background
+   - Keep the animated progress bar
+   - Keep the “NAWA CAFÉ” text unless you want logo-only branding later
 
-**File**: `src/components/kitchen/StockManager.tsx`
-- Add a mapping of `product_key` to image path
-- Display a thumbnail image in each stock card
+3. Verify the initial-load flow still works as intended
+   - `src/pages/Home.tsx` already mounts `PageLoaderOverlay`
+   - `src/hooks/useInitialLoad.ts` already controls the one-time-per-session behavior
+   - No logic changes are needed unless you want this loader on pages beyond the homepage
 
-### 2. Restrict edit/delete buttons to admin-only on store cards
-Currently the edit (pencil) and delete (X) buttons on store product cards are shown to any user with `isAdmin` from `AdminContext` — but since `isAdmin` is set true for both admin and staff roles, normal customers never see them. However, the `onEdit` and `onDelete` callbacks are always passed from `StorePage`. The real issue is that normal (non-admin) users should not see the edit/delete overlay buttons at all.
+Technical details:
+- File to edit: `src/components/PageLoaderOverlay.tsx`
+- Exact fix: replace `src="/nawacafe-logo.png"` with `src="/nawa-logo.png"`
+- No backend or database changes required
 
-**File**: `src/components/StoreProductCard.tsx`
-- Already gated by `isAdmin` check — this is correct since only authenticated admin/staff get `isAdmin = true`
-- Also hide the "Add New Card" button for non-admins (already done in StorePage)
-- No database RLS change needed — `store_products` already restricts INSERT/UPDATE to staff/admin roles, and there's no DELETE policy
-
-### 3. Move stock badge from card image to card detail section
-Remove the stock badge overlay from the product image area and place the stock info between the price and volume in the `CardContent` section.
-
-**File**: `src/components/StoreProductCard.tsx`
-- Remove the stock Badge from inside the image div (lines 79-83)
-- Add stock display between price and volume in CardContent
-
-### 4. Add stock info to ProductDetail page
-Fetch stock from database and display it between the price and the volume info on the product detail page.
-
-**File**: `src/pages/ProductDetail.tsx`
-- Fetch stock from `store_products` table using the product id
-- Display stock status between the price (`AED X`) and the "Add to Cart" button
-- Disable "Add to Cart" when stock is 0
-
-### Summary of files to change
-- `src/components/kitchen/StockManager.tsx` — add product images
-- `src/components/StoreProductCard.tsx` — move stock from image overlay to card details
-- `src/pages/ProductDetail.tsx` — add stock fetch and display
-
+Expected result:
+- On the very first brown loading screen, users will see the Nawa Café logo instead of the current incorrect icon/placeholder
+- The rest of the loading animation remains unchanged
