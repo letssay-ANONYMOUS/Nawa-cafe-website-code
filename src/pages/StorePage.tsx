@@ -10,6 +10,7 @@ import { AdminCardModal } from '@/components/AdminCardModal';
 import { AdminDeleteConfirm } from '@/components/AdminDeleteConfirm';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { STORE_CATEGORIES, STORE_PRODUCTS, type StoreCategory, type StoreProduct } from '@/data/storeCatalog';
 
 const StorePage = () => {
 
@@ -17,80 +18,13 @@ const StorePage = () => {
   const { toast } = useToast();
   const [showCardModal, setShowCardModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [editingCard, setEditingCard] = useState<any>(null);
-  const [deletingCard, setDeletingCard] = useState<any>(null);
-
-  const initialProducts = [
-    {
-      id: 1,
-      name: "Premium Extra Virgin Olive Oil",
-      description: "Cold-pressed from hand-picked olives in the Mediterranean. Rich, fruity flavor with peppery finish.",
-      price: 312,
-      image: "/olive-oils/premium-evoo.jpg",
-      rating: 5,
-      badge: "Bestseller",
-      volume: "500ml",
-      origin: "Italy"
-    },
-    {
-      id: 2,
-      name: "Organic Single Estate Olive Oil",
-      description: "Certified organic, single-origin olive oil with delicate notes of grass and artichoke.",
-      price: 349,
-      image: "/olive-oils/organic-estate.jpg",
-      rating: 5,
-      badge: "Organic",
-      volume: "750ml",
-      origin: "Spain"
-    },
-    {
-      id: 3,
-      name: "Infused Garlic & Herb Olive Oil",
-      description: "Premium olive oil infused with fresh garlic, rosemary, and Mediterranean herbs.",
-      price: 275,
-      image: "/olive-oils/garlic-herb.jpg",
-      rating: 4,
-      badge: "Limited",
-      volume: "250ml",
-      origin: "Greece"
-    },
-    {
-      id: 4,
-      name: "Early Harvest Olive Oil",
-      description: "Made from green, early-harvest olives for intense flavor and maximum health benefits.",
-      price: 386,
-      image: "/olive-oils/early-harvest.jpg",
-      rating: 5,
-      badge: "Premium",
-      volume: "500ml",
-      origin: "Italy"
-    },
-    {
-      id: 5,
-      name: "Lemon Infused Olive Oil",
-      description: "Bright and zesty olive oil infused with fresh Mediterranean lemons. Perfect for salads.",
-      price: 257,
-      image: "/olive-oils/lemon-infused.jpg",
-      rating: 5,
-      badge: "New",
-      volume: "250ml",
-      origin: "Greece"
-    },
-    {
-      id: 6,
-      name: "Gift Set Collection",
-      description: "Curated selection of three premium olive oils in an elegant gift box.",
-      price: 661,
-      image: "/olive-oils/gift-set.jpg",
-      rating: 5,
-      badge: "Gift Set",
-      volume: "3x250ml",
-      origin: "Mixed"
-    }
-  ];
-
-  const [products, setProducts] = useState(initialProducts);
+  const [editingCard, setEditingCard] = useState<StoreProduct | null>(null);
+  const [deletingCard, setDeletingCard] = useState<StoreProduct | null>(null);
+  const [activeCategory, setActiveCategory] = useState<StoreCategory>('oil');
+  const [products, setProducts] = useState<StoreProduct[]>(STORE_PRODUCTS);
   const [stockMap, setStockMap] = useState<Record<number, number>>({});
+  const activeCategoryConfig = STORE_CATEGORIES.find((category) => category.id === activeCategory) ?? STORE_CATEGORIES[0];
+  const filteredProducts = products.filter((product) => product.category === activeCategory);
 
   useEffect(() => {
     const loadStock = async () => {
@@ -113,12 +47,12 @@ const StorePage = () => {
     setShowCardModal(true);
   };
 
-  const handleEdit = (product: any) => {
+  const handleEdit = (product: StoreProduct) => {
     setEditingCard(product);
     setShowCardModal(true);
   };
 
-  const handleDelete = (product: any) => {
+  const handleDelete = (product: StoreProduct) => {
     setDeletingCard(product);
     setShowDeleteConfirm(true);
   };
@@ -141,7 +75,8 @@ const StorePage = () => {
         rating: 5, 
         badge: 'New', 
         volume: '500ml', 
-        origin: 'Mediterranean' 
+        origin: 'Mediterranean',
+        category: activeCategory,
       }]);
     }
   };
@@ -187,12 +122,23 @@ const StorePage = () => {
       <section className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-coffee-50 via-cream-50 to-background">
         <div className="container mx-auto text-center">
           <h1 className="font-playfair text-5xl md:text-6xl font-bold text-coffee-900 mb-6 animate-fade-in">
-            Artisan Olive Oil Collection
+            {activeCategoryConfig.heroTitle}
           </h1>
           <p className="text-xl text-coffee-700 max-w-3xl mx-auto mb-8 animate-fade-in">
-            Discover our carefully curated selection of premium olive oils, sourced directly from the finest estates 
-            in the Mediterranean. Each bottle tells a story of tradition, quality, and exceptional taste.
+            {activeCategoryConfig.heroDescription}
           </p>
+          <div className="flex flex-wrap justify-center gap-3 mb-10">
+            {STORE_CATEGORIES.map((category) => (
+              <Button
+                key={category.id}
+                variant={activeCategory === category.id ? 'default' : 'outline'}
+                onClick={() => setActiveCategory(category.id)}
+                className={activeCategory === category.id ? 'bg-coffee-600 hover:bg-coffee-700 text-white rounded-full px-6' : 'border-coffee-300 text-coffee-700 hover:bg-coffee-50 rounded-full px-6'}
+              >
+                {category.label}
+              </Button>
+            ))}
+          </div>
           
           {/* Feature Badges */}
           <div className="flex flex-wrap justify-center gap-8 mt-12">
@@ -216,7 +162,7 @@ const StorePage = () => {
         <div className="container mx-auto">
           <div className="flex justify-between items-center mb-12">
             <h2 className="font-playfair text-4xl font-bold text-coffee-900">
-              Our Premium Selection
+              {activeCategoryConfig.label} Selection
             </h2>
             {isAdmin && (
               <Button
@@ -230,7 +176,7 @@ const StorePage = () => {
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <StoreProductCard 
                 key={product.id} 
                 product={product}
@@ -249,7 +195,7 @@ const StorePage = () => {
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-coffee-100 via-cream-50 to-coffee-50">
         <div className="container mx-auto">
           <h2 className="font-playfair text-4xl font-bold text-coffee-900 text-center mb-12">
-            Why Choose Our Olive Oil?
+            Why Choose Our {activeCategoryConfig.label}?
           </h2>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -289,10 +235,10 @@ const StorePage = () => {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-coffee-800 via-coffee-700 to-coffee-800 text-white">
         <div className="container mx-auto text-center">
           <h2 className="font-playfair text-4xl md:text-5xl font-bold mb-6">
-            Experience Mediterranean Excellence
+            Discover More from Nawa
           </h2>
           <p className="text-xl text-cream-100 mb-8 max-w-2xl mx-auto">
-            Join thousands of satisfied customers who have elevated their cooking with our premium olive oils.
+            Explore curated pantry essentials and seasonal additions across oil, honey, and coffee beans.
           </p>
           <div className="flex justify-center">
             <Button 
