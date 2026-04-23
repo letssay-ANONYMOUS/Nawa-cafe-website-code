@@ -8,7 +8,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { useMenuItems, toMenuCardItem } from '@/hooks/useMenuItems';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AnimatePresence, motion, type Variants } from 'framer-motion';
+import { AnimatePresence, motion, type Variants, useReducedMotion } from 'framer-motion';
 
 interface OptionChoice {
   name: string;
@@ -28,6 +28,7 @@ const MenuItemDetail = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const shouldReduceMotion = useReducedMotion();
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});
   const [navDirection, setNavDirection] = useState(0);
   const previousCardRef = useRef<number | null>(null);
@@ -86,26 +87,73 @@ const MenuItemDetail = () => {
 
   const detailPageVariants: Variants = {
     enter: (direction: number) => ({
-      x: direction >= 0 ? 80 : -80,
+      x: shouldReduceMotion ? 0 : direction >= 0 ? 56 : -56,
       opacity: 0,
-      scale: 0.98,
+      scale: shouldReduceMotion ? 1 : 0.985,
+      filter: shouldReduceMotion ? 'blur(0px)' : 'blur(10px)',
     }),
     center: {
       x: 0,
       opacity: 1,
       scale: 1,
+      filter: 'blur(0px)',
       transition: {
-        duration: 0.34,
-        ease: 'easeOut',
+        ...(shouldReduceMotion
+          ? {
+              duration: 0.16,
+              ease: 'easeOut',
+            }
+          : {
+              x: {
+                type: 'spring',
+                stiffness: 220,
+                damping: 28,
+                mass: 0.9,
+              },
+              opacity: {
+                duration: 0.24,
+                ease: 'easeOut',
+              },
+              scale: {
+                duration: 0.32,
+                ease: 'easeOut',
+              },
+              filter: {
+                duration: 0.28,
+                ease: 'easeOut',
+              },
+            }),
       },
     },
     exit: (direction: number) => ({
-      x: direction >= 0 ? -80 : 80,
+      x: shouldReduceMotion ? 0 : direction >= 0 ? -40 : 40,
       opacity: 0,
-      scale: 0.98,
+      scale: shouldReduceMotion ? 1 : 0.992,
+      filter: shouldReduceMotion ? 'blur(0px)' : 'blur(8px)',
       transition: {
-        duration: 0.28,
-        ease: 'easeInOut',
+        ...(shouldReduceMotion
+          ? {
+              duration: 0.14,
+              ease: 'easeOut',
+            }
+          : {
+              x: {
+                duration: 0.22,
+                ease: 'easeInOut',
+              },
+              opacity: {
+                duration: 0.18,
+                ease: 'easeOut',
+              },
+              scale: {
+                duration: 0.2,
+                ease: 'easeOut',
+              },
+              filter: {
+                duration: 0.18,
+                ease: 'easeOut',
+              },
+            }),
       },
     }),
   };
