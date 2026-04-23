@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, ShoppingCart, Star } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
+import { getStoreProductById } from '@/data/storeCatalog';
 
 const ProductDetail = () => {
 
@@ -28,76 +29,7 @@ const ProductDetail = () => {
       });
   }, [id]);
 
-  const products = [
-    {
-      id: 1,
-      name: "Premium Extra Virgin Olive Oil",
-      description: "Cold-pressed from hand-picked olives in the Mediterranean. Rich, fruity flavor with peppery finish. Perfect for drizzling over salads, pasta, or bread. This premium oil is extracted using traditional methods that preserve all the natural antioxidants and polyphenols.",
-      price: 312,
-      image: "/olive-oils/premium-evoo.jpg",
-      rating: 5,
-      badge: "Bestseller",
-      volume: "500ml",
-      origin: "Italy"
-    },
-    {
-      id: 2,
-      name: "Organic Single Estate Olive Oil",
-      description: "Certified organic, single-origin olive oil with delicate notes of grass and artichoke. Sourced from a family-owned estate in Spain with over 200 years of olive cultivation tradition.",
-      price: 349,
-      image: "/olive-oils/organic-estate.jpg",
-      rating: 5,
-      badge: "Organic",
-      volume: "750ml",
-      origin: "Spain"
-    },
-    {
-      id: 3,
-      name: "Infused Garlic & Herb Olive Oil",
-      description: "Premium olive oil infused with fresh garlic, rosemary, and Mediterranean herbs. Perfect for marinades, roasting vegetables, or as a finishing oil for grilled meats.",
-      price: 275,
-      image: "/olive-oils/garlic-herb.jpg",
-      rating: 4,
-      badge: "Limited",
-      volume: "250ml",
-      origin: "Greece"
-    },
-    {
-      id: 4,
-      name: "Early Harvest Olive Oil",
-      description: "Made from green, early-harvest olives for intense flavor and maximum health benefits. Higher in polyphenols and antioxidants with a robust, peppery finish.",
-      price: 386,
-      image: "/olive-oils/early-harvest.jpg",
-      rating: 5,
-      badge: "Premium",
-      volume: "500ml",
-      origin: "Italy"
-    },
-    {
-      id: 5,
-      name: "Lemon Infused Olive Oil",
-      description: "Bright and zesty olive oil infused with fresh Mediterranean lemons. Perfect for salads, seafood, grilled chicken, and adding a citrus twist to your favorite dishes.",
-      price: 257,
-      image: "/olive-oils/lemon-infused.jpg",
-      rating: 5,
-      badge: "New",
-      volume: "250ml",
-      origin: "Greece"
-    },
-    {
-      id: 6,
-      name: "Gift Set Collection",
-      description: "Curated selection of three premium olive oils in an elegant gift box. Includes our Premium EVOO, Garlic & Herb, and Lemon Infused varieties. Perfect for the olive oil enthusiast.",
-      price: 661,
-      image: "/olive-oils/gift-set.jpg",
-      rating: 5,
-      badge: "Gift Set",
-      volume: "3x250ml",
-      origin: "Mixed"
-    }
-  ];
-
-  const product = products.find(p => p.id === Number(id));
+  const product = getStoreProductById(Number(id));
 
   const handleBack = useCallback(() => {
     if (window.history.length > 1) {
@@ -133,7 +65,7 @@ const ProductDetail = () => {
       description: product.description,
       price: product.price,
       image: product.image,
-      category: 'Olive Oil'
+      category: product.category
     });
     toast.success(`${product.name} added to cart!`);
   };
