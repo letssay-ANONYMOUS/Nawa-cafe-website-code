@@ -1,0 +1,1 @@
+DELETE FROM menu_items WHERE id = '94001aa1-4e07-4be8-9e21-e4921184e0b6';
