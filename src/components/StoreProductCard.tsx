@@ -6,21 +6,10 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
 import { useAdmin } from '@/contexts/AdminContext';
 import { toast } from 'sonner';
-
-interface Product {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  rating: number;
-  badge: string;
-  volume: string;
-  origin: string;
-}
+import type { StoreProduct } from '@/data/storeCatalog';
 
 interface StoreProductCardProps {
-  product: Product;
+  product: StoreProduct;
   stock?: number | null;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -39,7 +28,7 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
       description: product.description,
       price: product.price,
       image: product.image,
-      category: 'Olive Oil'
+      category: product.category
     });
     toast.success(`${product.name} added to cart!`);
   };
