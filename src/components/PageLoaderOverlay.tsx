@@ -4,6 +4,7 @@ import {
   overlayLogoVariants,
   progressVariants,
 } from "@/lib/motionVariants";
+import loaderLogo from "@/assets/nawa-loader-logo.jpeg";
 
 const PageLoaderOverlay = () => {
   return (
@@ -26,7 +27,7 @@ const PageLoaderOverlay = () => {
         exit="exit"
         className="relative flex flex-col items-center gap-4"
       >
-        <img src="/nawa-logo.png" alt="Nawa Café" loading="eager" fetchPriority="high" decoding="sync" className="w-20 h-20 object-contain" />
+        <img src={loaderLogo} alt="Nawa Café" loading="eager" fetchPriority="high" decoding="sync" className="w-20 h-20 object-contain" />
         <h1 className="font-playfair text-3xl md:text-4xl font-bold text-cream-100 tracking-wide">
           NAWA CAFÉ
         </h1>

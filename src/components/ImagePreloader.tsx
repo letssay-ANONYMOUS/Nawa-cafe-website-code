@@ -15,8 +15,7 @@ import homeBarista from '@/assets/home-barista.jpg';
 import aboutCoffee from '@/assets/about-coffee-1.jpg';
 import cateringMeal from '@/assets/catering-meal.jpg';
 import cateringCoffeeBar from '@/assets/catering-coffee-bar.jpg';
-
-const loaderLogo = '/nawa-logo.png';
+import loaderLogo from '@/assets/nawa-loader-logo.jpeg';
 
 const ALL_IMAGES = [
   cateringHero,
