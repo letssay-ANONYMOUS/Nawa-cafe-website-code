@@ -16,6 +16,8 @@ import aboutCoffee from '@/assets/about-coffee-1.jpg';
 import cateringMeal from '@/assets/catering-meal.jpg';
 import cateringCoffeeBar from '@/assets/catering-coffee-bar.jpg';
 
+const loaderLogo = '/nawa-logo.png';
+
 const ALL_IMAGES = [
   cateringHero,
   cateringCorporate,
@@ -31,6 +33,7 @@ const ALL_IMAGES = [
   aboutCoffee,
   cateringMeal,
   cateringCoffeeBar,
+  loaderLogo,
 ];
 
 /**
@@ -48,6 +51,7 @@ const ImagePreloader = () => {
         link.rel = 'preload';
         link.as = 'image';
         link.href = src;
+        link.fetchPriority = src === loaderLogo ? 'high' : 'auto';
         document.head.appendChild(link);
       }
 
