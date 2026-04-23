@@ -79,6 +79,9 @@ const Menu = () => {
     }
   };
 
+  const shouldKeepEmptySection = (sectionId: string) =>
+    sectionId === 'manual-brew' && !searchQuery.trim();
+
   if (isLoading) {
     return (
       <section className="min-h-screen bg-gradient-to-b from-[#4a5f4a]/30 via-[#5a6f5a]/20 to-[#4a5f4a]/30 flex items-center justify-center">
@@ -131,9 +134,9 @@ const Menu = () => {
           <div className="flex gap-3 sm:gap-4 min-w-max justify-start">
             {menuSections.map((section) => {
               const sectionCards = grouped[section.id] || [];
-              if (sectionCards.length === 0) return null;
+              if (sectionCards.length === 0 && !shouldKeepEmptySection(section.id)) return null;
               // Use the first card's image as section thumbnail
-              const thumbImage = sectionCards[0]?.image_url || '/placeholder.svg';
+              const thumbImage = sectionCards[0]?.image_url || '/menu-images/manual-brew-1.jpg';
               return (
                 <button
                   key={section.id}
@@ -165,7 +168,7 @@ const Menu = () => {
         {menuSections.map((section) => {
           const sectionCards = grouped[section.id] || [];
           const filtered = filterCards(sectionCards);
-          if (filtered.length === 0) return null;
+          if (filtered.length === 0 && !shouldKeepEmptySection(section.id)) return null;
 
           return (
             <div key={section.id} id={section.id} className="mb-16 scroll-mt-32">
@@ -178,66 +181,68 @@ const Menu = () => {
               </div>
 
               {/* Cards Grid */}
-              <motion.div
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-50px" }}
-                variants={{
-                  hidden: {},
-                  visible: { transition: { staggerChildren: 0.03 } }
-                }}
-                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-6"
-              >
-                {filtered.map((card) => {
-                  visibleCardOrder += 1;
-                  const cardOrder = visibleCardOrder;
+              {filtered.length > 0 && (
+                <motion.div
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, margin: "-50px" }}
+                  variants={{
+                    hidden: {},
+                    visible: { transition: { staggerChildren: 0.03 } }
+                  }}
+                  className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-6"
+                >
+                  {filtered.map((card) => {
+                    visibleCardOrder += 1;
+                    const cardOrder = visibleCardOrder;
 
-                  return (
-                    <motion.div
-                      key={card.id}
-                      variants={{
-                        hidden: { opacity: 0, y: -20 },
-                        visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } }
-                      }}
-                    >
-                      <Card
-                        data-card-index={card.id}
-                        data-card-order={cardOrder}
-                        onClick={() => navigate(`/menu/${card.id}`)}
-                        className="group overflow-hidden border-0 shadow-lg transition-all duration-300 bg-transparent cursor-pointer hover:shadow-[0_15px_30px_rgba(201,169,98,0.3)]"
+                    return (
+                      <motion.div
+                        key={card.id}
+                        variants={{
+                          hidden: { opacity: 0, y: -20 },
+                          visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } }
+                        }}
                       >
-                        {/* Image */}
-                        <div className="relative overflow-hidden aspect-[4/3]">
-                          <img
-                            src={card.image_url || '/placeholder.svg'}
-                            alt={card.name || ''}
-                            loading={cardOrder <= 8 ? "eager" : "lazy"}
-                            decoding="async"
-                            fetchPriority={cardOrder <= 4 ? "high" : "auto"}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          />
-                          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300" />
-                        </div>
-
-                        {/* Golden Footer */}
-                        <div className="bg-[#c9a962]/90 backdrop-blur-sm p-3 min-h-[5.5rem] flex flex-col justify-between transition-colors duration-300 group-hover:bg-[#c9a962]">
-                          <h3 className="font-semibold text-white text-xs sm:text-sm md:text-base leading-tight mb-1 line-clamp-2">
-                            {card.name}
-                          </h3>
-                          <div className="flex items-center justify-between">
-                            <p className="text-white/90 font-bold text-sm sm:text-base md:text-lg transition-all duration-300 group-hover:text-white">
-                              {card.price}
-                            </p>
-                            <p className="text-white/60 text-[10px] hidden md:block transition-all duration-300 group-hover:text-white/90">
-                              Click for details
-                            </p>
+                        <Card
+                          data-card-index={card.id}
+                          data-card-order={cardOrder}
+                          onClick={() => navigate(`/menu/${card.id}`)}
+                          className="group overflow-hidden border-0 shadow-lg transition-all duration-300 bg-transparent cursor-pointer hover:shadow-[0_15px_30px_rgba(201,169,98,0.3)]"
+                        >
+                          {/* Image */}
+                          <div className="relative overflow-hidden aspect-[4/3]">
+                            <img
+                              src={card.image_url || '/placeholder.svg'}
+                              alt={card.name || ''}
+                              loading={cardOrder <= 8 ? "eager" : "lazy"}
+                              decoding="async"
+                              fetchPriority={cardOrder <= 4 ? "high" : "auto"}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            />
+                            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300" />
                           </div>
-                        </div>
-                      </Card>
-                    </motion.div>
-                  );
-                })}
-              </motion.div>
+
+                          {/* Golden Footer */}
+                          <div className="bg-[#c9a962]/90 backdrop-blur-sm p-3 min-h-[5.5rem] flex flex-col justify-between transition-colors duration-300 group-hover:bg-[#c9a962]">
+                            <h3 className="font-semibold text-white text-xs sm:text-sm md:text-base leading-tight mb-1 line-clamp-2">
+                              {card.name}
+                            </h3>
+                            <div className="flex items-center justify-between">
+                              <p className="text-white/90 font-bold text-sm sm:text-base md:text-lg transition-all duration-300 group-hover:text-white">
+                                {card.price}
+                              </p>
+                              <p className="text-white/60 text-[10px] hidden md:block transition-all duration-300 group-hover:text-white/90">
+                                Click for details
+                              </p>
+                            </div>
+                          </div>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
+              )}
             </div>
           );
         })}
