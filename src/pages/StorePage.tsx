@@ -158,7 +158,7 @@ const StorePage = () => {
       </section>
 
       {/* Products Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8">
+      <section className="py-16 px-2 sm:px-6 lg:px-8">
         <div className="container mx-auto">
           <div className="flex justify-between items-center mb-12">
             <h2 className="font-playfair text-4xl font-bold text-coffee-900">
@@ -175,7 +175,7 @@ const StorePage = () => {
             )}
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-1.5 sm:gap-3 md:gap-6">
             {filteredProducts.map((product) => (
               <StoreProductCard 
                 key={product.id} 
