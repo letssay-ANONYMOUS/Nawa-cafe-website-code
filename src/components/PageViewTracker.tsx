@@ -96,7 +96,7 @@ const PageViewTracker = () => {
     const target = e.target as HTMLElement;
     const selector = target.tagName.toLowerCase() +
       (target.id ? `#${target.id}` : '') +
-      (target.className ? `.${target.className.split(' ').join('.')}` : '');
+      (typeof target.className === 'string' && target.className ? `.${target.className.split(' ').join('.')}` : '');
 
     const elementText = target.textContent?.slice(0, 50) || '';
     const visitorId = getVisitorId();
