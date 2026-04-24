@@ -158,9 +158,9 @@ const StorePage = () => {
       </section>
 
       {/* Products Section */}
-      <section className="py-16 px-1 sm:px-6 lg:px-8">
-        <div className="container mx-auto">
-          <div className="flex justify-between items-center mb-12">
+      <section className="py-16 px-0 sm:px-6 lg:px-8">
+        <div className="w-full sm:container sm:mx-auto">
+          <div className="flex justify-between items-center mb-12 px-4 sm:px-0">
             <h2 className="font-playfair text-4xl font-bold text-coffee-900">
               {activeCategoryConfig.label} Selection
             </h2>
