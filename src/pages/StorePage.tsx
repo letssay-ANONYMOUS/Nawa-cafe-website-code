@@ -158,7 +158,7 @@ const StorePage = () => {
       </section>
 
       {/* Products Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8">
+      <section className="py-16 px-2 sm:px-6 lg:px-8">
         <div className="container mx-auto">
           <div className="flex justify-between items-center mb-12">
             <h2 className="font-playfair text-4xl font-bold text-coffee-900">
