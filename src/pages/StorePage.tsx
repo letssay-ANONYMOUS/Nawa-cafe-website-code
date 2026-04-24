@@ -175,7 +175,7 @@ const StorePage = () => {
             )}
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-6">
             {filteredProducts.map((product) => (
               <StoreProductCard 
                 key={product.id} 
