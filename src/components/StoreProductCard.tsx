@@ -112,22 +112,14 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
         )}
       </CardContent>
       
-      <CardFooter className="flex gap-1.5 sm:gap-2 p-3 sm:p-6 pt-0 sm:pt-0 w-full">
+      <CardFooter className="p-3 sm:p-6 pt-0 sm:pt-0 w-full">
         <Button 
-          className="flex-1 min-w-0 bg-coffee-600 hover:bg-coffee-700 text-white rounded-full text-[11px] sm:text-sm h-8 sm:h-10 px-2 sm:px-4"
+          className="w-full bg-coffee-600 hover:bg-coffee-700 text-white rounded-full text-xs sm:text-sm h-9 sm:h-10 px-2 sm:px-4"
           onClick={handleAddToCart}
           disabled={stock === 0}
         >
-          <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2 shrink-0" />
-          <span className="hidden sm:inline">{stock === 0 ? 'Out of Stock' : 'Add to Cart'}</span>
-          <span className="sm:hidden ml-1 truncate">{stock === 0 ? 'Out' : 'Add'}</span>
-        </Button>
-        <Button 
-          variant="outline" 
-          className="flex-1 min-w-0 border-coffee-600 text-coffee-600 hover:bg-coffee-50 rounded-full text-[11px] sm:text-sm h-8 sm:h-10 px-2 sm:px-4"
-          onClick={handleViewDetails}
-        >
-          Details
+          <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 shrink-0" />
+          <span className="truncate">{stock === 0 ? 'Out of Stock' : 'Add to Cart'}</span>
         </Button>
       </CardFooter>
     </Card>
