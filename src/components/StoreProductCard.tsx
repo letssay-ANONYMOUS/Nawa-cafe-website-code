@@ -97,12 +97,12 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
           <span className="text-sm text-coffee-600">{product.origin}</span>
         </div>
         <CardTitle className="text-xs sm:text-xl text-coffee-900 font-playfair leading-tight line-clamp-2">{product.name}</CardTitle>
-        <CardDescription className="hidden sm:block text-coffee-700 line-clamp-2">{product.description}</CardDescription>
+        <CardDescription className="text-coffee-700 line-clamp-2 text-[11px] sm:text-sm leading-snug mt-1">{product.description}</CardDescription>
       </CardHeader>
       
       <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0 mt-auto">
-        <div className="flex items-center justify-between">
-          <span className="text-base sm:text-3xl font-bold text-coffee-600">AED {product.price}</span>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm sm:text-3xl font-bold text-coffee-600 whitespace-nowrap">AED {product.price}</span>
           <span className="hidden sm:inline text-coffee-600">{product.volume}</span>
         </div>
         {stock !== null && stock !== undefined && (
@@ -112,19 +112,19 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
         )}
       </CardContent>
       
-      <CardFooter className="flex gap-2 p-3 sm:p-6 pt-0 sm:pt-0">
+      <CardFooter className="flex gap-1.5 sm:gap-2 p-3 sm:p-6 pt-0 sm:pt-0 w-full">
         <Button 
-          className="flex-1 bg-coffee-600 hover:bg-coffee-700 text-white rounded-full text-xs sm:text-sm h-8 sm:h-10 px-2 sm:px-4"
+          className="flex-1 min-w-0 bg-coffee-600 hover:bg-coffee-700 text-white rounded-full text-[11px] sm:text-sm h-8 sm:h-10 px-2 sm:px-4"
           onClick={handleAddToCart}
           disabled={stock === 0}
         >
-          <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+          <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2 shrink-0" />
           <span className="hidden sm:inline">{stock === 0 ? 'Out of Stock' : 'Add to Cart'}</span>
-          <span className="sm:hidden ml-1">{stock === 0 ? 'Out' : 'Add'}</span>
+          <span className="sm:hidden ml-1 truncate">{stock === 0 ? 'Out' : 'Add'}</span>
         </Button>
         <Button 
           variant="outline" 
-          className="border-coffee-600 text-coffee-600 hover:bg-coffee-50 rounded-full text-xs sm:text-sm h-8 sm:h-10 px-2 sm:px-4"
+          className="flex-1 min-w-0 border-coffee-600 text-coffee-600 hover:bg-coffee-50 rounded-full text-[11px] sm:text-sm h-8 sm:h-10 px-2 sm:px-4"
           onClick={handleViewDetails}
         >
           Details
