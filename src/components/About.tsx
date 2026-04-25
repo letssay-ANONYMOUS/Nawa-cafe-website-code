@@ -209,7 +209,7 @@ const About = () => {
             {offerings.map((offering, index) => (
               <div
                 key={index}
-                className="flex items-center space-x-3 bg-white/10 backdrop-blur-sm rounded-xl p-3 md:p-4 text-white"
+                className="flex items-center space-x-3 backdrop-blur-sm rounded-xl p-3 md:p-4 text-white bg-[#6b3919]"
               >
                 <img src="/nawa-logo-brown.png" alt="Nawa Cafe" className="w-8 h-8 md:w-10 md:h-10 object-contain flex-shrink-0" />
                 <span className="text-sm md:text-base">{offering}</span>
