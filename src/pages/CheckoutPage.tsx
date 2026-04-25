@@ -125,16 +125,12 @@ const CheckoutPage = () => {
         itemCount: itemCount
       });
 
-      // Store payment URL for the pending page, then navigate
-      sessionStorage.setItem('ziina_payment_url', data.url);
-
-      // Try opening Ziina in a new tab
-      window.open(data.url, '_blank', 'noopener,noreferrer');
-
-      setLoading(false);
-
-      // Navigate to the pending page that polls for payment status
-      navigate(`/payment-pending?order_id=${data.orderId || 'unknown'}`);
+      // Redirect in the SAME tab to Ziina. This way:
+      // - Mobile users go straight to the gateway (no popup blockers, no awaiting screen)
+      // - The browser back button naturally returns to /checkout
+      // - Form data is restored from localStorage on return
+      // - Cart remains intact since we don't clear it until /payment-success
+      window.location.href = data.url;
 
     } catch (error) {
       console.error('Error creating payment:', error);
