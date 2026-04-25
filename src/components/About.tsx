@@ -62,7 +62,7 @@ const About = () => {
               transforming ordinary visits into extraordinary memories.
             </p>
             <div className="flex items-center space-x-3 md:space-x-4 p-4 md:p-6 bg-gradient-to-r from-coffee-700 to-coffee-600 rounded-2xl shadow-xl">
-              <Coffee className="w-8 h-8 md:w-10 md:h-10 text-cream-100" />
+              <img src="/nawa-logo-brown.png" alt="Nawa Cafe" className="w-12 h-12 md:w-16 md:h-16 object-contain flex-shrink-0" />
               <div>
                 <p className="text-white font-semibold text-base md:text-lg">
                   Crafted with passion, served with love
@@ -211,7 +211,7 @@ const About = () => {
                 key={index}
                 className="flex items-center space-x-3 bg-white/10 backdrop-blur-sm rounded-xl p-3 md:p-4 text-white"
               >
-                <Coffee className="w-5 h-5 md:w-6 md:h-6 text-cream-300 flex-shrink-0" />
+                <img src="/nawa-logo-brown.png" alt="Nawa Cafe" className="w-8 h-8 md:w-10 md:h-10 object-contain flex-shrink-0" />
                 <span className="text-sm md:text-base">{offering}</span>
               </div>
             ))}
