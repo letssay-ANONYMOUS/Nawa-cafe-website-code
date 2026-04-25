@@ -11,7 +11,7 @@ const Contact = () => {
     },
     {
       title: "Call Us",
-      details: ["037 800 030", "050 658 4176", "Sat–Thu: 7 AM–12 AM | Fri: 1 PM–12 AM"],
+      details: ["037 800 030", "050 658 4176", "Sun–Thu: 6:30 AM–12 AM | Fri–Sat: 7 AM–1 AM"],
       icon: Phone
     },
     {
@@ -62,12 +62,12 @@ const Contact = () => {
                 </h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Saturday – Thursday</span>
-                    <span className="font-semibold text-card-foreground">7:00 AM - 12:00 AM</span>
+                    <span className="text-muted-foreground">Sunday – Thursday</span>
+                    <span className="font-semibold text-card-foreground">6:30 AM - 12:00 AM</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Friday</span>
-                    <span className="font-semibold text-card-foreground">1:00 PM - 12:00 AM</span>
+                    <span className="text-muted-foreground">Friday – Saturday</span>
+                    <span className="font-semibold text-card-foreground">7:00 AM - 1:00 AM</span>
                   </div>
                 </div>
               </CardContent>

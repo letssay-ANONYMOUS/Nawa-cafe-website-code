@@ -6,7 +6,7 @@ const stats = [
   { value: '50+', label: 'Menu Items' },
   { value: '4.7★', label: 'Google Rating' },
   { value: '2021', label: 'Est. Year' },
-  { value: '2', label: 'Locations' },
+  { value: '1', label: 'Location' },
 ];
 
 const HomeExperience = () => {
