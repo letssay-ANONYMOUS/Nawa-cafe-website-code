@@ -131,8 +131,12 @@ serve(async (req) => {
       validatedItems.push({ ...item, price: dbPrice }); // Use DB price
     }
 
-    const amount = Math.round(serverTotal * 100) / 100; // Round to 2 decimals
-    console.log("Server-validated total:", amount);
+    // Apply permanent 15% discount (matches frontend pricing policy)
+    const DISCOUNT_RATE = 0.15;
+    const subtotalAmount = Math.round(serverTotal * 100) / 100;
+    const discountedTotal = serverTotal * (1 - DISCOUNT_RATE);
+    const amount = Math.round(discountedTotal * 100) / 100; // Round to 2 decimals
+    console.log("Server-validated subtotal:", subtotalAmount, "discounted total:", amount);
 
     // Get Ziina API token
     const ziinaToken = Deno.env.get("ZIINA_API_TOKEN") || Deno.env.get("ZIINA_API_KEY");
@@ -170,7 +174,7 @@ serve(async (req) => {
     
     try {
       // Use server-validated prices
-      const subtotal = amount;
+      const subtotal = subtotalAmount;
 
       // Insert order into database (without payment reference yet)
       const { data: insertedOrder, error: orderError } = await supabase
