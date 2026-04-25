@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { useState, useEffect } from 'react';
 import { useMenuCards, menuSections, groupCardsBySections, type MenuCard } from '@/hooks/useMenuCards';
 import { Card } from '@/components/ui/card';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const Menu = () => {
@@ -11,6 +11,33 @@ const Menu = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const { data: menuCards, isLoading, error } = useMenuCards();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Scroll to a specific card when ?card=ID is present in the URL
+  useEffect(() => {
+    if (isLoading || !menuCards) return;
+    const params = new URLSearchParams(location.search);
+    const cardId = params.get('card');
+    if (!cardId) return;
+
+    let attempts = 0;
+    const tryScroll = () => {
+      const el = document.querySelector<HTMLElement>(`[data-card-index="${cardId}"]`);
+      if (el) {
+        const offset = 120;
+        const pos = el.getBoundingClientRect().top + window.pageYOffset - offset;
+        window.scrollTo({ top: pos, behavior: 'smooth' });
+        el.classList.add('ring-4', 'ring-[#c9a962]', 'ring-offset-2', 'transition-all');
+        setTimeout(() => {
+          el.classList.remove('ring-4', 'ring-[#c9a962]', 'ring-offset-2');
+        }, 2500);
+      } else if (attempts < 10) {
+        attempts++;
+        setTimeout(tryScroll, 150);
+      }
+    };
+    setTimeout(tryScroll, 200);
+  }, [isLoading, menuCards, location.search]);
 
   // Show scroll-to-top button once user scrolls past the 10th card
   useEffect(() => {

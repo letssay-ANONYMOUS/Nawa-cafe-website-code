@@ -9,19 +9,19 @@ const featured = [
     title: 'Nawa Signature Latte',
     description: 'Our signature latte with golden caramel art, served in handcrafted ceramic.',
     image: '/menu-images/nawa-signature-latte.png',
-    targetSection: 'coffee',
+    targetCard: 38,
   },
   {
     title: 'Artisan Breakfast',
     description: 'Start your morning with our signature avocado toast, eggs, and fresh pastries.',
     image: '/menu-images/card-5-avocado-toast.jpg',
-    targetSection: 'nawa-breakfast',
+    targetCard: 11,
   },
   {
     title: 'Sweet Indulgence',
     description: 'Handcrafted desserts and fluffy pancakes made with the finest ingredients.',
     image: '/menu-images/molten-nawa-cookie.png',
-    targetSection: 'pastries-desserts',
+    targetCard: 112,
   },
 ];
 
@@ -73,7 +73,7 @@ const HomeFeatured = () => {
                 className="rounded-2xl flex-shrink-0 w-[70vw] sm:w-auto snap-center transition-all duration-300 hover:shadow-[0_15px_30px_rgba(201,169,98,0.3)]"
               >
                 <Link
-                  to={`/menu#${item.targetSection}`}
+                  to={`/menu?card=${item.targetCard}`}
                   className="group relative block aspect-[3/4] overflow-hidden rounded-2xl"
                 >
                   <motion.div
