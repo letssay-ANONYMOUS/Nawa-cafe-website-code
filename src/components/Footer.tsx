@@ -132,16 +132,16 @@ const Footer = () => {
     <>
     <footer className="text-white py-10 sm:py-12 bg-[#693c1b]">
       <div className="container mx-auto px-5 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-8 sm:gap-8 text-center sm:text-left">
           {/* Brand */}
           <div className="sm:col-span-2">
-            <div className="flex items-center space-x-2 mb-3 sm:mb-4">
+            <div className="flex items-center justify-center sm:justify-start space-x-2 mb-3 sm:mb-4">
               <img src="/nawa-logo-brown.png" alt="Nawa Cafe Logo" className="h-14 sm:h-20 w-auto object-contain" />
               <span className="font-playfair text-xl sm:text-2xl font-bold">
                 NAWA CAFÉ
               </span>
             </div>
-            <p className="text-cream-200 text-sm sm:text-base leading-relaxed mb-3 sm:mb-4">
+            <p className="text-cream-200 text-sm sm:text-base leading-relaxed mb-3 sm:mb-4 max-w-sm mx-auto sm:mx-0">
               An immersive coffee experience where artistry meets cuisine. Experience gourmet coffee, 
               authentic dishes, and unforgettable moments in Al Ain.
             </p>
@@ -149,14 +149,14 @@ const Footer = () => {
               href="https://www.google.com/maps/place/NAWA+Cafe/@24.2454332,55.7114633,17z/data=!3m1!4b1!4m6!3m5!1s0x3e8ab391028950b1:0xe99373a583558a82!8m2!3d24.2454332!4d55.7140382!16s%2Fg%2F11rr27q630"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center space-x-1 hover:opacity-80 transition-opacity mb-4"
+              className="inline-flex items-center space-x-1 hover:opacity-80 transition-opacity mb-4"
             >
               {Array.from({ length: 5 }, (_, index) => (
                 <Star key={index} className={`w-4 h-4 ${index < 4 ? 'text-amber-400 fill-current' : 'text-amber-400 fill-current opacity-70'}`} />
               ))}
-              <span className="ml-2 text-cream-200">4.7/5 Customer Rating</span>
+              <span className="ml-2 text-cream-200 text-sm">4.7/5 Customer Rating</span>
             </a>
-            <div className="flex space-x-4">
+            <div className="flex space-x-4 justify-center sm:justify-start">
               <a 
                 href="https://www.facebook.com/people/NAWA-Speciality-Coffee/100090559457646/?mibextid=LQQJ4d" 
                 target="_blank" 
