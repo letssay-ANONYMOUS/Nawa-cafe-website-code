@@ -207,7 +207,7 @@ const Footer = () => {
           {/* Quick Links */}
           <div>
             <h3 className="font-playfair text-xl font-semibold mb-4">Quick Links</h3>
-            <ul className="space-y-2">
+            <ul className="space-y-2 inline-block text-left sm:block">
               <li>
                 <Link to="/menu" className="text-cream-200 hover:text-cream-100 transition-colors duration-200 block">
                   Our Menu
