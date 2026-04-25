@@ -79,8 +79,8 @@ const LocationsPage = () => {
                 <CardContent className="p-8 text-center">
                   <Clock className="w-10 h-10 text-coffee-500 mx-auto mb-4" />
                   <h3 className="font-cinzel text-lg font-semibold text-card-foreground mb-3">Hours</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">Sat – Thu: 7 AM – 12 AM</p>
-                  <p className="text-sm text-muted-foreground leading-relaxed">Friday: 1 PM – 12 AM</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">Sun – Thu: 6:30 AM – 12 AM</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">Fri – Sat: 7 AM – 1 AM</p>
                 </CardContent>
               </Card>
             </div>

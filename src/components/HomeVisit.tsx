@@ -35,8 +35,8 @@ const HomeVisit = () => {
             <Clock className="w-8 h-8 sm:w-10 sm:h-10 text-coffee-500 mx-auto mb-3 sm:mb-4" />
             <h3 className="font-cinzel text-sm sm:text-lg font-semibold text-card-foreground mb-2">Hours</h3>
             <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed">
-              Sat – Thu: 7 AM – 12 AM<br />
-              Friday: 1 PM – 12 AM
+              Sun – Thu: 6:30 AM – 12 AM<br />
+              Fri – Sat: 7 AM – 1 AM
             </p>
           </div>
 
