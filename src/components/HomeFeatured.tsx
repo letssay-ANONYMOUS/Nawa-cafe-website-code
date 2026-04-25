@@ -58,7 +58,7 @@ const HomeFeatured = () => {
           viewport={{ once: true, amount: 0.2 }}
           variants={{
             hidden: {},
-            visible: { transition: { staggerChildren: 0.15 } }
+            visible: { transition: { staggerChildren: 0.3 } }
           }}
           className="sm:grid sm:grid-cols-3 sm:gap-8 mb-20"
         >
@@ -67,8 +67,8 @@ const HomeFeatured = () => {
               <motion.div
                 key={item.title}
                 variants={{
-                  hidden: { opacity: 0, y: 30 },
-                  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } }
+                  hidden: { clipPath: "inset(0% 0% 100% 0%)" },
+                  visible: { clipPath: "inset(0% 0% 0% 0%)", transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } }
                 }}
                 className="rounded-2xl flex-shrink-0 w-[70vw] sm:w-auto snap-center transition-all duration-300 hover:shadow-[0_15px_30px_rgba(201,169,98,0.3)]"
               >
@@ -76,14 +76,28 @@ const HomeFeatured = () => {
                   to={`/menu?card=${item.targetCard}`}
                   className="group relative block aspect-[3/4] overflow-hidden rounded-2xl"
                 >
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    loading="lazy"
-                  />
+                  <motion.div
+                    variants={{
+                      hidden: { scale: 1.2 },
+                      visible: { scale: 1, transition: { duration: 1.2, ease: "easeOut" } }
+                    }}
+                    className="w-full h-full"
+                  >
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      loading="lazy"
+                    />
+                  </motion.div>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                  <motion.div
+                    variants={{
+                      hidden: { opacity: 0, y: 10 },
+                      visible: { opacity: 1, y: 0, transition: { delay: 0.3, duration: 0.5 } }
+                    }}
+                    className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 translate-y-2 group-hover:translate-y-0 transition-transform duration-500"
+                  >
                     <h3 className="font-cinzel text-lg sm:text-2xl font-semibold text-white mb-1 sm:mb-2">
                       {item.title}
                     </h3>
@@ -93,7 +107,7 @@ const HomeFeatured = () => {
                     <div className="flex items-center gap-2 mt-2 sm:mt-3 text-cream-400 text-xs sm:text-sm font-medium sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-500">
                       Explore <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 transition-transform duration-300 group-hover:translate-x-1" />
                     </div>
-                  </div>
+                  </motion.div>
                 </Link>
               </motion.div>
             ))}
