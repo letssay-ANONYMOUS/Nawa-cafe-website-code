@@ -138,12 +138,10 @@ const ProductDetail = () => {
               <div className="space-y-4">
                 <Button 
                   size="lg" 
-                  className="w-full bg-coffee-600 hover:bg-coffee-700 text-white rounded-full text-lg py-6"
-                  onClick={handleAddToCart}
-                  disabled={stock === 0}
+                  className="w-full bg-coffee-600/60 text-white rounded-full text-lg py-6 cursor-not-allowed"
+                  disabled
                 >
-                  <ShoppingCart className="w-5 h-5 mr-2" />
-                  {stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                  Coming Soon
                 </Button>
                 
                 <div className="border-t border-coffee-200 pt-6">
