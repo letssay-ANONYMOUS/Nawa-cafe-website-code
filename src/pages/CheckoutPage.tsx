@@ -15,6 +15,24 @@ import { getVisitorId } from '@/hooks/useVisitorId';
 import { useAnalytics } from '@/hooks/useAnalytics';
 
 const FIXED_BRANCH = 'Stadhazza Branch';
+const CHECKOUT_FORM_KEY = 'nawa_checkout_form';
+
+const loadStoredForm = () => {
+  try {
+    const stored = localStorage.getItem(CHECKOUT_FORM_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return {
+        name: parsed.name || '',
+        phone: parsed.phone || '',
+        notes: parsed.notes || '',
+      };
+    }
+  } catch (e) {
+    console.error('Failed to load checkout form:', e);
+  }
+  return { name: '', phone: '', notes: '' };
+};
 
 const CheckoutPage = () => {
   const { toast } = useToast();
@@ -22,11 +40,16 @@ const CheckoutPage = () => {
   const navigate = useNavigate();
   const { trackCheckoutStart, trackCheckoutComplete } = useAnalytics();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    notes: '',
-  });
+  const [formData, setFormData] = useState(loadStoredForm);
+
+  // Persist form data on every change
+  useEffect(() => {
+    try {
+      localStorage.setItem(CHECKOUT_FORM_KEY, JSON.stringify(formData));
+    } catch (e) {
+      console.error('Failed to save checkout form:', e);
+    }
+  }, [formData]);
 
   const subtotal = getCartTotal();
   const discount = subtotal * 0.15;
@@ -102,16 +125,12 @@ const CheckoutPage = () => {
         itemCount: itemCount
       });
 
-      // Store payment URL for the pending page, then navigate
-      sessionStorage.setItem('ziina_payment_url', data.url);
-
-      // Try opening Ziina in a new tab
-      window.open(data.url, '_blank', 'noopener,noreferrer');
-
-      setLoading(false);
-
-      // Navigate to the pending page that polls for payment status
-      navigate(`/payment-pending?order_id=${data.orderId || 'unknown'}`);
+      // Redirect in the SAME tab to Ziina. This way:
+      // - Mobile users go straight to the gateway (no popup blockers, no awaiting screen)
+      // - The browser back button naturally returns to /checkout
+      // - Form data is restored from localStorage on return
+      // - Cart remains intact since we don't clear it until /payment-success
+      window.location.href = data.url;
 
     } catch (error) {
       console.error('Error creating payment:', error);
