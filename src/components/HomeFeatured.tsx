@@ -9,7 +9,7 @@ const featured = [
     title: 'Nawa Signature Latte',
     description: 'Our signature latte with golden caramel art, served in handcrafted ceramic.',
     image: '/menu-images/nawa-signature-latte.png',
-    targetCard: 38,
+    targetCard: 39,
   },
   {
     title: 'Artisan Breakfast',
