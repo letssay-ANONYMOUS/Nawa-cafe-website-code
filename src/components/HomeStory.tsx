@@ -18,7 +18,7 @@ const HomeStory = () => {
             </div>
             {/* Floating accent card */}
             <div className="absolute -bottom-4 -right-4 sm:-bottom-6 sm:-right-6 bg-cream-400 text-coffee-800 rounded-2xl p-3 sm:p-6 shadow-xl">
-              <p className="font-cinzel text-xl sm:text-4xl font-bold">10+</p>
+              <p className="font-cinzel text-xl sm:text-4xl font-bold">4+</p>
               <p className="text-[10px] sm:text-sm font-medium">Years of Craft</p>
             </div>
           </div>
