@@ -61,7 +61,7 @@ const About = () => {
               authentic pasta, risotto, burgers, and desserts. We believe in curating moments of joy and connection, 
               transforming ordinary visits into extraordinary memories.
             </p>
-            <div className="flex items-center space-x-3 md:space-x-4 p-4 md:p-6 bg-gradient-to-r from-coffee-700 to-coffee-600 rounded-2xl shadow-xl">
+            <div className="flex items-center space-x-3 md:space-x-4 p-4 md:p-6 bg-[#6b3919] rounded-2xl shadow-xl">
               <img src="/nawa-logo-brown.png" alt="Nawa Cafe" className="w-12 h-12 md:w-16 md:h-16 object-contain flex-shrink-0" />
               <div>
                 <p className="text-white font-semibold text-base md:text-lg">
