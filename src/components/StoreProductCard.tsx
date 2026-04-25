@@ -50,7 +50,8 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
 
   return (
     <Card 
-      className="border-coffee-200 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden group flex flex-col relative"
+      className="border-coffee-200 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden group flex flex-col relative cursor-pointer"
+      onClick={() => navigate(`/store/${product.id}`)}
     >
       <div className="relative overflow-hidden bg-gradient-to-br from-coffee-50 to-cream-100 aspect-[4/3] sm:h-64 sm:aspect-auto">
         <img 
