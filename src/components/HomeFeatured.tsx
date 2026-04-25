@@ -107,7 +107,7 @@ const HomeFeatured = () => {
                     <div className="flex items-center gap-2 mt-2 sm:mt-3 text-cream-400 text-xs sm:text-sm font-medium sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-500">
                       Explore <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 transition-transform duration-300 group-hover:translate-x-1" />
                     </div>
-                  </div>
+                  </motion.div>
                 </Link>
               </motion.div>
             ))}
