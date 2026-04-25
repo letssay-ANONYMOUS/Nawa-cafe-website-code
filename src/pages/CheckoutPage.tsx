@@ -6,21 +6,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Lock, MapPin, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { Lock, MapPin } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { getVisitorId } from '@/hooks/useVisitorId';
 import { useAnalytics } from '@/hooks/useAnalytics';
 
-type LocationStatus = 'pending' | 'acquired' | 'denied';
-
-const BRANCHES = [
-  { value: 'Stadhazza Branch', label: 'Stadhazza Branch' },
-  { value: 'Municipality Branch', label: 'Municipality Branch' },
-];
+const FIXED_BRANCH = 'Stadhazza Branch';
 
 const CheckoutPage = () => {
   const { toast } = useToast();
@@ -28,10 +22,6 @@ const CheckoutPage = () => {
   const navigate = useNavigate();
   const { trackCheckoutStart, trackCheckoutComplete } = useAnalytics();
   const [loading, setLoading] = useState(false);
-  const [customerCoords, setCustomerCoords] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [locationStatus, setLocationStatus] = useState<LocationStatus>('pending');
-  const [detectedBranch, setDetectedBranch] = useState<string | null>(null);
-  const [selectedBranch, setSelectedBranch] = useState<string>('');
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -50,48 +40,6 @@ const CheckoutPage = () => {
     }
   }, []);
 
-  // Haversine to detect nearest branch client-side for UI feedback
-  const detectBranch = (lat: number, lon: number) => {
-    const branches = [
-      { name: 'Stadhazza Branch', lat: 24.2167, lon: 55.7708 },
-      { name: 'Municipality Branch', lat: 24.2075, lon: 55.7447 },
-    ];
-    let nearest = branches[0];
-    let minDist = Infinity;
-    for (const b of branches) {
-      const R = 6371;
-      const dLat = (b.lat - lat) * Math.PI / 180;
-      const dLon = (b.lon - lon) * Math.PI / 180;
-      const a = Math.sin(dLat / 2) ** 2 +
-        Math.cos(lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) *
-        Math.sin(dLon / 2) ** 2;
-      const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      if (d < minDist) { minDist = d; nearest = b; }
-    }
-    return nearest.name;
-  };
-
-  // Request browser geolocation for branch detection
-  useEffect(() => {
-    if (!('geolocation' in navigator)) {
-      setLocationStatus('denied');
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setCustomerCoords({ latitude, longitude });
-        setDetectedBranch(detectBranch(latitude, longitude));
-        setLocationStatus('acquired');
-        console.log('Customer location acquired:', latitude, longitude);
-      },
-      (err) => {
-        console.log('Geolocation denied or unavailable:', err.message);
-        setLocationStatus('denied');
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -110,16 +58,6 @@ const CheckoutPage = () => {
       return;
     }
 
-    // Require branch selection if GPS wasn't available
-    if (!customerCoords && !selectedBranch) {
-      toast({
-        title: "Branch Required",
-        description: "Please select which branch you're ordering from.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     setLoading(true);
 
     try {
@@ -128,9 +66,9 @@ const CheckoutPage = () => {
           customerName: formData.name,
           phoneNumber: formData.phone,
           visitorId: getVisitorId(),
-          latitude: customerCoords?.latitude ?? null,
-          longitude: customerCoords?.longitude ?? null,
-          selectedBranch: !customerCoords ? selectedBranch : null,
+          latitude: null,
+          longitude: null,
+          selectedBranch: FIXED_BRANCH,
           orderItems: cartItems.map(item => ({
             name: item.name,
             quantity: item.quantity,
@@ -216,45 +154,13 @@ const CheckoutPage = () => {
                       <span className="text-sm text-coffee-600">Secure payment powered by Ziina</span>
                     </div>
 
-                    {/* Branch Location Status */}
+                    {/* Branch Location */}
                     <div className="mb-6 rounded-lg border border-coffee-200 p-4">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-1">
                         <MapPin className="w-5 h-5 text-coffee-600" />
-                        <span className="font-medium text-coffee-800">Branch Location</span>
+                        <span className="font-medium text-coffee-800">Branch</span>
                       </div>
-
-                      {locationStatus === 'pending' && (
-                        <div className="flex items-center gap-2 text-sm text-coffee-500">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>Detecting your nearest branch…</span>
-                        </div>
-                      )}
-
-                      {locationStatus === 'acquired' && detectedBranch && (
-                        <div className="flex items-center gap-2 text-sm text-green-700">
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span className="font-medium">{detectedBranch}</span>
-                        </div>
-                      )}
-
-                      {locationStatus === 'denied' && (
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2 text-sm text-amber-700">
-                            <AlertCircle className="w-4 h-4" />
-                            <span>Location not available — please select your branch</span>
-                          </div>
-                          <Select value={selectedBranch} onValueChange={setSelectedBranch}>
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select your branch" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {BRANCHES.map(b => (
-                                <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
+                      <div className="text-sm text-coffee-700 ml-7">{FIXED_BRANCH}</div>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
