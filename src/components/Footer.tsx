@@ -234,17 +234,20 @@ const Footer = () => {
           {/* Contact Info */}
           <div className="overflow-hidden">
             <h3 className="font-playfair text-xl font-semibold mb-4">Contact</h3>
-            <div className="space-y-3 text-cream-200">
-              <p className="flex items-center gap-2"><MapPin className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> Al Ain</p>
-              <p className="flex items-center gap-2"><MapPin className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> United Arab Emirates</p>
+            <div className="space-y-3 text-cream-200 inline-block text-left">
+              <p className="flex items-start gap-2">
+                <MapPin className="w-4 h-4 text-[#c9a962] flex-shrink-0 mt-0.5" />
+                <span>Al Ain, United Arab Emirates</span>
+              </p>
               <a href="tel:037800030" className="flex items-center gap-2 hover:text-cream-100 transition-colors">
-                <Phone className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> 037800030
+                <Phone className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> 037 800 030
               </a>
               <a href="tel:0506584176" className="flex items-center gap-2 hover:text-cream-100 transition-colors">
-                <Phone className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> 0506584176
+                <Phone className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> 050 658 4176
               </a>
               <a href="mailto:support@nawacafe.com" className="flex items-center gap-2 hover:text-cream-100 transition-colors">
-                <Mail className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> <span className="break-all">support@nawacafe.com</span>
+                <Mail className="w-4 h-4 text-[#c9a962] flex-shrink-0" />
+                <span className="text-sm break-all">support@nawacafe.com</span>
               </a>
             </div>
           </div>
