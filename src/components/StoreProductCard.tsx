@@ -50,8 +50,7 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
 
   return (
     <Card 
-      className="border-coffee-200 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden group cursor-pointer flex flex-col"
-      onClick={() => navigate(`/store/${product.id}`)}
+      className="border-coffee-200 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden group flex flex-col relative"
     >
       <div className="relative overflow-hidden bg-gradient-to-br from-coffee-50 to-cream-100 aspect-[4/3] sm:h-64 sm:aspect-auto">
         <img 
@@ -60,13 +59,13 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
           loading="eager"
           decoding="async"
           fetchPriority="high"
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          className="w-full h-full object-cover grayscale opacity-70"
         />
         <Badge className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-coffee-600 text-white border-0 text-[10px] sm:text-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1">
           {product.badge}
         </Badge>
         {isAdmin && onEdit && onDelete && (
-          <div className="absolute top-2 left-2 sm:top-4 sm:left-4 flex gap-1 sm:gap-2">
+          <div className="absolute top-2 left-2 sm:top-4 sm:left-4 flex gap-1 sm:gap-2 z-20">
             <Button
               size="icon"
               variant="secondary"
@@ -105,23 +104,23 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
           <span className="text-sm sm:text-3xl font-bold text-coffee-600 whitespace-nowrap">AED {product.price}</span>
           <span className="hidden sm:inline text-coffee-600">{product.volume}</span>
         </div>
-        {stock !== null && stock !== undefined && (
-          <div className={`mt-1 sm:mt-2 text-[10px] sm:text-sm font-semibold ${stock === 0 ? 'text-red-600' : stock < 5 ? 'text-yellow-600' : 'text-green-600'}`}>
-            {stock === 0 ? '● Out of Stock' : `● ${stock} in stock`}
-          </div>
-        )}
       </CardContent>
       
       <CardFooter className="p-3 sm:p-6 pt-0 sm:pt-0 w-full">
         <Button 
-          className="w-full bg-coffee-600 hover:bg-coffee-700 text-white rounded-full text-xs sm:text-sm h-9 sm:h-10 px-2 sm:px-4"
-          onClick={handleAddToCart}
-          disabled={stock === 0}
+          className="w-full bg-coffee-600/60 text-white rounded-full text-xs sm:text-sm h-9 sm:h-10 px-2 sm:px-4 cursor-not-allowed"
+          disabled
         >
-          <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 shrink-0" />
-          <span className="truncate">{stock === 0 ? 'Out of Stock' : 'Add to Cart'}</span>
+          <span className="truncate">Coming Soon</span>
         </Button>
       </CardFooter>
+
+      {/* Coming Soon Overlay */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+        <div className="bg-coffee-900/80 text-white font-playfair font-bold text-base sm:text-2xl px-4 py-2 sm:px-6 sm:py-3 rounded-full shadow-2xl rotate-[-8deg] border-2 border-cream-100">
+          Coming Soon
+        </div>
+      </div>
     </Card>
   );
 };
