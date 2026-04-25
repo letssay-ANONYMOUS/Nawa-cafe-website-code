@@ -174,7 +174,7 @@ serve(async (req) => {
     
     try {
       // Use server-validated prices
-      const subtotal = amount;
+      const subtotal = subtotalAmount;
 
       // Insert order into database (without payment reference yet)
       const { data: insertedOrder, error: orderError } = await supabase
