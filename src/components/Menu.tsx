@@ -95,7 +95,7 @@ const Menu = () => {
     const startY = window.pageYOffset;
     if (startY <= 0) return;
     // Fast but smooth: ~500-700ms with eased easing on all devices (native smooth is janky on mobile)
-    const duration = Math.min(700, Math.max(450, startY * 0.4));
+    const duration = Math.min(1200, Math.max(800, startY * 0.6));
     const startTime = performance.now();
     const ease = (t: number) => 1 - Math.pow(1 - t, 3); // easeOutCubic
     const animate = (now: number) => {
