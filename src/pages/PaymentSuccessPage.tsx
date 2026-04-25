@@ -52,6 +52,8 @@ const PaymentSuccessPage = () => {
           setVerified(true);
           setOrderNumber(data.order_number);
           clearCart();
+          // Clear saved checkout form on successful payment
+          try { localStorage.removeItem('nawa_checkout_form'); } catch {}
           toast({
             title: "Payment Confirmed!",
             description: "Thank you for your order. We'll start preparing it right away!",
