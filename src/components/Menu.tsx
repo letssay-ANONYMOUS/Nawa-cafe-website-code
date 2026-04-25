@@ -25,18 +25,34 @@ const Menu = () => {
       const el = document.querySelector<HTMLElement>(`[data-card-index="${cardId}"]`);
       if (el) {
         const offset = 120;
-        const pos = el.getBoundingClientRect().top + window.pageYOffset - offset;
-        window.scrollTo({ top: pos, behavior: 'smooth' });
-        el.classList.add('ring-4', 'ring-[#c9a962]', 'ring-offset-2', 'transition-all');
-        setTimeout(() => {
-          el.classList.remove('ring-4', 'ring-[#c9a962]', 'ring-offset-2');
-        }, 2500);
-      } else if (attempts < 10) {
+        const targetY = el.getBoundingClientRect().top + window.pageYOffset - offset;
+        const startY = window.pageYOffset;
+        const distance = targetY - startY;
+        const duration = Math.min(2200, Math.max(1200, Math.abs(distance) * 0.8));
+        const startTime = performance.now();
+        // easeInOutCubic for buttery smooth travel
+        const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+        const animate = (now: number) => {
+          const elapsed = now - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          window.scrollTo(0, startY + distance * ease(progress));
+          if (progress < 1) requestAnimationFrame(animate);
+          else {
+            el.classList.add('ring-4', 'ring-[#c9a962]', 'ring-offset-2', 'transition-all');
+            setTimeout(() => {
+              el.classList.remove('ring-4', 'ring-[#c9a962]', 'ring-offset-2');
+            }, 2500);
+          }
+        };
+        requestAnimationFrame(animate);
+      } else if (attempts < 15) {
         attempts++;
-        setTimeout(tryScroll, 150);
+        setTimeout(tryScroll, 200);
       }
     };
-    setTimeout(tryScroll, 200);
+    // Wait for menu cards to render and start their entrance animation
+    setTimeout(tryScroll, 600);
   }, [isLoading, menuCards, location.search]);
 
   // Show scroll-to-top button once user scrolls past the 10th card

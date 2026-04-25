@@ -243,8 +243,8 @@ const Footer = () => {
               <a href="tel:0506584176" className="flex items-center gap-2 hover:text-cream-100 transition-colors">
                 <Phone className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> 0506584176
               </a>
-              <a href="mailto:support@nawacafe.com" className="flex items-center gap-2 hover:text-cream-100 transition-colors overflow-hidden">
-                <Mail className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> <span className="truncate">support@nawacafe.com</span>
+              <a href="mailto:support@nawacafe.com" className="flex items-center gap-2 hover:text-cream-100 transition-colors">
+                <Mail className="w-4 h-4 text-[#c9a962] flex-shrink-0" /> <span className="break-all">support@nawacafe.com</span>
               </a>
             </div>
           </div>
