@@ -40,48 +40,6 @@ const CheckoutPage = () => {
     }
   }, []);
 
-  // Haversine to detect nearest branch client-side for UI feedback
-  const detectBranch = (lat: number, lon: number) => {
-    const branches = [
-      { name: 'Stadhazza Branch', lat: 24.2167, lon: 55.7708 },
-      { name: 'Municipality Branch', lat: 24.2075, lon: 55.7447 },
-    ];
-    let nearest = branches[0];
-    let minDist = Infinity;
-    for (const b of branches) {
-      const R = 6371;
-      const dLat = (b.lat - lat) * Math.PI / 180;
-      const dLon = (b.lon - lon) * Math.PI / 180;
-      const a = Math.sin(dLat / 2) ** 2 +
-        Math.cos(lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) *
-        Math.sin(dLon / 2) ** 2;
-      const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      if (d < minDist) { minDist = d; nearest = b; }
-    }
-    return nearest.name;
-  };
-
-  // Request browser geolocation for branch detection
-  useEffect(() => {
-    if (!('geolocation' in navigator)) {
-      setLocationStatus('denied');
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setCustomerCoords({ latitude, longitude });
-        setDetectedBranch(detectBranch(latitude, longitude));
-        setLocationStatus('acquired');
-        console.log('Customer location acquired:', latitude, longitude);
-      },
-      (err) => {
-        console.log('Geolocation denied or unavailable:', err.message);
-        setLocationStatus('denied');
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -100,16 +58,6 @@ const CheckoutPage = () => {
       return;
     }
 
-    // Require branch selection if GPS wasn't available
-    if (!customerCoords && !selectedBranch) {
-      toast({
-        title: "Branch Required",
-        description: "Please select which branch you're ordering from.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     setLoading(true);
 
     try {
@@ -118,9 +66,9 @@ const CheckoutPage = () => {
           customerName: formData.name,
           phoneNumber: formData.phone,
           visitorId: getVisitorId(),
-          latitude: customerCoords?.latitude ?? null,
-          longitude: customerCoords?.longitude ?? null,
-          selectedBranch: !customerCoords ? selectedBranch : null,
+          latitude: null,
+          longitude: null,
+          selectedBranch: FIXED_BRANCH,
           orderItems: cartItems.map(item => ({
             name: item.name,
             quantity: item.quantity,
