@@ -6,21 +6,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Lock, MapPin, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { Lock, MapPin } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { getVisitorId } from '@/hooks/useVisitorId';
 import { useAnalytics } from '@/hooks/useAnalytics';
 
-type LocationStatus = 'pending' | 'acquired' | 'denied';
-
-const BRANCHES = [
-  { value: 'Stadhazza Branch', label: 'Stadhazza Branch' },
-  { value: 'Municipality Branch', label: 'Municipality Branch' },
-];
+const FIXED_BRANCH = 'Stadhazza Branch';
 
 const CheckoutPage = () => {
   const { toast } = useToast();
@@ -28,10 +22,6 @@ const CheckoutPage = () => {
   const navigate = useNavigate();
   const { trackCheckoutStart, trackCheckoutComplete } = useAnalytics();
   const [loading, setLoading] = useState(false);
-  const [customerCoords, setCustomerCoords] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [locationStatus, setLocationStatus] = useState<LocationStatus>('pending');
-  const [detectedBranch, setDetectedBranch] = useState<string | null>(null);
-  const [selectedBranch, setSelectedBranch] = useState<string>('');
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
