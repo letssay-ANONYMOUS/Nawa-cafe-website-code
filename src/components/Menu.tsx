@@ -92,7 +92,18 @@ const Menu = () => {
   }, [searchQuery, menuCards]);
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const startY = window.pageYOffset;
+    if (startY <= 0) return;
+    // Fast but smooth: ~500-700ms with eased easing on all devices (native smooth is janky on mobile)
+    const duration = Math.min(700, Math.max(450, startY * 0.4));
+    const startTime = performance.now();
+    const ease = (t: number) => 1 - Math.pow(1 - t, 3); // easeOutCubic
+    const animate = (now: number) => {
+      const progress = Math.min((now - startTime) / duration, 1);
+      window.scrollTo(0, startY * (1 - ease(progress)));
+      if (progress < 1) requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
   };
 
   const grouped = menuCards ? groupCardsBySections(menuCards) : {};
