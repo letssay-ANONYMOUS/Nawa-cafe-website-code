@@ -154,45 +154,13 @@ const CheckoutPage = () => {
                       <span className="text-sm text-coffee-600">Secure payment powered by Ziina</span>
                     </div>
 
-                    {/* Branch Location Status */}
+                    {/* Branch Location */}
                     <div className="mb-6 rounded-lg border border-coffee-200 p-4">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-1">
                         <MapPin className="w-5 h-5 text-coffee-600" />
-                        <span className="font-medium text-coffee-800">Branch Location</span>
+                        <span className="font-medium text-coffee-800">Branch</span>
                       </div>
-
-                      {locationStatus === 'pending' && (
-                        <div className="flex items-center gap-2 text-sm text-coffee-500">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>Detecting your nearest branch…</span>
-                        </div>
-                      )}
-
-                      {locationStatus === 'acquired' && detectedBranch && (
-                        <div className="flex items-center gap-2 text-sm text-green-700">
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span className="font-medium">{detectedBranch}</span>
-                        </div>
-                      )}
-
-                      {locationStatus === 'denied' && (
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2 text-sm text-amber-700">
-                            <AlertCircle className="w-4 h-4" />
-                            <span>Location not available — please select your branch</span>
-                          </div>
-                          <Select value={selectedBranch} onValueChange={setSelectedBranch}>
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select your branch" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {BRANCHES.map(b => (
-                                <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
+                      <div className="text-sm text-coffee-700 ml-7">{FIXED_BRANCH}</div>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
