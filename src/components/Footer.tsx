@@ -130,7 +130,7 @@ const Footer = () => {
 
   return (
     <>
-    <footer className="bg-coffee-800 text-white py-10 sm:py-12">
+    <footer className="text-white py-10 sm:py-12 bg-[#693c1b]">
       <div className="container mx-auto px-5 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8">
           {/* Brand */}
