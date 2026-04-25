@@ -101,10 +101,10 @@ const HomeFeatured = () => {
                     <h3 className="font-cinzel text-lg sm:text-2xl font-semibold text-white mb-1 sm:mb-2">
                       {item.title}
                     </h3>
-                    <p className="text-cream-200 text-xs sm:text-sm leading-relaxed sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-500">
+                    <p className="text-cream-200 text-xs sm:text-sm leading-relaxed lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-500">
                       {item.description}
                     </p>
-                    <div className="flex items-center gap-2 mt-2 sm:mt-3 text-cream-400 text-xs sm:text-sm font-medium sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-500">
+                    <div className="flex items-center gap-2 mt-2 sm:mt-3 text-cream-400 text-xs sm:text-sm font-medium lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-500">
                       Explore <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 transition-transform duration-300 group-hover:translate-x-1" />
                     </div>
                   </motion.div>
