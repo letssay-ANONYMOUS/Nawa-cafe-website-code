@@ -21,7 +21,7 @@ export interface MenuSection {
 export const menuSections: MenuSection[] = [
   { id: 'nawa-breakfast', name: 'NAWA Breakfast', startId: 1, endId: 19 },
   { id: 'coffee', name: 'COFFEE', startId: 24, endId: 42 },
-  { id: 'cold-beverages', name: 'Cold Beverages', startId: 43, endId: 58 },
+  { id: 'cold-beverages', name: 'Cold Beverages', startId: 43, endId: 58, cardIds: [43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,119,120,121,122,123,124,125] },
   { id: 'manual-brew', name: 'MANUAL BREW', startId: 59, endId: 173, cardIds: [59, 60, 61, 62, 63, 170, 171, 172, 173] },
   { id: 'lunch-dinner', name: 'Lunch & Dinner', startId: 64, endId: 66 },
   { id: 'appetisers', name: 'Appetisers', startId: 67, endId: 73, cardIds: [67, 68, 69, 70, 71, 72, 73, 95] },
@@ -31,7 +31,7 @@ export const menuSections: MenuSection[] = [
   { id: 'burgers', name: 'Burgers', startId: 84, endId: 91 },
   { id: 'fries', name: 'Fries', startId: 92, endId: 94 },
   { id: 'kids-meals', name: 'Kids Meals', startId: 96, endId: 98 },
-  { id: 'pastries-desserts', name: 'Pastries & Desserts', startId: 99, endId: 125, cardIds: [99,100,101,102,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125] },
+  { id: 'pastries-desserts', name: 'Pastries & Desserts', startId: 99, endId: 118, cardIds: [99,100,101,102,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118] },
   { id: 'mojito', name: 'Mojito', startId: 126, endId: 130 },
   { id: 'water', name: 'Water', startId: 131, endId: 133 },
   { id: 'infusion', name: 'Infusion', startId: 134, endId: 135 },
