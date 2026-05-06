@@ -59,7 +59,7 @@ const KitchenDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [unacknowledgedOrders, setUnacknowledgedOrders] = useState<Set<string>>(new Set());
-  const [activeView, setActiveView] = useState<KitchenView>("paid");
+  const [activeView, setActiveView] = useState<KitchenView>(() => getKitchenViewFromPath(window.location.pathname));
   const [showSoundPicker, setShowSoundPicker] = useState(false);
   const [dateRange, setDateRange] = useState<DateRangeOption>(() =>
     (localStorage.getItem('kitchen_date_range') as DateRangeOption) || '1month'
