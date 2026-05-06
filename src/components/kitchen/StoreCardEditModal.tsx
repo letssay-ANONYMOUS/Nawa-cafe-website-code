@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Upload } from 'lucide-react';
+import { Upload, ClipboardPaste } from 'lucide-react';
 
 export interface StoreCardData {
   id: string;
@@ -42,14 +42,12 @@ export function StoreCardEditModal({ open, onOpenChange, product, onSaved }: Pro
     if (product) setForm(product);
   }, [product]);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const uploadFile = async (file: File) => {
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop();
+      const ext = (file.name.split('.').pop() || 'png').toLowerCase();
       const path = `store/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-      const { error } = await supabase.storage.from('menu-images').upload(path, file, { upsert: true });
+      const { error } = await supabase.storage.from('menu-images').upload(path, file, { upsert: true, contentType: file.type });
       if (error) throw error;
       const { data } = supabase.storage.from('menu-images').getPublicUrl(path);
       setForm(prev => ({ ...prev, image_url: data.publicUrl }));
@@ -60,6 +58,34 @@ export function StoreCardEditModal({ open, onOpenChange, product, onSaved }: Pro
       setUploading(false);
     }
   };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) await uploadFile(file);
+  };
+
+  // Paste image from clipboard anywhere in the modal
+  useEffect(() => {
+    if (!open) return;
+    const handlePaste = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            e.preventDefault();
+            const named = new File([file], `pasted-${Date.now()}.${item.type.split('/')[1] || 'png'}`, { type: item.type });
+            await uploadFile(named);
+            return;
+          }
+        }
+      }
+    };
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [open]);
+
 
   const handleSave = async () => {
     if (!product) return;
@@ -139,6 +165,10 @@ export function StoreCardEditModal({ open, onOpenChange, product, onSaved }: Pro
               {uploading ? 'Uploading…' : 'Upload new image'}
               <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
             </label>
+            <p className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+              <ClipboardPaste className="w-3 h-3" />
+              Tip: copy an image and press Ctrl/Cmd+V anywhere in this dialog to paste it.
+            </p>
             <Input
               className="mt-2"
               placeholder="Or paste image URL"
