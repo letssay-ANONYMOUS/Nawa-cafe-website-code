@@ -19,6 +19,7 @@ const ProductDetail = () => {
     window.scrollTo(0, 0);
   }, []);
 
+
   useEffect(() => {
     if (!id) return;
     supabase
@@ -55,6 +56,14 @@ const ProductDetail = () => {
     }
     navigate('/store', { replace: true });
   }, [navigate]);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleBack();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [handleBack]);
 
   if (loading) {
     return (
