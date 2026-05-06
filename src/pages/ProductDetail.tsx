@@ -35,11 +35,6 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-
-  useEffect(() => {
     if (!id) return;
     supabase
       .from('store_products')
@@ -74,11 +69,10 @@ const ProductDetail = () => {
       sessionStorage.setItem(STORE_PENDING_SCROLL_KEY, savedStoreY);
       sessionStorage.setItem(GLOBAL_STORE_SCROLL_KEY, savedStoreY);
     }
-    if (window.history.length > 1) {
-      navigate(-1);
-      return;
-    }
-    navigate('/store', { replace: true });
+    navigate('/store', {
+      replace: true,
+      state: savedStoreY ? { restoreStoreY: Number(savedStoreY) } : undefined,
+    });
   }, [navigate]);
 
   useEffect(() => {
