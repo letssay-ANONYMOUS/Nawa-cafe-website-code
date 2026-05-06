@@ -57,6 +57,14 @@ const ProductDetail = () => {
     navigate('/store', { replace: true });
   }, [navigate]);
 
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleBack();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [handleBack]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
