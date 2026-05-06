@@ -117,11 +117,13 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
       </CardFooter>
 
       {/* Coming Soon Overlay */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-        <div className="bg-coffee-900/80 text-white font-playfair font-bold text-base sm:text-2xl px-4 py-2 sm:px-6 sm:py-3 rounded-full shadow-2xl rotate-[-8deg] border-2 border-cream-100">
-          Coming Soon
+      {product.comingSoon && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+          <div className="bg-coffee-900/80 text-white font-playfair font-bold text-base sm:text-2xl px-4 py-2 sm:px-6 sm:py-3 rounded-full shadow-2xl rotate-[-8deg] border-2 border-cream-100">
+            Coming Soon
+          </div>
         </div>
-      </div>
+      )}
     </Card>
   );
 };
