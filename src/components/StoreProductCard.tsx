@@ -9,6 +9,10 @@ import { useAdmin } from '@/contexts/AdminContext';
 import { toast } from 'sonner';
 import type { StoreProduct } from '@/data/storeCatalog';
 
+const STORE_SCROLL_KEY = 'store:scrollY';
+const STORE_PENDING_SCROLL_KEY = 'store:pendingScrollY';
+const GLOBAL_STORE_SCROLL_KEY = 'scroll-pos:/store';
+
 interface StoreProductCardProps {
   product: StoreProduct;
   stock?: number | null;
@@ -30,6 +34,14 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
     }
   }, []);
 
+  const openProductPage = () => {
+    const storeScrollY = window.scrollY;
+    sessionStorage.setItem(STORE_SCROLL_KEY, String(storeScrollY));
+    sessionStorage.setItem(STORE_PENDING_SCROLL_KEY, String(storeScrollY));
+    sessionStorage.setItem(GLOBAL_STORE_SCROLL_KEY, String(storeScrollY));
+    navigate(`/store/${product.id}`, { state: { fromStore: true, storeScrollY } });
+  };
+
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -46,7 +58,7 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
 
   const handleViewDetails = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/store/${product.id}`);
+    openProductPage();
   };
 
   const handleEdit = (e: React.MouseEvent) => {
@@ -62,7 +74,7 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
   return (
     <Card 
       className="border-coffee-200 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden group flex flex-col relative cursor-pointer"
-      onClick={() => navigate(`/store/${product.id}`)}
+      onClick={openProductPage}
     >
       <div className="relative overflow-hidden bg-gradient-to-br from-coffee-50 to-cream-100 aspect-[4/3] sm:h-64 sm:aspect-auto">
         <img
