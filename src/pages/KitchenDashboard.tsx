@@ -1,6 +1,6 @@
 // Kitchen Dashboard v6 - Inline auth + parallel data loading for instant load
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,12 @@ interface OrderWithItems extends Order {
 }
 
 type DateRangeOption = '1month' | '2months' | '3months' | '4months';
+
+const getKitchenViewFromPath = (pathname: string): KitchenView => {
+  if (pathname.includes('/stock')) return 'stock';
+  if (pathname.includes('/pending')) return 'pending';
+  return 'paid';
+};
 
 const dateRangeLabels: Record<DateRangeOption, string> = {
   '1month': '1 Month',
@@ -65,7 +71,12 @@ const KitchenDashboard = () => {
     localStorage.getItem('kitchen_alert_custom_url') || ''
   );
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+
+  useEffect(() => {
+    setActiveView(getKitchenViewFromPath(location.pathname));
+  }, [location.pathname]);
 
   const handleAlertTimeout = useCallback(() => {
     toast({
@@ -359,6 +370,11 @@ const KitchenDashboard = () => {
     localStorage.setItem('kitchen_date_range', range);
   };
 
+  const handleViewChange = (view: KitchenView) => {
+    setActiveView(view);
+    navigate(`/admin/kitchen/${view}`);
+  };
+
 
 
   const paidOrders = orders.filter(o => o.payment_status === 'paid');
@@ -370,7 +386,7 @@ const KitchenDashboard = () => {
       <div className="min-h-screen flex w-full bg-background">
         <KitchenSidebar
           activeView={activeView}
-          onViewChange={setActiveView}
+          onViewChange={handleViewChange}
           paidCount={paidOrders.length}
           pendingCount={pendingOrders.length}
           unacknowledgedCount={unacknowledgedOrders.size}
@@ -384,10 +400,10 @@ const KitchenDashboard = () => {
                   <SidebarTrigger />
                   <div className="min-w-0">
                     <h1 className="text-sm sm:text-lg font-bold text-foreground truncate">
-                      {activeView === 'paid' ? '✅ Paid Orders' : '⏳ Pending Orders'}
+                      {activeView === 'stock' ? '📦 Store Stock' : activeView === 'paid' ? '✅ Paid Orders' : '⏳ Pending Orders'}
                     </h1>
                     <p className="text-[10px] sm:text-xs text-muted-foreground">
-                      Last {dateRangeLabels[dateRange].toLowerCase()} • {currentOrders.length} orders
+                      {activeView === 'stock' ? 'Editable product cards' : `Last ${dateRangeLabels[dateRange].toLowerCase()} • ${currentOrders.length} orders`}
                     </p>
                   </div>
                 </div>
