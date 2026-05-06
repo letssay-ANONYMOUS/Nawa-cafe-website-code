@@ -505,7 +505,13 @@ const KitchenDashboard = () => {
                     <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                   </Button>
 
-                  <Button variant="ghost" size="icon" onClick={() => { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }}>
+                  <Button variant="ghost" size="icon" onClick={() => {
+                    if (document.fullscreenElement) {
+                      void document.exitFullscreen();
+                    } else {
+                      void document.documentElement.requestFullscreen();
+                    }
+                  }}>
                     <ExternalLink className="w-4 h-4" />
                   </Button>
 
