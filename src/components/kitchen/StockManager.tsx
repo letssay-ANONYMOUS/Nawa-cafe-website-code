@@ -3,29 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Minus, RefreshCw, Package } from 'lucide-react';
+import { Plus, Minus, RefreshCw, Package, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-const PRODUCT_IMAGES: Record<number, string> = {
-  1: '/olive-oils/premium-evoo.jpg',
-  2: '/olive-oils/organic-estate.jpg',
-  3: '/olive-oils/garlic-herb.jpg',
-  4: '/olive-oils/early-harvest.jpg',
-  5: '/olive-oils/lemon-infused.jpg',
-  6: '/olive-oils/gift-set.jpg',
-};
-
-interface StoreProduct {
-  id: string;
-  product_key: number;
-  product_name: string;
-  stock_quantity: number;
-}
+import { StoreCardEditModal, type StoreCardData } from './StoreCardEditModal';
+import { STORE_CATEGORIES, type StoreCategory } from '@/data/storeCatalog';
 
 export function StockManager() {
-  const [products, setProducts] = useState<StoreProduct[]>([]);
+  const [products, setProducts] = useState<StoreCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [adjustments, setAdjustments] = useState<Record<number, string>>({});
+  const [activeCategory, setActiveCategory] = useState<StoreCategory>('oil');
+  const [editing, setEditing] = useState<StoreCardData | null>(null);
   const { toast } = useToast();
 
   const loadProducts = useCallback(async () => {
@@ -33,21 +21,19 @@ export function StockManager() {
     const { data, error } = await supabase
       .from('store_products')
       .select('*')
-      .order('product_key', { ascending: true });
+      .order('sort_order', { ascending: true });
 
     if (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to load stock' });
     } else {
-      setProducts((data as unknown as StoreProduct[]) || []);
+      setProducts((data as unknown as StoreCardData[]) || []);
     }
     setLoading(false);
   }, [toast]);
 
-  useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
+  useEffect(() => { loadProducts(); }, [loadProducts]);
 
-  const updateStock = async (product: StoreProduct, delta: number) => {
+  const updateStock = async (product: StoreCardData, delta: number) => {
     const newQty = Math.max(0, product.stock_quantity + delta);
     const { error } = await supabase
       .from('store_products')
@@ -62,7 +48,7 @@ export function StockManager() {
     }
   };
 
-  const handleCustomAdjust = async (product: StoreProduct, add: boolean) => {
+  const handleCustomAdjust = async (product: StoreCardData, add: boolean) => {
     const val = parseInt(adjustments[product.product_key] || '0', 10);
     if (isNaN(val) || val <= 0) return;
     await updateStock(product, add ? val : -val);
@@ -77,9 +63,11 @@ export function StockManager() {
     );
   }
 
+  const filtered = products.filter(p => (p.category ?? 'oil') === activeCategory);
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
           <Package className="w-5 h-5" />
           Store Stock Management
@@ -89,21 +77,39 @@ export function StockManager() {
         </Button>
       </div>
 
+      {/* Category tabs (mirror Store page) */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {STORE_CATEGORIES.map(cat => (
+          <Button
+            key={cat.id}
+            size="sm"
+            variant={activeCategory === cat.id ? 'default' : 'outline'}
+            onClick={() => setActiveCategory(cat.id)}
+            className={activeCategory === cat.id ? 'bg-coffee-600 hover:bg-coffee-700 text-white rounded-full px-5' : 'border-coffee-300 text-coffee-700 hover:bg-coffee-50 rounded-full px-5'}
+          >
+            {cat.label}
+          </Button>
+        ))}
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {products.map((product) => (
+        {filtered.map((product) => (
           <Card key={product.id} className="border">
             <CardHeader className="pb-2">
               <div className="flex items-center gap-3">
-                {PRODUCT_IMAGES[product.product_key] && (
+                {product.image_url && (
                   <img
-                    src={PRODUCT_IMAGES[product.product_key]}
+                    src={product.image_url}
                     alt={product.product_name}
                     className="w-12 h-12 rounded object-cover flex-shrink-0"
                   />
                 )}
-                <CardTitle className="text-sm font-medium leading-tight">
+                <CardTitle className="text-sm font-medium leading-tight flex-1">
                   {product.product_name}
                 </CardTitle>
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditing(product)}>
+                  <Pencil className="w-3.5 h-3.5" />
+                </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -114,28 +120,15 @@ export function StockManager() {
                 </span>
               </div>
 
-              {/* Quick +1 / -1 */}
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => updateStock(product, -1)}
-                  disabled={product.stock_quantity === 0}
-                  className="flex-1"
-                >
+                <Button variant="outline" size="sm" onClick={() => updateStock(product, -1)} disabled={product.stock_quantity === 0} className="flex-1">
                   <Minus className="w-4 h-4" />
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => updateStock(product, 1)}
-                  className="flex-1"
-                >
+                <Button variant="outline" size="sm" onClick={() => updateStock(product, 1)} className="flex-1">
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
 
-              {/* Custom amount */}
               <div className="flex items-center gap-1">
                 <Input
                   type="number"
@@ -155,7 +148,17 @@ export function StockManager() {
             </CardContent>
           </Card>
         ))}
+        {filtered.length === 0 && (
+          <p className="text-sm text-muted-foreground col-span-full">No products in this category yet.</p>
+        )}
       </div>
+
+      <StoreCardEditModal
+        open={!!editing}
+        onOpenChange={(v) => !v && setEditing(null)}
+        product={editing}
+        onSaved={loadProducts}
+      />
     </div>
   );
 }

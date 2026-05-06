@@ -1,124 +1,91 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Leaf, Award, Package, Plus } from 'lucide-react';
+import { Leaf, Award, Package } from 'lucide-react';
 import StoreProductCard from '@/components/StoreProductCard';
-import { useAdmin } from '@/contexts/AdminContext';
-import { AdminCardModal } from '@/components/AdminCardModal';
-import { AdminDeleteConfirm } from '@/components/AdminDeleteConfirm';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { STORE_CATEGORIES, STORE_PRODUCTS, type StoreCategory, type StoreProduct } from '@/data/storeCatalog';
+import { STORE_CATEGORIES, type StoreCategory, type StoreProduct } from '@/data/storeCatalog';
+
+const CATEGORY_KEY = 'store:activeCategory';
+const SCROLL_KEY = 'store:scrollY';
 
 const StorePage = () => {
-
-  const { isAdmin, addPendingChange } = useAdmin();
-  const { toast } = useToast();
-  const [showCardModal, setShowCardModal] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [editingCard, setEditingCard] = useState<StoreProduct | null>(null);
-  const [deletingCard, setDeletingCard] = useState<StoreProduct | null>(null);
-  const [activeCategory, setActiveCategory] = useState<StoreCategory>('oil');
-  const [products, setProducts] = useState<StoreProduct[]>(STORE_PRODUCTS);
+  const [activeCategory, setActiveCategoryState] = useState<StoreCategory>(() => {
+    const saved = sessionStorage.getItem(CATEGORY_KEY) as StoreCategory | null;
+    return saved && STORE_CATEGORIES.some(c => c.id === saved) ? saved : 'oil';
+  });
+  const [products, setProducts] = useState<StoreProduct[]>([]);
   const [stockMap, setStockMap] = useState<Record<number, number>>({});
-  const activeCategoryConfig = STORE_CATEGORIES.find((category) => category.id === activeCategory) ?? STORE_CATEGORIES[0];
+  const [loaded, setLoaded] = useState(false);
+  const activeCategoryConfig = STORE_CATEGORIES.find((c) => c.id === activeCategory) ?? STORE_CATEGORIES[0];
   const filteredProducts = products.filter((product) => product.category === activeCategory);
 
+  const setActiveCategory = (cat: StoreCategory) => {
+    sessionStorage.setItem(CATEGORY_KEY, cat);
+    sessionStorage.removeItem(SCROLL_KEY);
+    setActiveCategoryState(cat);
+  };
+
   useEffect(() => {
-    const loadStock = async () => {
+    const loadProducts = async () => {
       const { data } = await supabase
         .from('store_products')
-        .select('product_key, stock_quantity');
+        .select('*')
+        .order('sort_order', { ascending: true });
       if (data) {
-        const map: Record<number, number> = {};
-        (data as unknown as { product_key: number; stock_quantity: number }[]).forEach(p => {
-          map[p.product_key] = p.stock_quantity;
+        const stock: Record<number, number> = {};
+        const list: StoreProduct[] = (data as any[]).map(row => {
+          stock[row.product_key] = row.stock_quantity;
+          return {
+            id: row.product_key,
+            name: row.product_name,
+            description: row.description ?? '',
+            price: Number(row.price ?? 0),
+            image: row.image_url ?? '',
+            rating: row.rating ?? 5,
+            badge: row.badge ?? '',
+            volume: row.volume ?? '',
+            origin: row.origin ?? '',
+            category: (row.category ?? 'oil') as StoreCategory,
+            comingSoon: !!row.coming_soon,
+          };
         });
-        setStockMap(map);
+        setProducts(list);
+        setStockMap(stock);
       }
+      setLoaded(true);
     };
-    loadStock();
+    loadProducts();
   }, []);
 
-  const handleAddNew = () => {
-    setEditingCard(null);
-    setShowCardModal(true);
-  };
+  // Save scroll on unmount
+  useEffect(() => {
+    return () => {
+      sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
+    };
+  }, []);
 
-  const handleEdit = (product: StoreProduct) => {
-    setEditingCard(product);
-    setShowCardModal(true);
-  };
-
-  const handleDelete = (product: StoreProduct) => {
-    setDeletingCard(product);
-    setShowDeleteConfirm(true);
-  };
-
-  const handleSave = (data: any) => {
-    addPendingChange({
-      type: editingCard ? 'edit' : 'add',
-      page: 'store',
-      data,
-      id: editingCard?.id
-    });
-    
-    if (editingCard) {
-      setProducts(products.map(p => p.id === editingCard.id ? { ...p, ...data } : p));
-    } else {
-      const newId = Math.max(...products.map(p => p.id)) + 1;
-      setProducts([...products, { 
-        id: newId, 
-        ...data, 
-        rating: 5, 
-        badge: 'New', 
-        volume: '500ml', 
-        origin: 'Mediterranean',
-        category: activeCategory,
-      }]);
+  // Restore scroll after products render
+  useLayoutEffect(() => {
+    if (!loaded) return;
+    const y = sessionStorage.getItem(SCROLL_KEY);
+    if (y) {
+      requestAnimationFrame(() => window.scrollTo(0, parseInt(y, 10)));
     }
-  };
-
-  const confirmDelete = () => {
-    addPendingChange({
-      type: 'delete',
-      page: 'store',
-      id: deletingCard.id
-    });
-    
-    setProducts(products.filter(p => p.id !== deletingCard.id));
-    setShowDeleteConfirm(false);
-    toast({
-      title: 'Changes staged',
-      description: 'Card deletion staged. Click Save in footer to apply.',
-    });
-  };
+  }, [loaded]);
 
   const features = [
-    {
-      icon: Leaf,
-      title: "100% Natural",
-      description: "No additives or preservatives"
-    },
-    {
-      icon: Award,
-      title: "Award Winning",
-      description: "Internationally recognized quality"
-    },
-    {
-      icon: Package,
-      title: "Direct Import",
-      description: "From farm to your table"
-    }
+    { icon: Leaf, title: '100% Natural', description: 'No additives or preservatives' },
+    { icon: Award, title: 'Award Winning', description: 'Internationally recognized quality' },
+    { icon: Package, title: 'Direct Import', description: 'From farm to your table' },
   ];
 
   return (
     <div className="min-h-screen">
       <Header />
-      
-      {/* Hero Section */}
+
       <section className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-coffee-50 via-cream-50 to-background">
         <div className="container mx-auto text-center">
           <h1 className="font-playfair text-5xl md:text-6xl font-bold text-coffee-900 mb-6 animate-fade-in">
@@ -139,8 +106,7 @@ const StorePage = () => {
               </Button>
             ))}
           </div>
-          
-          {/* Feature Badges */}
+
           <div className="flex flex-wrap justify-center gap-8 mt-12">
             {features.map((feature, index) => (
               <div key={index} className="flex items-center gap-3 animate-scale-in">
@@ -157,65 +123,38 @@ const StorePage = () => {
         </div>
       </section>
 
-      {/* Products Section */}
       <section className="py-16 px-0 sm:px-6 lg:px-8">
         <div className="w-full sm:container sm:mx-auto">
           <div className="flex justify-between items-center mb-12 px-4 sm:px-0">
             <h2 className="font-playfair text-4xl font-bold text-coffee-900">
               {activeCategoryConfig.label} Selection
             </h2>
-            {isAdmin && (
-              <Button
-                onClick={handleAddNew}
-                className="bg-coffee-600 hover:bg-coffee-700 text-white"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add New Card
-              </Button>
-            )}
           </div>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-1 sm:gap-3 md:gap-6">
             {filteredProducts.map((product) => (
-              <StoreProductCard 
-                key={product.id} 
+              <StoreProductCard
+                key={product.id}
                 product={product}
                 stock={stockMap[product.id] ?? null}
-                {...(isAdmin ? {
-                  onEdit: () => handleEdit(product),
-                  onDelete: () => handleDelete(product)
-                } : {})}
               />
             ))}
           </div>
         </div>
       </section>
 
-      {/* Benefits Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-coffee-100 via-cream-50 to-coffee-50">
         <div className="container mx-auto">
           <h2 className="font-playfair text-4xl font-bold text-coffee-900 text-center mb-12">
             Why Choose Our {activeCategoryConfig.label}?
           </h2>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              {
-                title: "First Cold Press",
-                description: "Extracted at optimal temperature to preserve nutrients and flavor"
-              },
-              {
-                title: "Lab Tested",
-                description: "Each batch is tested for purity and quality standards"
-              },
-              {
-                title: "Sustainably Sourced",
-                description: "Supporting small family farms and sustainable practices"
-              },
-              {
-                title: "Fresh Harvest",
-                description: "Bottled within days of harvest for maximum freshness"
-              }
+              { title: 'First Cold Press', description: 'Extracted at optimal temperature to preserve nutrients and flavor' },
+              { title: 'Lab Tested', description: 'Each batch is tested for purity and quality standards' },
+              { title: 'Sustainably Sourced', description: 'Supporting small family farms and sustainable practices' },
+              { title: 'Fresh Harvest', description: 'Bottled within days of harvest for maximum freshness' },
             ].map((benefit, index) => (
               <Card key={index} className="text-center border-coffee-200 hover:border-coffee-400 transition-all duration-300">
                 <CardHeader>
@@ -231,7 +170,6 @@ const StorePage = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-coffee-800 via-coffee-700 to-coffee-800 text-white">
         <div className="container mx-auto text-center">
           <h2 className="font-playfair text-4xl md:text-5xl font-bold mb-6">
@@ -241,12 +179,10 @@ const StorePage = () => {
             Explore curated pantry essentials and seasonal additions across oil, honey, and coffee beans.
           </p>
           <div className="flex justify-center">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="bg-white text-coffee-700 hover:bg-cream-50 rounded-full px-8"
-              onClick={() => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
               Buy Now
             </Button>
@@ -255,22 +191,6 @@ const StorePage = () => {
       </section>
 
       <Footer />
-
-      <AdminCardModal
-        open={showCardModal}
-        onOpenChange={setShowCardModal}
-        onSave={handleSave}
-        initialData={editingCard}
-        title={editingCard ? 'Edit Card' : 'Add New Card'}
-        page="store"
-      />
-
-      <AdminDeleteConfirm
-        open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
-        onConfirm={confirmDelete}
-        itemName={deletingCard?.name || ''}
-      />
     </div>
   );
 };

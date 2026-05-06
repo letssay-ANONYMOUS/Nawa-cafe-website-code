@@ -60,7 +60,7 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
           loading="eager"
           decoding="async"
           fetchPriority="high"
-          className="w-full h-full object-cover grayscale opacity-70"
+          className={`w-full h-full object-cover ${product.comingSoon ? 'grayscale opacity-70' : ''}`}
         />
         <Badge className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-coffee-600 text-white border-0 text-[10px] sm:text-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1">
           {product.badge}
@@ -117,11 +117,13 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
       </CardFooter>
 
       {/* Coming Soon Overlay */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-        <div className="bg-coffee-900/80 text-white font-playfair font-bold text-base sm:text-2xl px-4 py-2 sm:px-6 sm:py-3 rounded-full shadow-2xl rotate-[-8deg] border-2 border-cream-100">
-          Coming Soon
+      {product.comingSoon && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+          <div className="bg-coffee-900/80 text-white font-playfair font-bold text-base sm:text-2xl px-4 py-2 sm:px-6 sm:py-3 rounded-full shadow-2xl rotate-[-8deg] border-2 border-cream-100">
+            Coming Soon
+          </div>
         </div>
-      </div>
+      )}
     </Card>
   );
 };

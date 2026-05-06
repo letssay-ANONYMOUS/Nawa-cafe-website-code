@@ -454,28 +454,58 @@ export type Database = {
       }
       store_products: {
         Row: {
+          badge: string | null
+          category: string
+          coming_soon: boolean
           created_at: string
+          description: string | null
           id: string
+          image_url: string | null
+          origin: string | null
+          price: number
           product_key: number
           product_name: string
+          rating: number
+          sort_order: number
           stock_quantity: number
           updated_at: string
+          volume: string | null
         }
         Insert: {
+          badge?: string | null
+          category?: string
+          coming_soon?: boolean
           created_at?: string
+          description?: string | null
           id?: string
+          image_url?: string | null
+          origin?: string | null
+          price?: number
           product_key: number
           product_name: string
+          rating?: number
+          sort_order?: number
           stock_quantity?: number
           updated_at?: string
+          volume?: string | null
         }
         Update: {
+          badge?: string | null
+          category?: string
+          coming_soon?: boolean
           created_at?: string
+          description?: string | null
           id?: string
+          image_url?: string | null
+          origin?: string | null
+          price?: number
           product_key?: number
           product_name?: string
+          rating?: number
+          sort_order?: number
           stock_quantity?: number
           updated_at?: string
+          volume?: string | null
         }
         Relationships: []
       }
