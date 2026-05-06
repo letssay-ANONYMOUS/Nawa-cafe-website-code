@@ -77,15 +77,16 @@ export function StockManager() {
         </Button>
       </div>
 
-      {/* Category tabs (mirror Store page) */}
-      <div className="flex flex-wrap gap-2 mb-4">
+      {/* Category tabs (mirror public Store page) */}
+      <div className="flex flex-wrap gap-3 mb-6">
         {STORE_CATEGORIES.map(cat => (
           <Button
             key={cat.id}
-            size="sm"
             variant={activeCategory === cat.id ? 'default' : 'outline'}
             onClick={() => setActiveCategory(cat.id)}
-            className={activeCategory === cat.id ? 'bg-coffee-600 hover:bg-coffee-700 text-white rounded-full px-5' : 'border-coffee-300 text-coffee-700 hover:bg-coffee-50 rounded-full px-5'}
+            className={activeCategory === cat.id
+              ? 'bg-coffee-600 hover:bg-coffee-700 text-white rounded-full px-6'
+              : 'border-coffee-300 text-coffee-700 hover:bg-coffee-50 rounded-full px-6'}
           >
             {cat.label}
           </Button>
