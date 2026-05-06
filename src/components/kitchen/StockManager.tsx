@@ -147,8 +147,9 @@ export function StockManager() {
       const { data } = supabase.storage.from('menu-images').getPublicUrl(path);
       setForm((prev) => ({ ...prev, image_url: data.publicUrl }));
       toast({ title: 'Image uploaded' });
-    } catch (err: any) {
-      toast({ variant: 'destructive', title: 'Upload failed', description: err.message });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Could not upload image.';
+      toast({ variant: 'destructive', title: 'Upload failed', description: message });
     } finally {
       setUploading(false);
       event.target.value = '';
