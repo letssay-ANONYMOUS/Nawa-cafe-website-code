@@ -58,10 +58,11 @@ const ProductDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen flex flex-col">
         <Header />
-        <div className="pt-24 pb-16 px-4 text-center text-coffee-700">Loading...</div>
-        <Footer />
+        <div className="flex-1 pt-24 pb-16 px-4 flex items-center justify-center text-coffee-700 min-h-[80vh]">
+          Loading...
+        </div>
       </div>
     );
   }
