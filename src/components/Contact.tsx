@@ -11,12 +11,12 @@ const Contact = () => {
     },
     {
       title: "Call Us",
-      details: ["037 800 030", "050 658 4176", "Sun–Thu: 6:30 AM–12 AM | Fri–Sat: 7 AM–1 AM"],
+      details: ["050 658 4176", "Sun–Thu: 6:30 AM–12 AM | Fri–Sat: 7 AM–1 AM"],
       icon: Phone
     },
     {
       title: "Email Us",
-      details: ["nawacafe22@gmail.com"],
+      details: ["support@nawacafe.com"],
       icon: Mail
     }
   ];
