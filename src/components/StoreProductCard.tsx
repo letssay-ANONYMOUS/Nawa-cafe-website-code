@@ -20,6 +20,16 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { isAdmin } = useAdmin();
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [imgLoaded, setImgLoaded] = useState(false);
+
+  // Handle browser cache: image may already be complete before onLoad binds
+  useEffect(() => {
+    if (imgRef.current?.complete && imgRef.current.naturalWidth > 0) {
+      setImgLoaded(true);
+    }
+  }, []);
+
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
