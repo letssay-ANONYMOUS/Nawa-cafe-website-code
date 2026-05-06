@@ -127,3 +127,16 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* Smooth top-to-bottom reveal for store images */
+@keyframes store-img-reveal {
+  0% { opacity: 0; transform: translateY(-14px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.store-img {
+  opacity: 0;
+  will-change: opacity, transform;
+}
+.store-img.is-loaded {
+  animation: store-img-reveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
