@@ -1,4 +1,4 @@
-import { CreditCard, Clock, ChefHat, Package } from "lucide-react";
+import { CreditCard, Clock, ChefHat, Package, Calculator } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Sidebar,
@@ -13,7 +13,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-export type KitchenView = "paid" | "pending" | "stock";
+export type KitchenView = "paid" | "pending" | "stock" | "calculator";
 
 interface KitchenSidebarProps {
   activeView: KitchenView;
@@ -44,6 +44,13 @@ const navItems = [
     icon: Package,
     color: "text-blue-600",
     bgColor: "bg-blue-50 dark:bg-blue-950/30",
+  },
+  {
+    id: "calculator" as const,
+    title: "Calculator",
+    icon: Calculator,
+    color: "text-purple-600",
+    bgColor: "bg-purple-50 dark:bg-purple-950/30",
   },
 ];
 
