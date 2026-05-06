@@ -60,20 +60,47 @@ const StorePage = () => {
     loadProducts();
   }, []);
 
-  // Save scroll on unmount
+  // Disable browser auto scroll restoration on this page
   useEffect(() => {
+    const prev = window.history.scrollRestoration;
+    window.history.scrollRestoration = 'manual';
+    const save = () => sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
+    window.addEventListener('beforeunload', save);
+    window.addEventListener('pagehide', save);
     return () => {
-      sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
+      save();
+      window.removeEventListener('beforeunload', save);
+      window.removeEventListener('pagehide', save);
+      window.history.scrollRestoration = prev;
     };
   }, []);
 
-  // Restore scroll after products render
+  // Restore scroll after products load AND first images settle (prevents jump glitch)
   useLayoutEffect(() => {
     if (!loaded) return;
     const y = sessionStorage.getItem(SCROLL_KEY);
-    if (y) {
-      requestAnimationFrame(() => window.scrollTo(0, parseInt(y, 10)));
-    }
+    if (!y) return;
+    const targetY = parseInt(y, 10);
+    let cancelled = false;
+
+    const doScroll = () => {
+      if (!cancelled) window.scrollTo(0, targetY);
+    };
+
+    // Wait until all currently-rendered store images have decoded (or timeout)
+    const imgs = Array.from(document.querySelectorAll<HTMLImageElement>('.store-img'));
+    const decodes = imgs.map(img =>
+      img.complete && img.naturalWidth > 0
+        ? Promise.resolve()
+        : img.decode().catch(() => {})
+    );
+    const timeout = new Promise(resolve => setTimeout(resolve, 500));
+    Promise.race([Promise.all(decodes), timeout]).then(() => {
+      requestAnimationFrame(doScroll);
+    });
+    // Initial best-effort scroll to minimize visual gap
+    requestAnimationFrame(doScroll);
+    return () => { cancelled = true; };
   }, [loaded]);
 
   const features = [
