@@ -10,6 +10,8 @@ import { STORE_CATEGORIES, type StoreCategory, type StoreProduct } from '@/data/
 
 const CATEGORY_KEY = 'store:activeCategory';
 const SCROLL_KEY = 'store:scrollY';
+const PENDING_SCROLL_KEY = 'store:pendingScrollY';
+const GLOBAL_STORE_SCROLL_KEY = 'scroll-pos:/store';
 
 const StorePage = () => {
   const [activeCategory, setActiveCategoryState] = useState<StoreCategory>(() => {
@@ -78,13 +80,23 @@ const StorePage = () => {
   // Restore scroll after products load AND first images settle (prevents jump glitch)
   useLayoutEffect(() => {
     if (!loaded) return;
-    const y = sessionStorage.getItem(SCROLL_KEY);
+    const y = sessionStorage.getItem(PENDING_SCROLL_KEY) ?? sessionStorage.getItem(SCROLL_KEY) ?? sessionStorage.getItem(GLOBAL_STORE_SCROLL_KEY);
     if (!y) return;
     const targetY = parseInt(y, 10);
     let cancelled = false;
+    let attempts = 0;
 
     const doScroll = () => {
-      if (!cancelled) window.scrollTo(0, targetY);
+      if (cancelled) return;
+      window.scrollTo(0, targetY);
+      attempts += 1;
+      if (attempts < 30 && Math.abs(window.scrollY - targetY) > 8) {
+        requestAnimationFrame(doScroll);
+      } else {
+        sessionStorage.setItem(SCROLL_KEY, String(targetY));
+        sessionStorage.setItem(GLOBAL_STORE_SCROLL_KEY, String(targetY));
+        sessionStorage.removeItem(PENDING_SCROLL_KEY);
+      }
     };
 
     // Wait until all currently-rendered store images have decoded (or timeout)
