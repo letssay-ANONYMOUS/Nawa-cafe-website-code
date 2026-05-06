@@ -64,10 +64,28 @@ export function StoreCardEditModal({ open, onOpenChange, product, onSaved }: Pro
     if (file) await uploadFile(file);
   };
 
-  // Paste image from clipboard anywhere in the modal
+  const handlePasteEvent = async (e: React.ClipboardEvent | ClipboardEvent) => {
+    const items = (e as any).clipboardData?.items;
+    if (!items) return;
+    for (const item of Array.from(items) as DataTransferItem[]) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          e.preventDefault();
+          const ext = item.type.split('/')[1] || 'png';
+          const named = new File([file], `pasted-${Date.now()}.${ext}`, { type: item.type });
+          await uploadFile(named);
+          return;
+        }
+      }
+    }
+    toast({ variant: 'destructive', title: 'No image found', description: 'Copy an image first, then paste here.' });
+  };
+
+  // Also accept paste anywhere in the modal as a convenience
   useEffect(() => {
     if (!open) return;
-    const handlePaste = async (e: ClipboardEvent) => {
+    const handler = (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
       if (!items) return;
       for (const item of Array.from(items)) {
@@ -76,14 +94,14 @@ export function StoreCardEditModal({ open, onOpenChange, product, onSaved }: Pro
           if (file) {
             e.preventDefault();
             const named = new File([file], `pasted-${Date.now()}.${item.type.split('/')[1] || 'png'}`, { type: item.type });
-            await uploadFile(named);
+            uploadFile(named);
             return;
           }
         }
       }
     };
-    window.addEventListener('paste', handlePaste);
-    return () => window.removeEventListener('paste', handlePaste);
+    window.addEventListener('paste', handler);
+    return () => window.removeEventListener('paste', handler);
   }, [open]);
 
 
