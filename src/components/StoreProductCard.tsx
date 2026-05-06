@@ -60,7 +60,7 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
           loading="eager"
           decoding="async"
           fetchPriority="high"
-          className="w-full h-full object-cover grayscale opacity-70"
+          className={`w-full h-full object-cover ${product.comingSoon ? 'grayscale opacity-70' : ''}`}
         />
         <Badge className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-coffee-600 text-white border-0 text-[10px] sm:text-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1">
           {product.badge}
