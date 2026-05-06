@@ -19,15 +19,6 @@ const ProductDetail = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        handleBack();
-      }
-    };
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [handleBack]);
 
   useEffect(() => {
     if (!id) return;
