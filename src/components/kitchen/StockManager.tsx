@@ -95,28 +95,37 @@ export function StockManager() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((product) => (
-          <Card key={product.id} className="border">
+          <Card key={product.id} className="border-coffee-200 overflow-hidden flex flex-col">
+            <div className="relative aspect-[4/3] bg-gradient-to-br from-coffee-50 to-cream-100 overflow-hidden">
+              {product.image_url ? (
+                <img src={product.image_url} alt={product.product_name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-coffee-400 text-sm">No image</div>
+              )}
+              {product.coming_soon && (
+                <div className="absolute top-2 left-2 bg-coffee-900/80 text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                  Coming Soon
+                </div>
+              )}
+              {product.badge && (
+                <div className="absolute top-2 right-2 bg-coffee-600 text-white text-[10px] px-2 py-1 rounded-full">
+                  {product.badge}
+                </div>
+              )}
+            </div>
             <CardHeader className="pb-2">
-              <div className="flex items-center gap-3">
-                {product.image_url && (
-                  <img
-                    src={product.image_url}
-                    alt={product.product_name}
-                    className="w-12 h-12 rounded object-cover flex-shrink-0"
-                  />
-                )}
-                <CardTitle className="text-sm font-medium leading-tight flex-1">
-                  {product.product_name}
-                </CardTitle>
-                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditing(product)}>
-                  <Pencil className="w-3.5 h-3.5" />
-                </Button>
+              <CardTitle className="text-sm font-semibold leading-tight line-clamp-2">
+                {product.product_name}
+              </CardTitle>
+              <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                <span>AED {product.price}</span>
+                <span>{product.volume}</span>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 mt-auto">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-xs">Current Stock</span>
-                <span className={`text-2xl font-bold ${product.stock_quantity === 0 ? 'text-destructive' : product.stock_quantity < 5 ? 'text-yellow-600' : 'text-green-600'}`}>
+                <span className="text-muted-foreground text-xs">Stock</span>
+                <span className={`text-xl font-bold ${product.stock_quantity === 0 ? 'text-destructive' : product.stock_quantity < 5 ? 'text-yellow-600' : 'text-green-600'}`}>
                   {product.stock_quantity}
                 </span>
               </div>
@@ -146,6 +155,15 @@ export function StockManager() {
                   -Remove
                 </Button>
               </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full border-coffee-300 text-coffee-700 hover:bg-coffee-50"
+                onClick={() => setEditing(product)}
+              >
+                <Pencil className="w-3.5 h-3.5 mr-2" /> Edit Card
+              </Button>
             </CardContent>
           </Card>
         ))}
