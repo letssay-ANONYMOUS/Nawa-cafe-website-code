@@ -1,0 +1,1 @@
+UPDATE public.store_products SET coming_soon = true WHERE category = 'oil';

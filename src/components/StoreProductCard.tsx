@@ -1,3 +1,4 @@
+import { useRef, useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +20,16 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { isAdmin } = useAdmin();
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [imgLoaded, setImgLoaded] = useState(false);
+
+  // Handle browser cache: image may already be complete before onLoad binds
+  useEffect(() => {
+    if (imgRef.current?.complete && imgRef.current.naturalWidth > 0) {
+      setImgLoaded(true);
+    }
+  }, []);
+
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -54,13 +65,15 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
       onClick={() => navigate(`/store/${product.id}`)}
     >
       <div className="relative overflow-hidden bg-gradient-to-br from-coffee-50 to-cream-100 aspect-[4/3] sm:h-64 sm:aspect-auto">
-        <img 
-          src={product.image} 
+        <img
+          ref={imgRef}
+          src={product.image}
           alt={product.name}
-          loading="eager"
+          loading="lazy"
           decoding="async"
-          fetchPriority="high"
-          className={`w-full h-full object-cover ${product.comingSoon ? 'grayscale opacity-70' : ''}`}
+          onLoad={() => setImgLoaded(true)}
+          onError={() => setImgLoaded(true)}
+          className={`store-img w-full h-full object-cover ${imgLoaded ? 'is-loaded' : ''} ${product.comingSoon && imgLoaded ? 'grayscale opacity-70' : ''}`}
         />
         <Badge className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-coffee-600 text-white border-0 text-[10px] sm:text-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1">
           {product.badge}
