@@ -8,17 +8,31 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Star } from 'lucide-react';
 import type { StoreProduct } from '@/data/storeCatalog';
 
+const STORE_SCROLL_KEY = 'store:scrollY';
+const STORE_PENDING_SCROLL_KEY = 'store:pendingScrollY';
+const GLOBAL_STORE_SCROLL_KEY = 'scroll-pos:/store';
+
+type StoreProductRow = {
+  product_key: number;
+  product_name: string;
+  description: string | null;
+  price: number | string | null;
+  image_url: string | null;
+  rating: number | null;
+  badge: string | null;
+  volume: string | null;
+  origin: string | null;
+  category: StoreProduct['category'] | null;
+  coming_soon: boolean | null;
+  stock_quantity: number | null;
+};
+
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [stock, setStock] = useState<number | null>(null);
   const [product, setProduct] = useState<StoreProduct | null>(null);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
 
   useEffect(() => {
     if (!id) return;
@@ -29,7 +43,7 @@ const ProductDetail = () => {
       .maybeSingle()
       .then(({ data }) => {
         if (data) {
-          const row = data as any;
+          const row = data as StoreProductRow;
           setStock(row.stock_quantity ?? null);
           setProduct({
             id: row.product_key,
@@ -50,11 +64,15 @@ const ProductDetail = () => {
   }, [id]);
 
   const handleBack = useCallback(() => {
-    if (window.history.length > 1) {
-      navigate(-1);
-      return;
+    const savedStoreY = sessionStorage.getItem(STORE_SCROLL_KEY) ?? sessionStorage.getItem(GLOBAL_STORE_SCROLL_KEY);
+    if (savedStoreY) {
+      sessionStorage.setItem(STORE_PENDING_SCROLL_KEY, savedStoreY);
+      sessionStorage.setItem(GLOBAL_STORE_SCROLL_KEY, savedStoreY);
     }
-    navigate('/store', { replace: true });
+    navigate('/store', {
+      replace: true,
+      state: savedStoreY ? { restoreStoreY: Number(savedStoreY) } : undefined,
+    });
   }, [navigate]);
 
   useEffect(() => {
