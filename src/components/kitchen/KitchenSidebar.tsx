@@ -110,15 +110,17 @@ export function KitchenSidebar({
                       {!isCollapsed && (
                         <>
                           <span className={cn(isActive && item.color)}>{item.title}</span>
-                          <span
-                            className={cn(
-                              "ml-auto text-xs font-bold px-2 py-0.5 rounded-full",
-                              isActive ? item.bgColor : "bg-muted",
-                              isActive ? item.color : "text-muted-foreground"
-                            )}
-                          >
-                            {count}
-                          </span>
+                          {count !== null && (
+                            <span
+                              className={cn(
+                                "ml-auto text-xs font-bold px-2 py-0.5 rounded-full",
+                                isActive ? item.bgColor : "bg-muted",
+                                isActive ? item.color : "text-muted-foreground"
+                              )}
+                            >
+                              {count}
+                            </span>
+                          )}
                         </>
                       )}
                     </SidebarMenuButton>
