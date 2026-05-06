@@ -12,6 +12,21 @@ const STORE_SCROLL_KEY = 'store:scrollY';
 const STORE_PENDING_SCROLL_KEY = 'store:pendingScrollY';
 const GLOBAL_STORE_SCROLL_KEY = 'scroll-pos:/store';
 
+type StoreProductRow = {
+  product_key: number;
+  product_name: string;
+  description: string | null;
+  price: number | string | null;
+  image_url: string | null;
+  rating: number | null;
+  badge: string | null;
+  volume: string | null;
+  origin: string | null;
+  category: StoreProduct['category'] | null;
+  coming_soon: boolean | null;
+  stock_quantity: number | null;
+};
+
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -33,7 +48,7 @@ const ProductDetail = () => {
       .maybeSingle()
       .then(({ data }) => {
         if (data) {
-          const row = data as any;
+          const row = data as StoreProductRow;
           setStock(row.stock_quantity ?? null);
           setProduct({
             id: row.product_key,
