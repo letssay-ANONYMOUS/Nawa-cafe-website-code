@@ -8,6 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Star } from 'lucide-react';
 import type { StoreProduct } from '@/data/storeCatalog';
 
+const STORE_SCROLL_KEY = 'store:scrollY';
+const STORE_PENDING_SCROLL_KEY = 'store:pendingScrollY';
+const GLOBAL_STORE_SCROLL_KEY = 'scroll-pos:/store';
+
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -50,6 +54,11 @@ const ProductDetail = () => {
   }, [id]);
 
   const handleBack = useCallback(() => {
+    const savedStoreY = sessionStorage.getItem(STORE_SCROLL_KEY) ?? sessionStorage.getItem(GLOBAL_STORE_SCROLL_KEY);
+    if (savedStoreY) {
+      sessionStorage.setItem(STORE_PENDING_SCROLL_KEY, savedStoreY);
+      sessionStorage.setItem(GLOBAL_STORE_SCROLL_KEY, savedStoreY);
+    }
     if (window.history.length > 1) {
       navigate(-1);
       return;
