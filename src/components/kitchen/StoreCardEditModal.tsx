@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -38,15 +38,9 @@ export function StoreCardEditModal({ open, onOpenChange, product, onSaved }: Pro
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
-  // Sync form with product
-  useState(() => {
+  useEffect(() => {
     if (product) setForm(product);
-  });
-
-  // Re-init when product changes
-  if (product && form.id !== product.id) {
-    setForm(product);
-  }
+  }, [product]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
