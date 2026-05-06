@@ -1,0 +1,1 @@
+UPDATE public.menu_cards SET image_url='https://lomqlmqsoyayuegheetv.supabase.co/storage/v1/object/public/menu-images/menu/card-74-v2.jpg' WHERE id=74;
