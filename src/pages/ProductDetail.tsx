@@ -20,6 +20,16 @@ const ProductDetail = () => {
   }, []);
 
   useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleBack();
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [handleBack]);
+
+  useEffect(() => {
     if (!id) return;
     supabase
       .from('store_products')
