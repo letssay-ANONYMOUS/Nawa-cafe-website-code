@@ -183,10 +183,16 @@ export function StoreCardEditModal({ open, onOpenChange, product, onSaved }: Pro
               {uploading ? 'Uploading…' : 'Upload new image'}
               <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
             </label>
-            <p className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-              <ClipboardPaste className="w-3 h-3" />
-              Tip: copy an image and press Ctrl/Cmd+V anywhere in this dialog to paste it.
-            </p>
+            <div
+              tabIndex={0}
+              onPaste={handlePasteEvent}
+              className="mt-2 flex items-center justify-center gap-2 border-2 border-dashed rounded-md p-4 text-sm text-muted-foreground cursor-text focus:outline-none focus:border-coffee-700 focus:bg-coffee-50 focus:text-coffee-900"
+              role="textbox"
+              aria-label="Click here, then press Ctrl/Cmd+V to paste an image"
+            >
+              <ClipboardPaste className="w-4 h-4" />
+              Click here, then press Ctrl/Cmd+V to paste an image
+            </div>
             <Input
               className="mt-2"
               placeholder="Or paste image URL"
