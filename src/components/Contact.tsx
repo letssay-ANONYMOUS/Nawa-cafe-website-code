@@ -16,7 +16,7 @@ const Contact = () => {
     },
     {
       title: "Email Us",
-      details: ["nawacafe22@gmail.com"],
+      details: ["support@nawacafe.com"],
       icon: Mail
     }
   ];
