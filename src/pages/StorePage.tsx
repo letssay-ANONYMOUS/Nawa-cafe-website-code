@@ -13,6 +13,21 @@ const SCROLL_KEY = 'store:scrollY';
 const PENDING_SCROLL_KEY = 'store:pendingScrollY';
 const GLOBAL_STORE_SCROLL_KEY = 'scroll-pos:/store';
 
+type StoreProductRow = {
+  product_key: number;
+  product_name: string;
+  description: string | null;
+  price: number | string | null;
+  image_url: string | null;
+  rating: number | null;
+  badge: string | null;
+  volume: string | null;
+  origin: string | null;
+  category: StoreCategory | null;
+  coming_soon: boolean | null;
+  stock_quantity: number;
+};
+
 const StorePage = () => {
   const [activeCategory, setActiveCategoryState] = useState<StoreCategory>(() => {
     const saved = sessionStorage.getItem(CATEGORY_KEY) as StoreCategory | null;
@@ -38,7 +53,7 @@ const StorePage = () => {
         .order('sort_order', { ascending: true });
       if (data) {
         const stock: Record<number, number> = {};
-        const list: StoreProduct[] = (data as any[]).map(row => {
+        const list: StoreProduct[] = (data as StoreProductRow[]).map(row => {
           stock[row.product_key] = row.stock_quantity;
           return {
             id: row.product_key,
