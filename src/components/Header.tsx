@@ -15,10 +15,10 @@ const Header = () => {
   const navItems = [
     { path: '/', label: 'Home' },
     { path: '/menu', label: 'Menu' },
-    { path: '/about', label: 'About' },
     { path: '/catering', label: 'Catering' },
     { path: '/locations', label: 'Locations' },
     { path: '/store', label: 'Store' },
+    { path: '/about', label: 'About' },
     { path: '/contact', label: 'Contact' },
   ];
 
