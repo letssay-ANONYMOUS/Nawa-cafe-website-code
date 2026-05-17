@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { CartItem } from '@/contexts/CartContext';
@@ -13,11 +13,49 @@ export interface DiscountInfo {
   target_name: string | null;
 }
 
+// -----------------------------------------------------------------------------
+// Shared singleton store so every useDiscountCode() instance stays in sync —
+// applying a code in <PromoCodeInput /> must instantly update totals in the
+// parent page that also reads this hook.
+// -----------------------------------------------------------------------------
+const listeners = new Set<() => void>();
+let currentCode: string = (() => {
+  try { return localStorage.getItem(STORAGE_KEY) || ''; } catch { return ''; }
+})();
+
+const subscribe = (cb: () => void) => {
+  listeners.add(cb);
+  return () => { listeners.delete(cb); };
+};
+const getSnapshot = () => currentCode;
+
+function setSharedCode(next: string) {
+  const normalized = next.trim().toUpperCase();
+  if (normalized === currentCode) return;
+  currentCode = normalized;
+  try {
+    if (normalized) localStorage.setItem(STORAGE_KEY, normalized);
+    else localStorage.removeItem(STORAGE_KEY);
+  } catch {}
+  listeners.forEach((cb) => cb());
+}
+
+// Keep tabs in sync
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORAGE_KEY) {
+      const next = (e.newValue || '').trim().toUpperCase();
+      if (next !== currentCode) {
+        currentCode = next;
+        listeners.forEach((cb) => cb());
+      }
+    }
+  });
+}
+
 async function fetchCode(code: string): Promise<DiscountInfo | null> {
   if (!code) return null;
-  const { data, error } = await supabase.rpc('validate_discount_code', {
-    _code: code,
-  });
+  const { data, error } = await supabase.rpc('validate_discount_code', { _code: code });
   if (error) {
     console.error('validate_discount_code error', error);
     return null;
@@ -33,10 +71,7 @@ async function fetchCode(code: string): Promise<DiscountInfo | null> {
   };
 }
 
-/**
- * Round half-away-from-zero to 2 decimals — avoids floating-point drift
- * (e.g. 0.1 + 0.2). Use ONLY at the very end for display/storage.
- */
+/** Round half-away-from-zero to 2 decimals — avoids floating-point drift. */
 export const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 export function computeCodeDiscount(
@@ -51,12 +86,11 @@ export function computeCodeDiscount(
     return round2(subtotal * pct);
   }
 
-  // scope = 'item' — match by exact name
   if (!info.target_name) return 0;
   const target = info.target_name.trim().toLowerCase();
   let total = 0;
   for (const item of cartItems) {
-    if (item.name.trim().toLowerCase() === target) {
+    if ((item.name || '').trim().toLowerCase() === target) {
       total += item.price * item.quantity * pct;
     }
   }
@@ -64,24 +98,10 @@ export function computeCodeDiscount(
 }
 
 export function useDiscountCode() {
-  const [code, setCodeState] = useState<string>(() => {
-    try {
-      return localStorage.getItem(STORAGE_KEY) || '';
-    } catch {
-      return '';
-    }
-  });
+  const code = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-  const setCode = useCallback((next: string) => {
-    const normalized = next.trim().toUpperCase();
-    setCodeState(normalized);
-    try {
-      if (normalized) localStorage.setItem(STORAGE_KEY, normalized);
-      else localStorage.removeItem(STORAGE_KEY);
-    } catch {}
-  }, []);
-
-  const clear = useCallback(() => setCode(''), [setCode]);
+  const setCode = useCallback((next: string) => setSharedCode(next), []);
+  const clear = useCallback(() => setSharedCode(''), []);
 
   const query = useQuery({
     queryKey: ['discount-code', code],
