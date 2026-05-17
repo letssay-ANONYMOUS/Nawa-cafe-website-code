@@ -268,6 +268,7 @@ serve(async (req) => {
           visitor_id: visitorId || 'unknown',
           customer_name: customerName,
           customer_phone: phoneNumber,
+          customer_email: customerEmail || null,
           extra_notes: additionalNotes || null,
           subtotal: subtotal,
           total_amount: amount,
