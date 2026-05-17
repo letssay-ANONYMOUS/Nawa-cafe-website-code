@@ -76,6 +76,7 @@ const persistSeenIds = (ids: Set<string>) => {
 const KitchenDashboard = () => {
   const mountedRef = useRef(true);
   const seenPaidIdsRef = useRef<Set<string>>(loadSeenIds());
+  const initialLoadDoneRef = useRef(false);
 
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [isLoading, setIsLoading] = useState(true);
