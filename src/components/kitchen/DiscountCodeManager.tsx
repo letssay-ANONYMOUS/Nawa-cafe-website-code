@@ -100,7 +100,7 @@ export function DiscountCodeManager() {
         supabase
           .from('discount_codes')
           .select('*')
-          .order('created_at', { ascending: false }),
+          .order('updated_at', { ascending: false }),
         supabase
           .from('store_products')
           .select('id, product_name')
@@ -186,7 +186,7 @@ export function DiscountCodeManager() {
     setSaving(true);
     const { data: createdRow, error } = await supabase
       .from('discount_codes')
-      .insert({
+      .upsert({
         code: cleanCode,
         percent: pct,
         scope,
@@ -194,7 +194,7 @@ export function DiscountCodeManager() {
         target_name,
         expires_at,
         active: true,
-      })
+      }, { onConflict: 'code' })
       .select('*')
       .single();
     setSaving(false);
@@ -206,7 +206,7 @@ export function DiscountCodeManager() {
     loadSeq.current += 1;
     setRows((prev) => [createdRow as DiscountRow, ...prev.filter((r) => r.id !== createdRow.id)]);
     refreshDiscountCaches();
-    toast({ title: 'Code created', description: `${cleanCode} is now active.` });
+    toast({ title: 'Code saved', description: `${cleanCode} is now active.` });
     resetForm();
   };
 
