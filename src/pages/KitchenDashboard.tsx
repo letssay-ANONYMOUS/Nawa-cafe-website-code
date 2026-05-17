@@ -97,15 +97,30 @@ const KitchenDashboard = () => {
     onTimeout: handleAlertTimeout,
   });
 
-  // Initialize audio on first user interaction
+  // Initialize audio on first user interaction — listen to every gesture type
+  // so iPad / Android / desktop all unlock immediately regardless of input method.
   useEffect(() => {
-    const handleFirstInteraction = () => {
-      initAudioContext();
-      window.removeEventListener('click', handleFirstInteraction);
+    const unlock = () => {
+      try { initAudioContext(); } catch {}
     };
-    window.addEventListener('click', handleFirstInteraction);
-    return () => window.removeEventListener('click', handleFirstInteraction);
+    const events: (keyof WindowEventMap)[] = ['click', 'touchstart', 'touchend', 'keydown', 'pointerdown'];
+    events.forEach((e) => window.addEventListener(e, unlock, { passive: true } as any));
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, unlock as any));
+    };
   }, [initAudioContext]);
+
+  // Re-arm audio context when tab becomes visible again (iPad wake from sleep)
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        try { initAudioContext(); } catch {}
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [initAudioContext]);
+
 
   // Initial settings load
   useEffect(() => {
