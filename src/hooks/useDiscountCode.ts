@@ -36,7 +36,9 @@ function setSharedCode(next: string) {
   try {
     if (normalized) localStorage.setItem(STORAGE_KEY, normalized);
     else localStorage.removeItem(STORAGE_KEY);
-  } catch {}
+  } catch {
+    // localStorage can be unavailable in private browsing; keep the in-memory code synced.
+  }
   listeners.forEach((cb) => cb());
 }
 
