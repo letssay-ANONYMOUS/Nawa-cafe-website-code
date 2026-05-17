@@ -13,6 +13,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { getVisitorId } from '@/hooks/useVisitorId';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { PromoCodeInput } from '@/components/PromoCodeInput';
+import { useDiscountCode, computeCodeDiscount, round2 } from '@/hooks/useDiscountCode';
 
 const FIXED_BRANCH = 'Stadhazza Branch';
 const CHECKOUT_FORM_KEY = 'nawa_checkout_form';
@@ -37,6 +39,7 @@ const loadStoredForm = () => {
 const CheckoutPage = () => {
   const { toast } = useToast();
   const { cartItems, getCartTotal, getCartCount, clearCart } = useCart();
+  const { info: discountInfo, code: discountCode, clear: clearDiscount } = useDiscountCode();
   const navigate = useNavigate();
   const { trackCheckoutStart, trackCheckoutComplete } = useAnalytics();
   const [loading, setLoading] = useState(false);
@@ -52,8 +55,9 @@ const CheckoutPage = () => {
   }, [formData]);
 
   const subtotal = getCartTotal();
-  const discount = subtotal * 0.15;
-  const total = subtotal - discount;
+  const loyaltyDiscount = round2(subtotal * 0.15);
+  const codeDiscount = computeCodeDiscount(cartItems, subtotal, discountInfo);
+  const total = round2(Math.max(0, subtotal - loyaltyDiscount - codeDiscount));
   const itemCount = getCartCount();
 
   // Track checkout start when page loads with items
@@ -98,6 +102,7 @@ const CheckoutPage = () => {
             category: item.category,
           })),
           additionalNotes: formData.notes || "None",
+          discountCode: discountCode || null,
         },
       });
 
@@ -269,14 +274,21 @@ const CheckoutPage = () => {
                           ))}
                         </div>
                         <div className="border-t border-coffee-200 pt-4 space-y-2">
-                          <div className="flex justify-between text-sm text-coffee-700">
+                          <PromoCodeInput />
+                          <div className="flex justify-between text-sm text-coffee-700 pt-2">
                             <span>Subtotal</span>
                             <span>AED {subtotal.toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between text-sm text-green-600 font-medium">
-                            <span>Discount (15%)</span>
-                            <span>-AED {discount.toFixed(2)}</span>
+                            <span>Loyalty discount (15%)</span>
+                            <span>-AED {loyaltyDiscount.toFixed(2)}</span>
                           </div>
+                          {codeDiscount > 0 && discountInfo && (
+                            <div className="flex justify-between text-sm text-green-700 font-medium">
+                              <span>Promo ({discountInfo.code} −{discountInfo.percent}%)</span>
+                              <span>−AED {codeDiscount.toFixed(2)}</span>
+                            </div>
+                          )}
                           <div className="flex justify-between text-lg font-semibold text-coffee-800 border-t border-coffee-200 pt-2">
                             <span>Total</span>
                             <span>AED {total.toFixed(2)}</span>

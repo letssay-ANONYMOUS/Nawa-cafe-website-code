@@ -23,6 +23,7 @@ import { KitchenSidebar, type KitchenView } from "@/components/kitchen/KitchenSi
 import { SoundPicker } from "@/components/kitchen/SoundPicker";
 import { StockManager } from "@/components/kitchen/StockManager";
 import { RevenueCalculator } from "@/components/kitchen/RevenueCalculator";
+import { DiscountCodeManager } from "@/components/kitchen/DiscountCodeManager";
 import type { Tables } from '@/integrations/supabase/types';
 
 type Order = Tables<'orders'>;
@@ -38,6 +39,7 @@ const getKitchenViewFromPath = (pathname: string): KitchenView => {
   if (pathname.includes('/stock')) return 'stock';
   if (pathname.includes('/pending')) return 'pending';
   if (pathname.includes('/calculator')) return 'calculator';
+  if (pathname.includes('/discounts')) return 'discounts';
   return 'paid';
 };
 
@@ -402,10 +404,10 @@ const KitchenDashboard = () => {
                   <SidebarTrigger />
                   <div className="min-w-0">
                     <h1 className="text-sm sm:text-lg font-bold text-foreground truncate">
-                      {activeView === 'stock' ? '📦 Store Stock' : activeView === 'calculator' ? '🧮 Revenue Calculator' : activeView === 'paid' ? '✅ Paid Orders' : '⏳ Pending Orders'}
+                      {activeView === 'stock' ? '📦 Store Stock' : activeView === 'calculator' ? '🧮 Revenue Calculator' : activeView === 'discounts' ? '🏷 Discount Codes' : activeView === 'paid' ? '✅ Paid Orders' : '⏳ Pending Orders'}
                     </h1>
                     <p className="text-[10px] sm:text-xs text-muted-foreground">
-                      {activeView === 'stock' ? 'Editable product cards' : activeView === 'calculator' ? 'Auto gains per day, week, month' : `Last ${dateRangeLabels[dateRange].toLowerCase()} • ${currentOrders.length} orders`}
+                      {activeView === 'stock' ? 'Editable product cards' : activeView === 'calculator' ? 'Auto gains per day, week, month' : activeView === 'discounts' ? 'Create and manage promo codes' : `Last ${dateRangeLabels[dateRange].toLowerCase()} • ${currentOrders.length} orders`}
                     </p>
                   </div>
                 </div>
@@ -530,6 +532,8 @@ const KitchenDashboard = () => {
               <StockManager />
             ) : activeView === 'calculator' ? (
               <RevenueCalculator />
+            ) : activeView === 'discounts' ? (
+              <DiscountCodeManager />
             ) : isLoading ? (
               <div className="flex items-center justify-center h-64">
                 <RefreshCw className="w-8 h-8 animate-spin text-primary" />
