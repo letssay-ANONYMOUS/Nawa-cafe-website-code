@@ -422,6 +422,14 @@ serve(async (req) => {
       console.error("Error updating order with payment reference:", updateError);
     }
 
+    // Link order to shared payment if applicable
+    if (sharedPaymentId) {
+      await supabase
+        .from('shared_payments')
+        .update({ paid_order_id: orderData.id })
+        .eq('id', sharedPaymentId);
+    }
+
 
     return new Response(
       JSON.stringify({
