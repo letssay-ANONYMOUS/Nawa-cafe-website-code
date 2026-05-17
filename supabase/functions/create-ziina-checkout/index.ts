@@ -20,7 +20,7 @@ serve(async (req) => {
     const customerIp = cfConnectingIp || (forwardedFor ? forwardedFor.split(",")[0].trim() : null) || realIp || null;
     console.log("Customer IP:", customerIp);
 
-    const { customerName, phoneNumber, orderItems, additionalNotes, visitorId, latitude, longitude, selectedBranch } = await req.json();
+    const { customerName, phoneNumber, orderItems, additionalNotes, visitorId, latitude, longitude, selectedBranch, discountCode } = await req.json();
 
     // ===== BRANCH DETECTION =====
     // Two Nawa Cafe branches in Al Ain
@@ -131,12 +131,44 @@ serve(async (req) => {
       validatedItems.push({ ...item, price: dbPrice }); // Use DB price
     }
 
-    // Apply permanent 15% discount (matches frontend pricing policy)
+    // Apply permanent 15% loyalty discount (matches frontend pricing policy)
     const DISCOUNT_RATE = 0.15;
     const subtotalAmount = Math.round(serverTotal * 100) / 100;
-    const discountedTotal = serverTotal * (1 - DISCOUNT_RATE);
-    const amount = Math.round(discountedTotal * 100) / 100; // Round to 2 decimals
-    console.log("Server-validated subtotal:", subtotalAmount, "discounted total:", amount);
+    const loyaltyDiscount = Math.round(serverTotal * DISCOUNT_RATE * 100) / 100;
+
+    // ===== PROMO CODE VALIDATION (server-side) =====
+    let appliedCode: string | null = null;
+    let codeDiscount = 0;
+    if (discountCode && typeof discountCode === "string") {
+      const { data: codeRows, error: codeErr } = await supabase.rpc("validate_discount_code", {
+        _code: discountCode,
+      });
+      if (codeErr) {
+        console.warn("Discount code validation failed:", codeErr);
+      } else if (Array.isArray(codeRows) && codeRows[0]) {
+        const row = codeRows[0] as { code: string; percent: number; scope: string; target_source: string | null; target_name: string | null };
+        const pct = Math.min(100, Math.max(0, Number(row.percent))) / 100;
+        if (row.scope === "cart") {
+          codeDiscount = serverTotal * pct;
+        } else if (row.scope === "item" && row.target_name) {
+          const target = row.target_name.trim().toLowerCase();
+          for (const it of validatedItems) {
+            if (String(it.name).trim().toLowerCase() === target) {
+              codeDiscount += it.price * it.quantity * pct;
+            }
+          }
+        }
+        codeDiscount = Math.round(codeDiscount * 100) / 100;
+        appliedCode = row.code;
+        console.log("Applied promo code:", appliedCode, "discount:", codeDiscount);
+      } else {
+        console.log("Discount code not valid:", discountCode);
+      }
+    }
+
+    const rawTotal = serverTotal - loyaltyDiscount - codeDiscount;
+    const amount = Math.max(0, Math.round(rawTotal * 100) / 100);
+    console.log("Server-validated subtotal:", subtotalAmount, "loyalty:", loyaltyDiscount, "promo:", codeDiscount, "final:", amount);
 
     // Get Ziina API token
     const ziinaToken = Deno.env.get("ZIINA_API_TOKEN") || Deno.env.get("ZIINA_API_KEY");
@@ -191,6 +223,8 @@ serve(async (req) => {
           order_type: 'dine_in',
           ip_address: customerIp,
           customer_location: customerLocation,
+          applied_discount_code: appliedCode,
+          code_discount_amount: codeDiscount,
         })
         .select('id, order_number')
         .single();
