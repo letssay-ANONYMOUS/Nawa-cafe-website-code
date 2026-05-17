@@ -250,6 +250,17 @@ const SharedPaymentPage = () => {
                         className="mt-1"
                       />
                     </div>
+                    <div>
+                      <Label htmlFor="payer-email">Email <span className="text-coffee-400 font-normal">(optional)</span></Label>
+                      <Input
+                        id="payer-email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        className="mt-1"
+                      />
+                    </div>
                   </div>
                   <Button
                     onClick={handlePay}
