@@ -16,10 +16,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, RefreshCw, Trash2, Tag, Percent } from 'lucide-react';
+import { CalendarIcon, RefreshCw, Trash2, Tag, Percent, Check, ChevronsUpDown, Sparkles } from 'lucide-react';
+import { useLoyaltyDiscount } from '@/hooks/useLoyaltyDiscount';
 
 interface DiscountRow {
   id: string;
