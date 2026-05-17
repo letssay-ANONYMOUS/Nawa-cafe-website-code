@@ -190,20 +190,32 @@ const KitchenDashboard = () => {
           items: (itemsData || []).filter(item => item.order_id === order.id),
         })));
 
-        // SAFETY NET: any paid order we haven't seen before must trigger the
-        // alert, even if the realtime channel missed the event.
-        const missed: string[] = [];
-        for (const o of ordersData) {
-          if (o.payment_status === 'paid' && !seenPaidIdsRef.current.has(o.id)) {
-            missed.push(o.id);
+        // SAFETY NET: only alert for paid orders that appear AFTER the initial
+        // load on this device. On first load (e.g. fresh login / page refresh),
+        // seed seenPaidIds with everything already paid so the alert does NOT
+        // fire just because someone signed in.
+        if (!initialLoadDoneRef.current) {
+          for (const o of ordersData) {
+            if (o.payment_status === 'paid') {
+              seenPaidIdsRef.current.add(o.id);
+            }
           }
-        }
-        if (missed.length > 0) {
-          setUnacknowledgedOrders(prev => {
-            const next = new Set(prev);
-            missed.forEach(id => next.add(id));
-            return next;
-          });
+          persistSeenIds(seenPaidIdsRef.current);
+          initialLoadDoneRef.current = true;
+        } else {
+          const missed: string[] = [];
+          for (const o of ordersData) {
+            if (o.payment_status === 'paid' && !seenPaidIdsRef.current.has(o.id)) {
+              missed.push(o.id);
+            }
+          }
+          if (missed.length > 0) {
+            setUnacknowledgedOrders(prev => {
+              const next = new Set(prev);
+              missed.forEach(id => next.add(id));
+              return next;
+            });
+          }
         }
       } else {
         setOrders([]);
