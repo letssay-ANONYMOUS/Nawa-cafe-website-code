@@ -40,6 +40,7 @@ const SharedPaymentPage = () => {
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [paying, setPaying] = useState(false);
 
   useEffect(() => {
