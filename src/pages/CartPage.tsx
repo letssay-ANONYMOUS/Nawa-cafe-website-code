@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
 import { PromoCodeInput } from '@/components/PromoCodeInput';
 import { useDiscountCode, computeCodeDiscount, round2 } from '@/hooks/useDiscountCode';
+import ShareCartPayment from '@/components/ShareCartPayment';
 
 const CartPage = () => {
   const { cartItems, updateQuantity, removeFromCart, getCartTotal } = useCart();
@@ -132,6 +133,7 @@ const CartPage = () => {
                           Proceed to Checkout
                         </Button>
                       </Link>
+                      <ShareCartPayment subtotal={subtotal} total={total} />
                       <Link to="/menu">
                         <Button variant="outline" size="lg" className="w-full mt-3">
                           Continue Shopping
