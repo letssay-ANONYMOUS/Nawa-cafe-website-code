@@ -56,14 +56,33 @@ const getDateFromRange = (range: DateRangeOption): Date => {
   return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 };
 
+const ACK_STORAGE_KEY = 'kitchen_seen_paid_orders';
+const loadSeenIds = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem(ACK_STORAGE_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr.slice(-500) : []);
+  } catch { return new Set(); }
+};
+const persistSeenIds = (ids: Set<string>) => {
+  try {
+    // Keep only the most recent 500 to avoid unbounded growth
+    const arr = Array.from(ids).slice(-500);
+    localStorage.setItem(ACK_STORAGE_KEY, JSON.stringify(arr));
+  } catch {}
+};
+
 const KitchenDashboard = () => {
   const mountedRef = useRef(true);
+  const seenPaidIdsRef = useRef<Set<string>>(loadSeenIds());
 
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [unacknowledgedOrders, setUnacknowledgedOrders] = useState<Set<string>>(new Set());
   const [activeView, setActiveView] = useState<KitchenView>(() => getKitchenViewFromPath(window.location.pathname));
+
   const [showSoundPicker, setShowSoundPicker] = useState(false);
   const [dateRange, setDateRange] = useState<DateRangeOption>(() =>
     (localStorage.getItem('kitchen_date_range') as DateRangeOption) || '1month'
@@ -97,15 +116,30 @@ const KitchenDashboard = () => {
     onTimeout: handleAlertTimeout,
   });
 
-  // Initialize audio on first user interaction
+  // Initialize audio on first user interaction — listen to every gesture type
+  // so iPad / Android / desktop all unlock immediately regardless of input method.
   useEffect(() => {
-    const handleFirstInteraction = () => {
-      initAudioContext();
-      window.removeEventListener('click', handleFirstInteraction);
+    const unlock = () => {
+      try { initAudioContext(); } catch {}
     };
-    window.addEventListener('click', handleFirstInteraction);
-    return () => window.removeEventListener('click', handleFirstInteraction);
+    const events: (keyof WindowEventMap)[] = ['click', 'touchstart', 'touchend', 'keydown', 'pointerdown'];
+    events.forEach((e) => window.addEventListener(e, unlock, { passive: true } as any));
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, unlock as any));
+    };
   }, [initAudioContext]);
+
+  // Re-arm audio context when tab becomes visible again (iPad wake from sleep)
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        try { initAudioContext(); } catch {}
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [initAudioContext]);
+
 
   // Initial settings load
   useEffect(() => {
@@ -154,6 +188,22 @@ const KitchenDashboard = () => {
           ...order,
           items: (itemsData || []).filter(item => item.order_id === order.id),
         })));
+
+        // SAFETY NET: any paid order we haven't seen before must trigger the
+        // alert, even if the realtime channel missed the event.
+        const missed: string[] = [];
+        for (const o of ordersData) {
+          if (o.payment_status === 'paid' && !seenPaidIdsRef.current.has(o.id)) {
+            missed.push(o.id);
+          }
+        }
+        if (missed.length > 0) {
+          setUnacknowledgedOrders(prev => {
+            const next = new Set(prev);
+            missed.forEach(id => next.add(id));
+            return next;
+          });
+        }
       } else {
         setOrders([]);
       }
@@ -341,6 +391,9 @@ const KitchenDashboard = () => {
   }, [unacknowledgedOrders.size, soundEnabled, startAlert, stopAlert]);
 
   const handleAcknowledge = useCallback((orderId: string) => {
+    // Mark as permanently seen so future polls / reloads don't re-alert.
+    seenPaidIdsRef.current.add(orderId);
+    persistSeenIds(seenPaidIdsRef.current);
     setUnacknowledgedOrders(prev => {
       const newSet = new Set(prev);
       newSet.delete(orderId);
