@@ -58,7 +58,7 @@ async function fetchCode(code: string): Promise<DiscountInfo | null> {
   const { data, error } = await supabase.rpc('validate_discount_code', { _code: code });
   if (error) {
     console.error('validate_discount_code error', error);
-    return null;
+    throw error;
   }
   const row = Array.isArray(data) ? data[0] : null;
   if (!row) return null;
@@ -109,7 +109,9 @@ export function useDiscountCode() {
     enabled: !!code,
     staleTime: 30 * 1000,
     gcTime: 60 * 1000,
-    retry: 1,
+    retry: 2,
+    refetchOnMount: false,
+    refetchOnReconnect: true,
   });
 
   return {
@@ -118,6 +120,6 @@ export function useDiscountCode() {
     clear,
     info: query.data ?? null,
     loading: query.isFetching,
-    invalid: !!code && !query.isFetching && !query.data,
+    invalid: !!code && query.isSuccess && !query.data,
   };
 }
