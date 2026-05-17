@@ -184,24 +184,30 @@ export function DiscountCodeManager() {
     }
 
     setSaving(true);
-    const { error } = await supabase.from('discount_codes').insert({
-      code: cleanCode,
-      percent: pct,
-      scope,
-      target_source,
-      target_name,
-      expires_at,
-      active: true,
-    });
+    const { data: createdRow, error } = await supabase
+      .from('discount_codes')
+      .insert({
+        code: cleanCode,
+        percent: pct,
+        scope,
+        target_source,
+        target_name,
+        expires_at,
+        active: true,
+      })
+      .select('*')
+      .single();
     setSaving(false);
 
     if (error) {
       toast({ variant: 'destructive', title: 'Failed to create code', description: error.message });
       return;
     }
+    loadSeq.current += 1;
+    setRows((prev) => [createdRow as DiscountRow, ...prev.filter((r) => r.id !== createdRow.id)]);
+    refreshDiscountCaches();
     toast({ title: 'Code created', description: `${cleanCode} is now active.` });
     resetForm();
-    load();
   };
 
   const toggleActive = async (row: DiscountRow) => {
@@ -214,6 +220,7 @@ export function DiscountCodeManager() {
       return;
     }
     setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, active: !r.active } : r)));
+    refreshDiscountCaches();
   };
 
   const deleteRow = async (row: DiscountRow) => {
@@ -224,6 +231,7 @@ export function DiscountCodeManager() {
       return;
     }
     setRows((prev) => prev.filter((r) => r.id !== row.id));
+    refreshDiscountCaches();
     toast({ title: 'Code deleted', description: row.code });
   };
 
