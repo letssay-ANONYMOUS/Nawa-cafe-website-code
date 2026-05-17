@@ -265,14 +265,67 @@ export function DiscountCodeManager() {
           {scope === 'item' && (
             <div className="space-y-1">
               <Label>Product</Label>
-              <Select value={targetKey} onValueChange={setTargetKey}>
-                <SelectTrigger><SelectValue placeholder="Pick a product" /></SelectTrigger>
-                <SelectContent className="max-h-72">
-                  {productOptions.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={productPickerOpen} onOpenChange={setProductPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={productPickerOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    <span className={cn('truncate', !targetKey && 'text-muted-foreground')}>
+                      {targetKey
+                        ? productOptions.find((o) => o.value === targetKey)?.label ?? 'Pick a product'
+                        : 'Search menu or store products…'}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command
+                    filter={(value, search) => {
+                      // Match against the label (search by name) — `value` we
+                      // pass below is the human-readable label lowercased.
+                      return value.includes(search.toLowerCase()) ? 1 : 0;
+                    }}
+                  >
+                    <CommandInput placeholder="Search by name…" />
+                    <CommandList className="max-h-72">
+                      <CommandEmpty>No product found.</CommandEmpty>
+                      <CommandGroup heading="Menu">
+                        {productOptions.filter((o) => o.source === 'menu').map((o) => (
+                          <CommandItem
+                            key={o.value}
+                            value={o.label.toLowerCase()}
+                            onSelect={() => {
+                              setTargetKey(o.value);
+                              setProductPickerOpen(false);
+                            }}
+                          >
+                            <Check className={cn('mr-2 h-4 w-4', targetKey === o.value ? 'opacity-100' : 'opacity-0')} />
+                            {o.label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                      <CommandGroup heading="Store">
+                        {productOptions.filter((o) => o.source === 'store').map((o) => (
+                          <CommandItem
+                            key={o.value}
+                            value={o.label.toLowerCase()}
+                            onSelect={() => {
+                              setTargetKey(o.value);
+                              setProductPickerOpen(false);
+                            }}
+                          >
+                            <Check className={cn('mr-2 h-4 w-4', targetKey === o.value ? 'opacity-100' : 'opacity-0')} />
+                            {o.label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           )}
 
