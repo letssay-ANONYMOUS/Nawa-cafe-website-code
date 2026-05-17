@@ -281,10 +281,12 @@ const CheckoutPage = () => {
                             <span>Subtotal</span>
                             <span>AED {subtotal.toFixed(2)}</span>
                           </div>
-                          <div className="flex justify-between text-sm text-green-600 font-medium">
-                            <span>Loyalty discount (15%)</span>
-                            <span>-AED {loyaltyDiscount.toFixed(2)}</span>
-                          </div>
+                          {loyaltyDiscount > 0 && (
+                            <div className="flex justify-between text-sm text-green-600 font-medium">
+                              <span>Loyalty discount ({loyaltyPercent}%)</span>
+                              <span>-AED {loyaltyDiscount.toFixed(2)}</span>
+                            </div>
+                          )}
                           {codeDiscount > 0 && discountInfo && (
                             <div className="flex justify-between text-sm text-green-700 font-medium">
                               <span>Promo ({discountInfo.code} −{discountInfo.percent}%)</span>
