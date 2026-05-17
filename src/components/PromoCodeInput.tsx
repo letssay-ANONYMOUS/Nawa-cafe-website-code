@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,10 @@ export function PromoCodeInput() {
   const { code, setCode, clear, info, loading, invalid } = useDiscountCode();
   const [draft, setDraft] = useState(code);
 
+  useEffect(() => {
+    setDraft(code);
+  }, [code]);
+
   // Only render the promo field when at least one active code exists.
   // If the staff hasn't created any active code, the checkout/cart stays clean.
   const { data: hasActiveCodes, isLoading: checkingCodes } = useQuery({
@@ -18,17 +22,19 @@ export function PromoCodeInput() {
       const { data, error } = await supabase.rpc('has_active_discount_codes');
       if (error) {
         console.error('has_active_discount_codes error', error);
-        return false;
+        throw error;
       }
       return !!data;
     },
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,
+    retry: 2,
+    placeholderData: (previous) => previous,
   });
 
   // Keep showing the box if the user already has a code applied (even if
   // staff later disables all codes) so they can see/remove it.
-  if (!hasActiveCodes && !code && !checkingCodes) return null;
+  if (!code && hasActiveCodes !== true) return null;
 
   const apply = () => {
     setCode(draft);

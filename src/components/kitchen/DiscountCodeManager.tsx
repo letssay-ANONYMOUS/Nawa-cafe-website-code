@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useMenuCards } from '@/hooks/useMenuCards';
@@ -62,6 +63,8 @@ const DURATION_PRESETS: { label: string; hours: number | null }[] = [
 
 export function DiscountCodeManager() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const loadSeq = useRef(0);
   const { data: menuCards } = useMenuCards();
   const [storeProducts, setStoreProducts] = useState<StoreProductLite[]>([]);
   const [rows, setRows] = useState<DiscountRow[]>([]);
@@ -84,32 +87,42 @@ export function DiscountCodeManager() {
     setLoyaltyDraft(String(loyaltyPercent));
   }, [loyaltyPercent]);
 
-  const load = async () => {
+  const refreshDiscountCaches = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['has-active-discount-codes'] });
+    queryClient.invalidateQueries({ queryKey: ['discount-code'] });
+  }, [queryClient]);
+
+  const load = useCallback(async () => {
+    const requestId = ++loadSeq.current;
     setLoading(true);
-    const [codesRes, storeRes] = await Promise.all([
-      supabase
-        .from('discount_codes')
-        .select('*')
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('store_products')
-        .select('id, product_name')
-        .order('sort_order', { ascending: true }),
-    ]);
-    if (codesRes.error) {
-      toast({ variant: 'destructive', title: 'Failed to load codes', description: codesRes.error.message });
-    } else {
-      setRows((codesRes.data as DiscountRow[]) || []);
+    try {
+      const [codesRes, storeRes] = await Promise.all([
+        supabase
+          .from('discount_codes')
+          .select('*')
+          .order('updated_at', { ascending: false }),
+        supabase
+          .from('store_products')
+          .select('id, product_name')
+          .order('sort_order', { ascending: true }),
+      ]);
+      if (requestId !== loadSeq.current) return;
+      if (codesRes.error) {
+        toast({ variant: 'destructive', title: 'Failed to load codes', description: codesRes.error.message });
+      } else {
+        setRows((codesRes.data as DiscountRow[]) || []);
+      }
+      if (!storeRes.error) {
+        setStoreProducts((storeRes.data as StoreProductLite[]) || []);
+      }
+    } finally {
+      if (requestId === loadSeq.current) setLoading(false);
     }
-    if (!storeRes.error) {
-      setStoreProducts((storeRes.data as StoreProductLite[]) || []);
-    }
-    setLoading(false);
-  };
+  }, [toast]);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   const productOptions = useMemo(() => {
     const opts: { value: string; label: string; source: 'menu' | 'store' }[] = [];
@@ -171,24 +184,31 @@ export function DiscountCodeManager() {
     }
 
     setSaving(true);
-    const { error } = await supabase.from('discount_codes').insert({
-      code: cleanCode,
-      percent: pct,
-      scope,
-      target_source,
-      target_name,
-      expires_at,
-      active: true,
-    });
+    const { data: createdRow, error } = await supabase
+      .from('discount_codes')
+      .upsert({
+        code: cleanCode,
+        percent: pct,
+        scope,
+        target_source,
+        target_name,
+        expires_at,
+        active: true,
+      }, { onConflict: 'code' })
+      .select('*')
+      .single();
     setSaving(false);
 
     if (error) {
       toast({ variant: 'destructive', title: 'Failed to create code', description: error.message });
       return;
     }
-    toast({ title: 'Code created', description: `${cleanCode} is now active.` });
+    loadSeq.current += 1;
+    setRows((prev) => [createdRow as DiscountRow, ...prev.filter((r) => r.id !== createdRow.id)]);
+    setLoading(false);
+    refreshDiscountCaches();
+    toast({ title: 'Code saved', description: `${cleanCode} is now active.` });
     resetForm();
-    load();
   };
 
   const toggleActive = async (row: DiscountRow) => {
@@ -201,6 +221,7 @@ export function DiscountCodeManager() {
       return;
     }
     setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, active: !r.active } : r)));
+    refreshDiscountCaches();
   };
 
   const deleteRow = async (row: DiscountRow) => {
@@ -211,6 +232,7 @@ export function DiscountCodeManager() {
       return;
     }
     setRows((prev) => prev.filter((r) => r.id !== row.id));
+    refreshDiscountCaches();
     toast({ title: 'Code deleted', description: row.code });
   };
 
