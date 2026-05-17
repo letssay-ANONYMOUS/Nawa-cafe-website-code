@@ -205,6 +205,7 @@ export function DiscountCodeManager() {
     }
     loadSeq.current += 1;
     setRows((prev) => [createdRow as DiscountRow, ...prev.filter((r) => r.id !== createdRow.id)]);
+    setLoading(false);
     refreshDiscountCaches();
     toast({ title: 'Code saved', description: `${cleanCode} is now active.` });
     resetForm();
