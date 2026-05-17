@@ -55,8 +55,9 @@ const CheckoutPage = () => {
     }
   }, [formData]);
 
+  const { percent: loyaltyPercent } = useLoyaltyDiscount();
   const subtotal = getCartTotal();
-  const loyaltyDiscount = round2(subtotal * 0.15);
+  const loyaltyDiscount = round2(subtotal * (loyaltyPercent / 100));
   const codeDiscount = computeCodeDiscount(cartItems, subtotal, discountInfo);
   const total = round2(Math.max(0, subtotal - loyaltyDiscount - codeDiscount));
   const itemCount = getCartCount();
