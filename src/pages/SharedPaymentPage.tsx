@@ -92,6 +92,7 @@ const SharedPaymentPage = () => {
         body: {
           customerName: name.trim(),
           phoneNumber: phone.trim(),
+          customerEmail: email.trim() || null,
           orderItems,
           additionalNotes: sp.notes
             ? `[Shared payment from ${sp.sender_name || 'a friend'}] ${sp.notes}`
