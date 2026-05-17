@@ -56,14 +56,33 @@ const getDateFromRange = (range: DateRangeOption): Date => {
   return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 };
 
+const ACK_STORAGE_KEY = 'kitchen_seen_paid_orders';
+const loadSeenIds = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem(ACK_STORAGE_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr.slice(-500) : []);
+  } catch { return new Set(); }
+};
+const persistSeenIds = (ids: Set<string>) => {
+  try {
+    // Keep only the most recent 500 to avoid unbounded growth
+    const arr = Array.from(ids).slice(-500);
+    localStorage.setItem(ACK_STORAGE_KEY, JSON.stringify(arr));
+  } catch {}
+};
+
 const KitchenDashboard = () => {
   const mountedRef = useRef(true);
+  const seenPaidIdsRef = useRef<Set<string>>(loadSeenIds());
 
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [unacknowledgedOrders, setUnacknowledgedOrders] = useState<Set<string>>(new Set());
   const [activeView, setActiveView] = useState<KitchenView>(() => getKitchenViewFromPath(window.location.pathname));
+
   const [showSoundPicker, setShowSoundPicker] = useState(false);
   const [dateRange, setDateRange] = useState<DateRangeOption>(() =>
     (localStorage.getItem('kitchen_date_range') as DateRangeOption) || '1month'
