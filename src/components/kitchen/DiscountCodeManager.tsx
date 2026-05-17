@@ -73,8 +73,16 @@ export function DiscountCodeManager() {
   const [percent, setPercent] = useState<string>('10');
   const [scope, setScope] = useState<Scope>('cart');
   const [targetKey, setTargetKey] = useState<string>(''); // "menu:NAME" or "store:NAME"
+  const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [durationLabel, setDurationLabel] = useState<string>('7 days');
   const [customExpiry, setCustomExpiry] = useState<Date | undefined>(undefined);
+
+  // Loyalty discount (site-wide, applied to every order)
+  const { percent: loyaltyPercent, save: saveLoyalty, saving: savingLoyalty } = useLoyaltyDiscount();
+  const [loyaltyDraft, setLoyaltyDraft] = useState<string>('');
+  useEffect(() => {
+    setLoyaltyDraft(String(loyaltyPercent));
+  }, [loyaltyPercent]);
 
   const load = async () => {
     setLoading(true);
