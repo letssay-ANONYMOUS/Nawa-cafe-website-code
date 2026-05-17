@@ -467,6 +467,42 @@ export type Database = {
           },
         ]
       }
+      shared_payments: {
+        Row: {
+          cart: Json
+          created_at: string
+          expires_at: string
+          id: string
+          notes: string | null
+          paid_order_id: string | null
+          sender_name: string | null
+          subtotal: number
+          total: number
+        }
+        Insert: {
+          cart: Json
+          created_at?: string
+          expires_at?: string
+          id?: string
+          notes?: string | null
+          paid_order_id?: string | null
+          sender_name?: string | null
+          subtotal?: number
+          total?: number
+        }
+        Update: {
+          cart?: Json
+          created_at?: string
+          expires_at?: string
+          id?: string
+          notes?: string | null
+          paid_order_id?: string | null
+          sender_name?: string | null
+          subtotal?: number
+          total?: number
+        }
+        Relationships: []
+      }
       site_events: {
         Row: {
           created_at: string
