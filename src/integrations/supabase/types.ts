@@ -65,6 +65,45 @@ export type Database = {
         }
         Relationships: []
       }
+      discount_codes: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          percent: number
+          scope: string
+          target_name: string | null
+          target_source: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          percent: number
+          scope: string
+          target_name?: string | null
+          target_source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          percent?: number
+          scope?: string
+          target_name?: string | null
+          target_source?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       kitchen_settings: {
         Row: {
           id: string
@@ -258,6 +297,8 @@ export type Database = {
       }
       orders: {
         Row: {
+          applied_discount_code: string | null
+          code_discount_amount: number
           created_at: string
           customer_email: string | null
           customer_location: string | null
@@ -280,6 +321,8 @@ export type Database = {
           visitor_id: string
         }
         Insert: {
+          applied_discount_code?: string | null
+          code_discount_amount?: number
           created_at?: string
           customer_email?: string | null
           customer_location?: string | null
@@ -302,6 +345,8 @@ export type Database = {
           visitor_id: string
         }
         Update: {
+          applied_discount_code?: string | null
+          code_discount_amount?: number
           created_at?: string
           customer_email?: string | null
           customer_location?: string | null
@@ -578,6 +623,16 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      validate_discount_code: {
+        Args: { _code: string }
+        Returns: {
+          code: string
+          percent: number
+          scope: string
+          target_name: string
+          target_source: string
+        }[]
       }
     }
     Enums: {
