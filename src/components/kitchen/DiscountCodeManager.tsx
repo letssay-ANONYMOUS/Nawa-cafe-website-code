@@ -214,9 +214,86 @@ export function DiscountCodeManager() {
     toast({ title: 'Code deleted', description: row.code });
   };
 
+  const handleSaveLoyalty = async () => {
+    const n = Number(loyaltyDraft);
+    if (!Number.isFinite(n) || n < 0 || n > 100) {
+      toast({ variant: 'destructive', title: 'Invalid percent', description: 'Loyalty discount must be 0–100.' });
+      return;
+    }
+    try {
+      await saveLoyalty(n);
+      toast({
+        title: n === 0 ? 'Loyalty discount disabled' : 'Loyalty discount updated',
+        description: n === 0
+          ? 'Customers will no longer see an automatic discount.'
+          : `Every order now gets ${n}% off automatically.`,
+      });
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Save failed', description: (e as Error).message });
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Create form */}
+      {/* Site-wide loyalty discount control */}
+      <Card className="border-primary/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-primary" />
+            Loyalty discount (applied to every order)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-[auto,1fr,auto] md:items-end">
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={loyaltyPercent > 0}
+              disabled={savingLoyalty}
+              onCheckedChange={async (on) => {
+                const next = on ? (Number(loyaltyDraft) > 0 ? Number(loyaltyDraft) : 15) : 0;
+                setLoyaltyDraft(String(next));
+                try {
+                  await saveLoyalty(next);
+                  toast({
+                    title: on ? 'Loyalty discount enabled' : 'Loyalty discount disabled',
+                    description: on
+                      ? `Every order now gets ${next}% off automatically.`
+                      : 'Customers will no longer see an automatic discount.',
+                  });
+                } catch (e) {
+                  toast({ variant: 'destructive', title: 'Save failed', description: (e as Error).message });
+                }
+              }}
+            />
+            <span className="text-sm font-medium">
+              {loyaltyPercent > 0 ? 'Active' : 'Disabled'}
+            </span>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="loyalty-percent">Percent off</Label>
+            <div className="relative">
+              <Input
+                id="loyalty-percent"
+                type="number"
+                min={0}
+                max={100}
+                step={1}
+                value={loyaltyDraft}
+                onChange={(e) => setLoyaltyDraft(e.target.value)}
+                disabled={loyaltyPercent === 0 || savingLoyalty}
+              />
+              <Percent className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Default is 15%. Set to 0 or toggle off to disable for everyone.
+            </p>
+          </div>
+          <Button onClick={handleSaveLoyalty} disabled={savingLoyalty || loyaltyPercent === 0}>
+            {savingLoyalty ? 'Saving…' : 'Save percent'}
+          </Button>
+        </CardContent>
+      </Card>
+
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
