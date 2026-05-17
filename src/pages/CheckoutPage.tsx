@@ -15,6 +15,7 @@ import { getVisitorId } from '@/hooks/useVisitorId';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { PromoCodeInput } from '@/components/PromoCodeInput';
 import { useDiscountCode, computeCodeDiscount, round2 } from '@/hooks/useDiscountCode';
+import { useLoyaltyDiscount } from '@/hooks/useLoyaltyDiscount';
 
 const FIXED_BRANCH = 'Stadhazza Branch';
 const CHECKOUT_FORM_KEY = 'nawa_checkout_form';
