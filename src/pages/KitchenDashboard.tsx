@@ -391,6 +391,9 @@ const KitchenDashboard = () => {
   }, [unacknowledgedOrders.size, soundEnabled, startAlert, stopAlert]);
 
   const handleAcknowledge = useCallback((orderId: string) => {
+    // Mark as permanently seen so future polls / reloads don't re-alert.
+    seenPaidIdsRef.current.add(orderId);
+    persistSeenIds(seenPaidIdsRef.current);
     setUnacknowledgedOrders(prev => {
       const newSet = new Set(prev);
       newSet.delete(orderId);
