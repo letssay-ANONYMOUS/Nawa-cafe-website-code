@@ -40,6 +40,7 @@ const SharedPaymentPage = () => {
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [paying, setPaying] = useState(false);
 
   useEffect(() => {
@@ -91,6 +92,7 @@ const SharedPaymentPage = () => {
         body: {
           customerName: name.trim(),
           phoneNumber: phone.trim(),
+          customerEmail: email.trim() || null,
           orderItems,
           additionalNotes: sp.notes
             ? `[Shared payment from ${sp.sender_name || 'a friend'}] ${sp.notes}`
@@ -182,22 +184,28 @@ const SharedPaymentPage = () => {
                   <ul className="divide-y divide-coffee-100">
                     {sp.cart.map((item, idx) => (
                       <li key={idx} className="py-3 flex items-center gap-3">
-                        {item.image && (
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="w-14 h-14 rounded-md object-cover"
-                          />
-                        )}
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-coffee-800 truncate">{item.name}</p>
                           <p className="text-sm text-coffee-600">
                             AED {Number(item.price).toFixed(2)} × {item.quantity}
                           </p>
                         </div>
-                        <p className="font-semibold text-coffee-800">
+                        <p className="font-semibold text-coffee-800 whitespace-nowrap">
                           AED {(Number(item.price) * item.quantity).toFixed(2)}
                         </p>
+                        {item.image ? (
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            loading="lazy"
+                            className="w-16 h-16 rounded-md object-cover border border-coffee-100 shrink-0"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded-md bg-cream-100 shrink-0" />
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -239,6 +247,17 @@ const SharedPaymentPage = () => {
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="+971 …"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="payer-email">Email <span className="text-coffee-400 font-normal">(optional)</span></Label>
+                      <Input
+                        id="payer-email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
                         className="mt-1"
                       />
                     </div>
