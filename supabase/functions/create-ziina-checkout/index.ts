@@ -131,10 +131,28 @@ serve(async (req) => {
       validatedItems.push({ ...item, price: dbPrice }); // Use DB price
     }
 
-    // Apply permanent 15% loyalty discount (matches frontend pricing policy)
-    const DISCOUNT_RATE = 0.15;
+    // Apply loyalty discount — percent is configurable via kitchen_settings
+    // (key: "loyalty_discount_percent"). Defaults to 15 if unset, 0 disables.
+    let loyaltyPercent = 15;
+    try {
+      const { data: lpRow } = await supabase
+        .from("kitchen_settings")
+        .select("setting_value")
+        .eq("setting_key", "loyalty_discount_percent")
+        .maybeSingle();
+      if (lpRow?.setting_value !== undefined && lpRow?.setting_value !== null) {
+        const parsed = Number(lpRow.setting_value);
+        if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 100) {
+          loyaltyPercent = parsed;
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to load loyalty_discount_percent, using default 15%", e);
+    }
+    const DISCOUNT_RATE = loyaltyPercent / 100;
     const subtotalAmount = Math.round(serverTotal * 100) / 100;
     const loyaltyDiscount = Math.round(serverTotal * DISCOUNT_RATE * 100) / 100;
+
 
     // ===== PROMO CODE VALIDATION (server-side) =====
     let appliedCode: string | null = null;

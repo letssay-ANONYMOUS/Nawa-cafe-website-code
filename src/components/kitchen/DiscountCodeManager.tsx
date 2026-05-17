@@ -16,10 +16,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, RefreshCw, Trash2, Tag, Percent } from 'lucide-react';
+import { CalendarIcon, RefreshCw, Trash2, Tag, Percent, Check, ChevronsUpDown, Sparkles } from 'lucide-react';
+import { useLoyaltyDiscount } from '@/hooks/useLoyaltyDiscount';
 
 interface DiscountRow {
   id: string;
@@ -64,8 +73,16 @@ export function DiscountCodeManager() {
   const [percent, setPercent] = useState<string>('10');
   const [scope, setScope] = useState<Scope>('cart');
   const [targetKey, setTargetKey] = useState<string>(''); // "menu:NAME" or "store:NAME"
+  const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [durationLabel, setDurationLabel] = useState<string>('7 days');
   const [customExpiry, setCustomExpiry] = useState<Date | undefined>(undefined);
+
+  // Loyalty discount (site-wide, applied to every order)
+  const { percent: loyaltyPercent, save: saveLoyalty, saving: savingLoyalty } = useLoyaltyDiscount();
+  const [loyaltyDraft, setLoyaltyDraft] = useState<string>('');
+  useEffect(() => {
+    setLoyaltyDraft(String(loyaltyPercent));
+  }, [loyaltyPercent]);
 
   const load = async () => {
     setLoading(true);
@@ -197,9 +214,86 @@ export function DiscountCodeManager() {
     toast({ title: 'Code deleted', description: row.code });
   };
 
+  const handleSaveLoyalty = async () => {
+    const n = Number(loyaltyDraft);
+    if (!Number.isFinite(n) || n < 0 || n > 100) {
+      toast({ variant: 'destructive', title: 'Invalid percent', description: 'Loyalty discount must be 0–100.' });
+      return;
+    }
+    try {
+      await saveLoyalty(n);
+      toast({
+        title: n === 0 ? 'Loyalty discount disabled' : 'Loyalty discount updated',
+        description: n === 0
+          ? 'Customers will no longer see an automatic discount.'
+          : `Every order now gets ${n}% off automatically.`,
+      });
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Save failed', description: (e as Error).message });
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Create form */}
+      {/* Site-wide loyalty discount control */}
+      <Card className="border-primary/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-primary" />
+            Loyalty discount (applied to every order)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-[auto,1fr,auto] md:items-end">
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={loyaltyPercent > 0}
+              disabled={savingLoyalty}
+              onCheckedChange={async (on) => {
+                const next = on ? (Number(loyaltyDraft) > 0 ? Number(loyaltyDraft) : 15) : 0;
+                setLoyaltyDraft(String(next));
+                try {
+                  await saveLoyalty(next);
+                  toast({
+                    title: on ? 'Loyalty discount enabled' : 'Loyalty discount disabled',
+                    description: on
+                      ? `Every order now gets ${next}% off automatically.`
+                      : 'Customers will no longer see an automatic discount.',
+                  });
+                } catch (e) {
+                  toast({ variant: 'destructive', title: 'Save failed', description: (e as Error).message });
+                }
+              }}
+            />
+            <span className="text-sm font-medium">
+              {loyaltyPercent > 0 ? 'Active' : 'Disabled'}
+            </span>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="loyalty-percent">Percent off</Label>
+            <div className="relative">
+              <Input
+                id="loyalty-percent"
+                type="number"
+                min={0}
+                max={100}
+                step={1}
+                value={loyaltyDraft}
+                onChange={(e) => setLoyaltyDraft(e.target.value)}
+                disabled={loyaltyPercent === 0 || savingLoyalty}
+              />
+              <Percent className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Default is 15%. Set to 0 or toggle off to disable for everyone.
+            </p>
+          </div>
+          <Button onClick={handleSaveLoyalty} disabled={savingLoyalty || loyaltyPercent === 0}>
+            {savingLoyalty ? 'Saving…' : 'Save percent'}
+          </Button>
+        </CardContent>
+      </Card>
+
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -248,14 +342,67 @@ export function DiscountCodeManager() {
           {scope === 'item' && (
             <div className="space-y-1">
               <Label>Product</Label>
-              <Select value={targetKey} onValueChange={setTargetKey}>
-                <SelectTrigger><SelectValue placeholder="Pick a product" /></SelectTrigger>
-                <SelectContent className="max-h-72">
-                  {productOptions.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={productPickerOpen} onOpenChange={setProductPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={productPickerOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    <span className={cn('truncate', !targetKey && 'text-muted-foreground')}>
+                      {targetKey
+                        ? productOptions.find((o) => o.value === targetKey)?.label ?? 'Pick a product'
+                        : 'Search menu or store products…'}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command
+                    filter={(value, search) => {
+                      // Match against the label (search by name) — `value` we
+                      // pass below is the human-readable label lowercased.
+                      return value.includes(search.toLowerCase()) ? 1 : 0;
+                    }}
+                  >
+                    <CommandInput placeholder="Search by name…" />
+                    <CommandList className="max-h-72">
+                      <CommandEmpty>No product found.</CommandEmpty>
+                      <CommandGroup heading="Menu">
+                        {productOptions.filter((o) => o.source === 'menu').map((o) => (
+                          <CommandItem
+                            key={o.value}
+                            value={o.label.toLowerCase()}
+                            onSelect={() => {
+                              setTargetKey(o.value);
+                              setProductPickerOpen(false);
+                            }}
+                          >
+                            <Check className={cn('mr-2 h-4 w-4', targetKey === o.value ? 'opacity-100' : 'opacity-0')} />
+                            {o.label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                      <CommandGroup heading="Store">
+                        {productOptions.filter((o) => o.source === 'store').map((o) => (
+                          <CommandItem
+                            key={o.value}
+                            value={o.label.toLowerCase()}
+                            onSelect={() => {
+                              setTargetKey(o.value);
+                              setProductPickerOpen(false);
+                            }}
+                          >
+                            <Check className={cn('mr-2 h-4 w-4', targetKey === o.value ? 'opacity-100' : 'opacity-0')} />
+                            {o.label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           )}
 

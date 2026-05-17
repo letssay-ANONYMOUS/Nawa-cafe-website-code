@@ -15,6 +15,7 @@ import { getVisitorId } from '@/hooks/useVisitorId';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { PromoCodeInput } from '@/components/PromoCodeInput';
 import { useDiscountCode, computeCodeDiscount, round2 } from '@/hooks/useDiscountCode';
+import { useLoyaltyDiscount } from '@/hooks/useLoyaltyDiscount';
 
 const FIXED_BRANCH = 'Stadhazza Branch';
 const CHECKOUT_FORM_KEY = 'nawa_checkout_form';
@@ -54,8 +55,9 @@ const CheckoutPage = () => {
     }
   }, [formData]);
 
+  const { percent: loyaltyPercent } = useLoyaltyDiscount();
   const subtotal = getCartTotal();
-  const loyaltyDiscount = round2(subtotal * 0.15);
+  const loyaltyDiscount = round2(subtotal * (loyaltyPercent / 100));
   const codeDiscount = computeCodeDiscount(cartItems, subtotal, discountInfo);
   const total = round2(Math.max(0, subtotal - loyaltyDiscount - codeDiscount));
   const itemCount = getCartCount();
@@ -279,10 +281,12 @@ const CheckoutPage = () => {
                             <span>Subtotal</span>
                             <span>AED {subtotal.toFixed(2)}</span>
                           </div>
-                          <div className="flex justify-between text-sm text-green-600 font-medium">
-                            <span>Loyalty discount (15%)</span>
-                            <span>-AED {loyaltyDiscount.toFixed(2)}</span>
-                          </div>
+                          {loyaltyDiscount > 0 && (
+                            <div className="flex justify-between text-sm text-green-600 font-medium">
+                              <span>Loyalty discount ({loyaltyPercent}%)</span>
+                              <span>-AED {loyaltyDiscount.toFixed(2)}</span>
+                            </div>
+                          )}
                           {codeDiscount > 0 && discountInfo && (
                             <div className="flex justify-between text-sm text-green-700 font-medium">
                               <span>Promo ({discountInfo.code} −{discountInfo.percent}%)</span>
