@@ -86,50 +86,84 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // ===== SERVER-SIDE PRICE VALIDATION =====
-    // Fetch actual prices from database to prevent client-side manipulation
-    const itemNames = orderItems.map((item: any) => item.name);
-    const { data: dbItems, error: menuError } = await supabase
-      .from('menu_items')
-      .select('title, price')
-      .in('title', itemNames)
-      .eq('published', true);
-
-    if (menuError) {
-      console.error("Error fetching menu items for validation:", menuError);
-      return new Response(
-        JSON.stringify({ error: { provider: "validation", message: "Failed to validate prices" } }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-      );
-    }
-
-    // Build a price lookup map from database
-    const priceMap = new Map<string, number>();
-    for (const item of dbItems || []) {
-      priceMap.set(item.title, Number(item.price));
-    }
-
-    // Validate each item and calculate server-side total
     let serverTotal = 0;
     const validatedItems: any[] = [];
-    for (const item of orderItems) {
-      const dbPrice = priceMap.get(item.name);
-      if (dbPrice === undefined) {
-        console.error(`Item not found in menu: ${item.name}`);
+
+    if (sharedPaymentId) {
+      // Trusted server-side cart from shared_payments — supports store + menu items
+      const { data: spRow, error: spErr } = await supabase
+        .from('shared_payments')
+        .select('cart, subtotal, paid_order_id, expires_at')
+        .eq('id', sharedPaymentId)
+        .maybeSingle();
+      if (spErr || !spRow) {
         return new Response(
-          JSON.stringify({ error: { provider: "validation", message: `Item "${item.name}" not found in menu` } }),
+          JSON.stringify({ error: { provider: "validation", message: "Shared payment link not found" } }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
         );
       }
-      const qty = Number(item.quantity);
-      if (!Number.isInteger(qty) || qty < 1) {
+      if (spRow.paid_order_id) {
         return new Response(
-          JSON.stringify({ error: { provider: "validation", message: `Invalid quantity for "${item.name}"` } }),
+          JSON.stringify({ error: { provider: "validation", message: "This shared order has already been paid" } }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
         );
       }
-      serverTotal += dbPrice * qty;
-      validatedItems.push({ ...item, price: dbPrice }); // Use DB price
+      if (new Date(spRow.expires_at).getTime() < Date.now()) {
+        return new Response(
+          JSON.stringify({ error: { provider: "validation", message: "This shared payment link has expired" } }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+        );
+      }
+      const cart = Array.isArray(spRow.cart) ? spRow.cart : [];
+      for (const it of cart) {
+        const price = Number(it.price);
+        const qty = Number(it.quantity);
+        if (!Number.isFinite(price) || price < 0 || !Number.isInteger(qty) || qty < 1) continue;
+        serverTotal += price * qty;
+        validatedItems.push({ name: it.name, price, quantity: qty, category: it.category || null });
+      }
+      orderItems = validatedItems;
+    } else {
+      // ===== SERVER-SIDE PRICE VALIDATION (regular cart) =====
+      const itemNames = orderItems.map((item: any) => item.name);
+      const { data: dbItems, error: menuError } = await supabase
+        .from('menu_items')
+        .select('title, price')
+        .in('title', itemNames)
+        .eq('published', true);
+
+      if (menuError) {
+        console.error("Error fetching menu items for validation:", menuError);
+        return new Response(
+          JSON.stringify({ error: { provider: "validation", message: "Failed to validate prices" } }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+        );
+      }
+
+      const priceMap = new Map<string, number>();
+      for (const item of dbItems || []) {
+        priceMap.set(item.title, Number(item.price));
+      }
+
+      for (const item of orderItems) {
+        const dbPrice = priceMap.get(item.name);
+        if (dbPrice === undefined) {
+          console.error(`Item not found in menu: ${item.name}`);
+          return new Response(
+            JSON.stringify({ error: { provider: "validation", message: `Item "${item.name}" not found in menu` } }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+          );
+        }
+        const qty = Number(item.quantity);
+        if (!Number.isInteger(qty) || qty < 1) {
+          return new Response(
+            JSON.stringify({ error: { provider: "validation", message: `Invalid quantity for "${item.name}"` } }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+          );
+        }
+        serverTotal += dbPrice * qty;
+        validatedItems.push({ ...item, price: dbPrice });
+      }
     }
 
     // Apply loyalty discount — percent is configurable via kitchen_settings
