@@ -343,9 +343,14 @@ serve(async (req) => {
     }
 
     // Now build the full payment body with success URL including order_id
+    // (and shared_payment_id when applicable, so verification can mark the
+    // shared link as paid only after a confirmed payment)
+    const successUrl = sharedPaymentId
+      ? `${origin}/payment-success?order_id=${orderData.id}&sp=${sharedPaymentId}`
+      : `${origin}/payment-success?order_id=${orderData.id}`;
     const paymentBody = {
       ...basePaymentBody,
-      success_url: `${origin}/payment-success?order_id=${orderData.id}`,
+      success_url: successUrl,
     };
 
     console.log("Creating Ziina payment intent:", JSON.stringify(paymentBody));
