@@ -1,0 +1,1 @@
+ALTER TABLE public.menu_cards ADD COLUMN IF NOT EXISTS section text;
