@@ -89,11 +89,12 @@ serve(async (req) => {
     let serverTotal = 0;
     const validatedItems: any[] = [];
 
+    let sharedPaymentTotal: number | null = null;
     if (sharedPaymentId) {
       // Trusted server-side cart from shared_payments — supports store + menu items
       const { data: spRow, error: spErr } = await supabase
         .from('shared_payments')
-        .select('cart, subtotal, paid_order_id, expires_at')
+        .select('cart, subtotal, total, paid_order_id, expires_at')
         .eq('id', sharedPaymentId)
         .maybeSingle();
       if (spErr || !spRow) {
@@ -123,6 +124,10 @@ serve(async (req) => {
         validatedItems.push({ name: it.name, price, quantity: qty, category: it.category || null });
       }
       orderItems = validatedItems;
+      // Use the exact total saved on the shared payment row — no loyalty or
+      // promo discounts are applied to shared links; the payer pays exactly
+      // what is shown on the share page.
+      sharedPaymentTotal = Number(spRow.total);
     } else {
       // ===== SERVER-SIDE PRICE VALIDATION (regular cart) =====
       const itemNames = orderItems.map((item: any) => item.name);
