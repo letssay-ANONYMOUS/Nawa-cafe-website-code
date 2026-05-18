@@ -7,6 +7,7 @@ export interface MenuCard {
   price: string | null;
   description: string | null;
   image_url: string | null;
+  section: string | null;
 }
 
 // Section definitions based on card ID ranges
@@ -65,15 +66,37 @@ export function useMenuCards() {
   });
 }
 
-// Group cards by section
+// Group cards by section, honoring per-card `section` override
 export function groupCardsBySections(cards: MenuCard[]): Record<string, MenuCard[]> {
   const grouped: Record<string, MenuCard[]> = {};
+  const overridden = new Set<number>();
+
+  for (const section of menuSections) grouped[section.id] = [];
+
+  for (const card of cards) {
+    if (card.section && grouped[card.section]) {
+      grouped[card.section].push(card);
+      overridden.add(card.id);
+    }
+  }
 
   for (const section of menuSections) {
-    grouped[section.id] = section.cardIds
-      ? cards.filter((card) => section.cardIds?.includes(card.id))
-      : cards.filter((card) => card.id >= section.startId && card.id <= section.endId);
+    const defaults = section.cardIds
+      ? cards.filter((c) => section.cardIds?.includes(c.id) && !overridden.has(c.id))
+      : cards.filter((c) => c.id >= section.startId && c.id <= section.endId && !overridden.has(c.id));
+    grouped[section.id].push(...defaults);
+  }
+
+  for (const key of Object.keys(grouped)) {
+    grouped[key].sort((a, b) => a.id - b.id);
   }
 
   return grouped;
+}
+
+export function defaultSectionIdForCard(id: number): string | null {
+  const s = menuSections.find((sec) =>
+    sec.cardIds ? sec.cardIds.includes(id) : id >= sec.startId && id <= sec.endId
+  );
+  return s?.id ?? null;
 }
