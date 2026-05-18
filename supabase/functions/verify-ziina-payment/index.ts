@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { payment_id, order_id } = await req.json();
+    const { payment_id, order_id, shared_payment_id } = await req.json();
 
     console.log("Verifying payment:", { payment_id, order_id });
 
