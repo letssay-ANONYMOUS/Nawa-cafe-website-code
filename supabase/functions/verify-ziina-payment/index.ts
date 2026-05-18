@@ -190,6 +190,19 @@ serve(async (req) => {
         console.log("Order already marked as:", existingOrder.payment_status);
       }
 
+      // Mark the linked shared payment as paid, if any. Only allowed once
+      // payment is confirmed completed by Ziina.
+      if (shared_payment_id) {
+        const { error: spErr } = await supabase
+          .from("shared_payments")
+          .update({ paid_order_id: order_id })
+          .eq("id", shared_payment_id)
+          .is("paid_order_id", null);
+        if (spErr) {
+          console.error("Failed to mark shared payment as paid:", spErr);
+        }
+      }
+
       return new Response(
         JSON.stringify({
           success: true,
