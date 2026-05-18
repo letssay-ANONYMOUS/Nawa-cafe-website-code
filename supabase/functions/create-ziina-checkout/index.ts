@@ -434,13 +434,8 @@ serve(async (req) => {
       console.error("Error updating order with payment reference:", updateError);
     }
 
-    // Link order to shared payment if applicable
-    if (sharedPaymentId) {
-      await supabase
-        .from('shared_payments')
-        .update({ paid_order_id: orderData.id })
-        .eq('id', sharedPaymentId);
-    }
+    // NOTE: do NOT mark the shared payment as paid here. It is only marked
+    // paid after Ziina confirms the payment in verify-ziina-payment.
 
 
     return new Response(
