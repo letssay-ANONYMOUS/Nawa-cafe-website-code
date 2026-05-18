@@ -224,9 +224,11 @@ serve(async (req) => {
       }
     }
 
-    const rawTotal = serverTotal - loyaltyDiscount - codeDiscount;
+    const rawTotal = sharedPaymentTotal !== null
+      ? sharedPaymentTotal
+      : serverTotal - loyaltyDiscount - codeDiscount;
     const amount = Math.max(0, Math.round(rawTotal * 100) / 100);
-    console.log("Server-validated subtotal:", subtotalAmount, "loyalty:", loyaltyDiscount, "promo:", codeDiscount, "final:", amount);
+    console.log("Server-validated subtotal:", subtotalAmount, "loyalty:", loyaltyDiscount, "promo:", codeDiscount, "shared:", sharedPaymentTotal, "final:", amount);
 
     // Get Ziina API token
     const ziinaToken = Deno.env.get("ZIINA_API_TOKEN") || Deno.env.get("ZIINA_API_KEY");
