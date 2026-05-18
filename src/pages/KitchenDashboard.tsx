@@ -37,11 +37,11 @@ interface OrderWithItems extends Order {
 type DateRangeOption = '1month' | '2months' | '3months' | '4months';
 
 const getKitchenViewFromPath = (pathname: string): KitchenView => {
+  if (pathname.includes('/menu-cards')) return 'menu-cards';
   if (pathname.includes('/stock')) return 'stock';
   if (pathname.includes('/pending')) return 'pending';
   if (pathname.includes('/calculator')) return 'calculator';
   if (pathname.includes('/discounts')) return 'discounts';
-  if (pathname.includes('/menu-cards')) return 'menu-cards';
   return 'paid';
 };
 
