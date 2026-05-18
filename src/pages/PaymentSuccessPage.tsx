@@ -20,6 +20,7 @@ const PaymentSuccessPage = () => {
   
   const paymentId = searchParams.get('payment_id');
   const orderId = searchParams.get('order_id');
+  const sharedPaymentId = searchParams.get('sp');
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -33,9 +34,10 @@ const PaymentSuccessPage = () => {
         // Call the verification edge function directly — it uses service role
         // to look up the order and verify payment server-side
         const { data, error: verifyError } = await supabase.functions.invoke('verify-ziina-payment', {
-          body: { 
-            payment_id: paymentId || '', 
-            order_id: orderId 
+          body: {
+            payment_id: paymentId || '',
+            order_id: orderId,
+            shared_payment_id: sharedPaymentId || null,
           }
         });
 

@@ -89,11 +89,12 @@ serve(async (req) => {
     let serverTotal = 0;
     const validatedItems: any[] = [];
 
+    let sharedPaymentTotal: number | null = null;
     if (sharedPaymentId) {
       // Trusted server-side cart from shared_payments — supports store + menu items
       const { data: spRow, error: spErr } = await supabase
         .from('shared_payments')
-        .select('cart, subtotal, paid_order_id, expires_at')
+        .select('cart, subtotal, total, paid_order_id, expires_at')
         .eq('id', sharedPaymentId)
         .maybeSingle();
       if (spErr || !spRow) {
@@ -123,6 +124,10 @@ serve(async (req) => {
         validatedItems.push({ name: it.name, price, quantity: qty, category: it.category || null });
       }
       orderItems = validatedItems;
+      // Use the exact total saved on the shared payment row — no loyalty or
+      // promo discounts are applied to shared links; the payer pays exactly
+      // what is shown on the share page.
+      sharedPaymentTotal = Number(spRow.total);
     } else {
       // ===== SERVER-SIDE PRICE VALIDATION (regular cart) =====
       const itemNames = orderItems.map((item: any) => item.name);
@@ -219,9 +224,11 @@ serve(async (req) => {
       }
     }
 
-    const rawTotal = serverTotal - loyaltyDiscount - codeDiscount;
+    const rawTotal = sharedPaymentTotal !== null
+      ? sharedPaymentTotal
+      : serverTotal - loyaltyDiscount - codeDiscount;
     const amount = Math.max(0, Math.round(rawTotal * 100) / 100);
-    console.log("Server-validated subtotal:", subtotalAmount, "loyalty:", loyaltyDiscount, "promo:", codeDiscount, "final:", amount);
+    console.log("Server-validated subtotal:", subtotalAmount, "loyalty:", loyaltyDiscount, "promo:", codeDiscount, "shared:", sharedPaymentTotal, "final:", amount);
 
     // Get Ziina API token
     const ziinaToken = Deno.env.get("ZIINA_API_TOKEN") || Deno.env.get("ZIINA_API_KEY");
@@ -336,9 +343,14 @@ serve(async (req) => {
     }
 
     // Now build the full payment body with success URL including order_id
+    // (and shared_payment_id when applicable, so verification can mark the
+    // shared link as paid only after a confirmed payment)
+    const successUrl = sharedPaymentId
+      ? `${origin}/payment-success?order_id=${orderData.id}&sp=${sharedPaymentId}`
+      : `${origin}/payment-success?order_id=${orderData.id}`;
     const paymentBody = {
       ...basePaymentBody,
-      success_url: `${origin}/payment-success?order_id=${orderData.id}`,
+      success_url: successUrl,
     };
 
     console.log("Creating Ziina payment intent:", JSON.stringify(paymentBody));
@@ -422,13 +434,8 @@ serve(async (req) => {
       console.error("Error updating order with payment reference:", updateError);
     }
 
-    // Link order to shared payment if applicable
-    if (sharedPaymentId) {
-      await supabase
-        .from('shared_payments')
-        .update({ paid_order_id: orderData.id })
-        .eq('id', sharedPaymentId);
-    }
+    // NOTE: do NOT mark the shared payment as paid here. It is only marked
+    // paid after Ziina confirms the payment in verify-ziina-payment.
 
 
     return new Response(

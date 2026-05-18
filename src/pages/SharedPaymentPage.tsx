@@ -104,14 +104,10 @@ const SharedPaymentPage = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error.message || 'Payment failed');
       if (data?.url) {
-        // Link the order back to the shared payment (best-effort)
-        if (data.orderId) {
-          supabase
-            .from('shared_payments')
-            .update({ paid_order_id: data.orderId })
-            .eq('id', sp.id)
-            .then(() => {});
-        }
+        // NOTE: do NOT mark the shared payment as paid here — it must only be
+        // marked paid after Ziina confirms the payment (handled in
+        // verify-ziina-payment). Otherwise hitting the browser back button
+        // would falsely show "Already paid".
         window.location.href = data.url;
       } else {
         throw new Error('No payment URL returned');
