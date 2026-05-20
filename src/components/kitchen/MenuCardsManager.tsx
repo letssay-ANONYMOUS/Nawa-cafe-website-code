@@ -427,6 +427,9 @@ export function MenuCardsManager() {
           <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw className="w-4 h-4 mr-1" /> Refresh
           </Button>
+          <Button size="sm" onClick={handleCreate}>
+            <Plus className="w-4 h-4 mr-1" /> Add Card
+          </Button>
         </div>
       </div>
 
