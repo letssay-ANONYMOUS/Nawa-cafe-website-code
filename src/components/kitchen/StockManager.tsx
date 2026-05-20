@@ -275,6 +275,27 @@ export function StockManager() {
             <Button variant="outline" size="sm" onClick={loadProducts}>
               <RefreshCw className="w-4 h-4 mr-1" /> Refresh
             </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="w-4 h-4 mr-1" /> Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete "{selectedProduct.product_name}"?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This permanently removes this product from the public store. This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <Button onClick={handleSave} disabled={saving || uploading}>
               <Save className="w-4 h-4 mr-2" />
               {saving ? 'Saving…' : 'Save Card'}
