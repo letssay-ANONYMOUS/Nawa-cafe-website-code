@@ -664,6 +664,21 @@ export type Database = {
         }
         Returns: boolean
       }
+      insert_menu_card_at: {
+        Args: {
+          _description: string
+          _image_url: string
+          _name: string
+          _price: string
+          _section: string
+          _target_id: number
+        }
+        Returns: number
+      }
+      move_menu_card: {
+        Args: { _new_id: number; _old_id: number }
+        Returns: number
+      }
       validate_discount_code: {
         Args: { _code: string }
         Returns: {
