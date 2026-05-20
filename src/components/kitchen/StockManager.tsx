@@ -336,7 +336,7 @@ export function StockManager() {
                 {previewOrigin && <span className="text-sm text-coffee-600">{previewOrigin}</span>}
               </div>
               <CardTitle className="font-playfair text-2xl text-coffee-900 leading-tight">{previewName}</CardTitle>
-              <CardDescription className="text-coffee-700 leading-relaxed">{previewDescription}</CardDescription>
+              <CardDescription className="text-coffee-700 leading-relaxed whitespace-pre-wrap">{previewDescription}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-end justify-between gap-3">
