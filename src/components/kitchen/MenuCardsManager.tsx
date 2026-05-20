@@ -50,6 +50,7 @@ interface EditForm {
   description: string;
   image_url: string;
   section: string; // section id, "" = default
+  card_number: string; // editable card id
 }
 
 const sectionNameById = (id: string | null): string => {
