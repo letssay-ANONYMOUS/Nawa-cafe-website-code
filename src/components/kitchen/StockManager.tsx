@@ -8,9 +8,20 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, ImageIcon, Minus, Package, Plus, RefreshCw, Save, Star, Upload } from 'lucide-react';
+import { ArrowLeft, ImageIcon, Minus, Package, Plus, RefreshCw, Save, Star, Trash2, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { STORE_CATEGORIES, type StoreCategory } from '@/data/storeCatalog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export interface StoreCardData {
   id: string;
