@@ -158,10 +158,10 @@ export function MenuCardsManager() {
       const { error } = await supabase
         .from("menu_cards")
         .update({
-          name: form.name.trim() || null,
-          price: form.price.trim() || null,
-          description: form.description.trim() || null,
-          image_url: form.image_url.trim() || null,
+          name: form.name || null,
+          price: form.price || null,
+          description: form.description || null,
+          image_url: form.image_url || null,
           section: form.section || null,
         })
         .eq("id", selectedCard.id);
@@ -173,6 +173,43 @@ export function MenuCardsManager() {
       toast({ variant: "destructive", title: "Save failed", description: msg });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCreate = async () => {
+    try {
+      const maxId = cards.reduce((m, c) => (c.id > m ? c.id : m), 0);
+      const nextId = Math.max(maxId + 1, 200);
+      const sectionForNew = activeSection !== ALL_ID ? activeSection : null;
+      const { error } = await supabase.from("menu_cards").insert({
+        id: nextId,
+        name: "New Card",
+        price: "",
+        description: "",
+        image_url: null,
+        section: sectionForNew,
+      });
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["menu-cards"] });
+      toast({ title: "Card created", description: `New card #${nextId}.` });
+      navigate(`/admin/kitchen/menu-cards/${nextId}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Could not create card.";
+      toast({ variant: "destructive", title: "Create failed", description: msg });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedCard) return;
+    try {
+      const { error } = await supabase.from("menu_cards").delete().eq("id", selectedCard.id);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["menu-cards"] });
+      toast({ title: "Card deleted", description: `Card #${selectedCard.id} removed.` });
+      navigate("/admin/kitchen/menu-cards");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Could not delete card.";
+      toast({ variant: "destructive", title: "Delete failed", description: msg });
     }
   };
 
