@@ -7,7 +7,7 @@ import { ArrowLeft, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { useMenuItems, toMenuCardItem } from '@/hooks/useMenuItems';
-import { useMenuCards } from '@/hooks/useMenuCards';
+import { useMenuCards, groupCardsBySections, menuSections } from '@/hooks/useMenuCards';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AnimatePresence, motion, type Variants, useReducedMotion } from 'framer-motion';
 
@@ -60,26 +60,31 @@ const MenuItemDetail = () => {
   if (!item && menuCards) {
     const card = menuCards.find(c => c.id === Number(id));
     if (card) {
+      const priceMatch = (card.price || '').match(/[\d]+(?:\.[\d]+)?/);
+      const parsedPrice = priceMatch ? parseFloat(priceMatch[0]) : 0;
       item = {
         id: card.id,
         name: card.name || 'Untitled',
         description: card.description || '',
-        price: Number(card.price) || 0,
+        price: parsedPrice,
         image: card.image_url || '/placeholder.svg',
         options: null,
       };
     }
   }
 
-  // Build a unified ordered list of cards (menu_cards is the source of truth).
-  // Each entry exposes card_number + title so navigation works for both
-  // legacy menu_items and staff-added cards.
+  // Build ordered list matching the visual menu page order:
+  // iterate sections in declared order, and within each section use grouped cards.
   const orderedCards = useMemo(() => {
     if (!menuCards) return [] as { card_number: number; title: string }[];
-    return [...menuCards]
-      .filter(c => typeof c.id === 'number')
-      .sort((a, b) => a.id - b.id)
-      .map(c => ({ card_number: c.id, title: c.name || 'Untitled' }));
+    const grouped = groupCardsBySections(menuCards);
+    const list: { card_number: number; title: string }[] = [];
+    for (const section of menuSections) {
+      for (const c of grouped[section.id] || []) {
+        list.push({ card_number: c.id, title: c.name || 'Untitled' });
+      }
+    }
+    return list;
   }, [menuCards]);
 
   const currentIndex = orderedCards.findIndex(c => c.card_number === Number(id));
