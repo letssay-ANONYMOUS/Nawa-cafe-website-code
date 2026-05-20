@@ -20,7 +20,18 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { ArrowLeft, ImageIcon, LayoutGrid, RefreshCw, Save, Search, Upload } from "lucide-react";
+import { ArrowLeft, ImageIcon, LayoutGrid, Plus, RefreshCw, Save, Search, Trash2, Upload } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
   useMenuCards,
