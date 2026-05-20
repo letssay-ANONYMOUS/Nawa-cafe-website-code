@@ -8,9 +8,20 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, ImageIcon, Minus, Package, Plus, RefreshCw, Save, Star, Upload } from 'lucide-react';
+import { ArrowLeft, ImageIcon, Minus, Package, Plus, RefreshCw, Save, Star, Trash2, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { STORE_CATEGORIES, type StoreCategory } from '@/data/storeCatalog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export interface StoreCardData {
   id: string;
@@ -187,6 +198,53 @@ export function StockManager() {
     toast({ title: 'Saved', description: 'Card page updated.' });
   };
 
+  const handleCreate = async () => {
+    try {
+      const maxKey = products.reduce((m, p) => (p.product_key > m ? p.product_key : m), 0);
+      const nextKey = Math.max(maxKey + 1, 1);
+      const maxSort = products.reduce((m, p) => {
+        const s = (p as unknown as { sort_order?: number }).sort_order ?? 0;
+        return s > m ? s : m;
+      }, 0);
+      const { data, error } = await supabase
+        .from('store_products')
+        .insert({
+          product_key: nextKey,
+          product_name: 'New Product',
+          description: '',
+          price: 0,
+          category: activeCategory,
+          stock_quantity: 0,
+          sort_order: maxSort + 1,
+          coming_soon: false,
+          rating: 5,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      await loadProducts();
+      toast({ title: 'Product created', description: `Product #${nextKey} added.` });
+      if (data) navigate(`/admin/kitchen/stock/${nextKey}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not create product.';
+      toast({ variant: 'destructive', title: 'Create failed', description: msg });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedProduct) return;
+    try {
+      const { error } = await supabase.from('store_products').delete().eq('id', selectedProduct.id);
+      if (error) throw error;
+      await loadProducts();
+      toast({ title: 'Product deleted', description: `${selectedProduct.product_name} removed.` });
+      navigate('/admin/kitchen/stock');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not delete product.';
+      toast({ variant: 'destructive', title: 'Delete failed', description: msg });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -217,6 +275,27 @@ export function StockManager() {
             <Button variant="outline" size="sm" onClick={loadProducts}>
               <RefreshCw className="w-4 h-4 mr-1" /> Refresh
             </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="w-4 h-4 mr-1" /> Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete "{selectedProduct.product_name}"?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This permanently removes this product from the public store. This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <Button onClick={handleSave} disabled={saving || uploading}>
               <Save className="w-4 h-4 mr-2" />
               {saving ? 'Saving…' : 'Save Card'}
@@ -257,7 +336,7 @@ export function StockManager() {
                 {previewOrigin && <span className="text-sm text-coffee-600">{previewOrigin}</span>}
               </div>
               <CardTitle className="font-playfair text-2xl text-coffee-900 leading-tight">{previewName}</CardTitle>
-              <CardDescription className="text-coffee-700 leading-relaxed">{previewDescription}</CardDescription>
+              <CardDescription className="text-coffee-700 leading-relaxed whitespace-pre-wrap">{previewDescription}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-end justify-between gap-3">
@@ -401,9 +480,14 @@ export function StockManager() {
           <Package className="w-5 h-5" />
           Store Stock Management
         </h2>
-        <Button variant="outline" size="sm" onClick={loadProducts}>
-          <RefreshCw className="w-4 h-4 mr-1" /> Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={loadProducts}>
+            <RefreshCw className="w-4 h-4 mr-1" /> Refresh
+          </Button>
+          <Button size="sm" onClick={handleCreate}>
+            <Plus className="w-4 h-4 mr-1" /> Add Card
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-3">

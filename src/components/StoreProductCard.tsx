@@ -122,7 +122,7 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
           <span className="text-sm text-coffee-600">{product.origin}</span>
         </div>
         <CardTitle className="text-sm sm:text-xl text-coffee-900 font-playfair leading-tight line-clamp-2">{product.name}</CardTitle>
-        <CardDescription className="hidden sm:block text-coffee-700 line-clamp-2 text-[11px] sm:text-sm leading-snug mt-1">{product.description}</CardDescription>
+        <CardDescription className="hidden sm:block text-coffee-700 line-clamp-2 text-[11px] sm:text-sm leading-snug mt-1 whitespace-pre-wrap">{product.description}</CardDescription>
       </CardHeader>
       
       <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0 mt-auto">

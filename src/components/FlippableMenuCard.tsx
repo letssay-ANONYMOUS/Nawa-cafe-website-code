@@ -146,7 +146,7 @@ const FlippableMenuCard = ({ item, cardNumber, category = 'menu' }: FlippableMen
             </div>
 
             {/* Description */}
-            <p className="text-white/80 text-xs md:text-sm leading-relaxed mb-3 line-clamp-3 flex-shrink-0">
+            <p className="text-white/80 text-xs md:text-sm leading-relaxed mb-3 line-clamp-3 flex-shrink-0 whitespace-pre-wrap">
               {item.description || 'A delicious item from our carefully crafted menu.'}
             </p>
 

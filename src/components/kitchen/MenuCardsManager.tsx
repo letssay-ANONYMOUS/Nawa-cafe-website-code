@@ -20,7 +20,18 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { ArrowLeft, ImageIcon, LayoutGrid, RefreshCw, Save, Search, Upload } from "lucide-react";
+import { ArrowLeft, ImageIcon, LayoutGrid, Plus, RefreshCw, Save, Search, Trash2, Upload } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
   useMenuCards,
@@ -147,10 +158,10 @@ export function MenuCardsManager() {
       const { error } = await supabase
         .from("menu_cards")
         .update({
-          name: form.name.trim() || null,
-          price: form.price.trim() || null,
-          description: form.description.trim() || null,
-          image_url: form.image_url.trim() || null,
+          name: form.name || null,
+          price: form.price || null,
+          description: form.description || null,
+          image_url: form.image_url || null,
           section: form.section || null,
         })
         .eq("id", selectedCard.id);
@@ -162,6 +173,43 @@ export function MenuCardsManager() {
       toast({ variant: "destructive", title: "Save failed", description: msg });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCreate = async () => {
+    try {
+      const maxId = cards.reduce((m, c) => (c.id > m ? c.id : m), 0);
+      const nextId = Math.max(maxId + 1, 200);
+      const sectionForNew = activeSection !== ALL_ID ? activeSection : null;
+      const { error } = await supabase.from("menu_cards").insert({
+        id: nextId,
+        name: "New Card",
+        price: "",
+        description: "",
+        image_url: null,
+        section: sectionForNew,
+      });
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["menu-cards"] });
+      toast({ title: "Card created", description: `New card #${nextId}.` });
+      navigate(`/admin/kitchen/menu-cards/${nextId}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Could not create card.";
+      toast({ variant: "destructive", title: "Create failed", description: msg });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedCard) return;
+    try {
+      const { error } = await supabase.from("menu_cards").delete().eq("id", selectedCard.id);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["menu-cards"] });
+      toast({ title: "Card deleted", description: `Card #${selectedCard.id} removed.` });
+      navigate("/admin/kitchen/menu-cards");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Could not delete card.";
+      toast({ variant: "destructive", title: "Delete failed", description: msg });
     }
   };
 
@@ -191,6 +239,27 @@ export function MenuCardsManager() {
             <Button variant="outline" size="sm" onClick={() => refetch()}>
               <RefreshCw className="w-4 h-4 mr-1" /> Refresh
             </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="w-4 h-4 mr-1" /> Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete card #{selectedCard.id}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This permanently removes "{selectedCard.name || "Untitled"}" from the public menu. This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <Button onClick={handleSave} disabled={saving || uploading}>
               <Save className="w-4 h-4 mr-2" />
               {saving ? "Saving…" : "Save Card"}
@@ -218,7 +287,7 @@ export function MenuCardsManager() {
                 {sectionLabel}
               </CardDescription>
               <CardTitle className="font-playfair text-2xl leading-tight">{previewName}</CardTitle>
-              <CardDescription className="leading-relaxed">{previewDescription}</CardDescription>
+              <CardDescription className="leading-relaxed whitespace-pre-wrap">{previewDescription}</CardDescription>
             </CardHeader>
             <CardContent>
               <span className="text-2xl font-bold text-primary">{previewPrice}</span>
@@ -357,6 +426,9 @@ export function MenuCardsManager() {
           </div>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw className="w-4 h-4 mr-1" /> Refresh
+          </Button>
+          <Button size="sm" onClick={handleCreate}>
+            <Plus className="w-4 h-4 mr-1" /> Add Card
           </Button>
         </div>
       </div>
