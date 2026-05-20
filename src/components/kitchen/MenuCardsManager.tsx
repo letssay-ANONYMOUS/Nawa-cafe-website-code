@@ -157,6 +157,23 @@ export function MenuCardsManager() {
     if (!selectedCard || !form) return;
     setSaving(true);
     try {
+      const desiredId = parseInt(form.card_number, 10);
+      if (!Number.isFinite(desiredId) || desiredId < 1) {
+        throw new Error("Card number must be a positive integer.");
+      }
+
+      let finalId = selectedCard.id;
+
+      // If card number changed, shift via RPC first
+      if (desiredId !== selectedCard.id) {
+        const { data, error } = await supabase.rpc("move_menu_card", {
+          _old_id: selectedCard.id,
+          _new_id: desiredId,
+        });
+        if (error) throw error;
+        finalId = (data as number) ?? desiredId;
+      }
+
       const { error } = await supabase
         .from("menu_cards")
         .update({
@@ -166,10 +183,13 @@ export function MenuCardsManager() {
           image_url: form.image_url || null,
           section: form.section || null,
         })
-        .eq("id", selectedCard.id);
+        .eq("id", finalId);
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ["menu-cards"] });
-      toast({ title: "Saved", description: `Card #${selectedCard.id} updated.` });
+      toast({ title: "Saved", description: `Card #${finalId} updated.` });
+      if (finalId !== selectedCard.id) {
+        navigate(`/admin/kitchen/menu-cards/${finalId}`);
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Could not save.";
       toast({ variant: "destructive", title: "Save failed", description: msg });
@@ -180,21 +200,42 @@ export function MenuCardsManager() {
 
   const handleCreate = async () => {
     try {
-      const maxId = cards.reduce((m, c) => (c.id > m ? c.id : m), 0);
-      const nextId = Math.max(maxId + 1, 200);
+      // Default suggestion: end of active section, or next free overall
+      let suggestedId: number;
+      if (activeSection !== ALL_ID) {
+        const sec = menuSections.find((s) => s.id === activeSection);
+        const sectionCards = cards.filter((c) => effectiveSectionId(c) === activeSection);
+        const maxInSec = sectionCards.reduce((m, c) => (c.id > m ? c.id : m), 0);
+        suggestedId = maxInSec ? maxInSec + 1 : (sec?.startId ?? 1);
+      } else {
+        suggestedId = cards.reduce((m, c) => (c.id > m ? c.id : m), 0) + 1;
+      }
+
+      const input = window.prompt(
+        `Card number for the new card?\n\nIf the number is already used, that card and all following cards shift up by 1 automatically.`,
+        String(suggestedId),
+      );
+      if (input === null) return;
+      const targetId = parseInt(input, 10);
+      if (!Number.isFinite(targetId) || targetId < 1) {
+        toast({ variant: "destructive", title: "Invalid number", description: "Enter a positive integer." });
+        return;
+      }
+
       const sectionForNew = activeSection !== ALL_ID ? activeSection : null;
-      const { error } = await supabase.from("menu_cards").insert({
-        id: nextId,
-        name: "New Card",
-        price: "",
-        description: "",
-        image_url: null,
-        section: sectionForNew,
+      const { data, error } = await supabase.rpc("insert_menu_card_at", {
+        _target_id: targetId,
+        _name: "New Card",
+        _price: "",
+        _description: "",
+        _image_url: null,
+        _section: sectionForNew,
       });
       if (error) throw error;
+      const newId = (data as number) ?? targetId;
       await queryClient.invalidateQueries({ queryKey: ["menu-cards"] });
-      toast({ title: "Card created", description: `New card #${nextId}.` });
-      navigate(`/admin/kitchen/menu-cards/${nextId}`);
+      toast({ title: "Card created", description: `New card #${newId}.` });
+      navigate(`/admin/kitchen/menu-cards/${newId}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Could not create card.";
       toast({ variant: "destructive", title: "Create failed", description: msg });
