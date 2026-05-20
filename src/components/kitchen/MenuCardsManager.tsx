@@ -98,6 +98,7 @@ export function MenuCardsManager() {
       description: selectedCard.description ?? "",
       image_url: selectedCard.image_url ?? "",
       section: selectedCard.section ?? "",
+      card_number: String(selectedCard.id),
     });
   }, [selectedCard]);
 
