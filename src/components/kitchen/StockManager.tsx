@@ -198,6 +198,53 @@ export function StockManager() {
     toast({ title: 'Saved', description: 'Card page updated.' });
   };
 
+  const handleCreate = async () => {
+    try {
+      const maxKey = products.reduce((m, p) => (p.product_key > m ? p.product_key : m), 0);
+      const nextKey = Math.max(maxKey + 1, 1);
+      const maxSort = products.reduce((m, p) => {
+        const s = (p as unknown as { sort_order?: number }).sort_order ?? 0;
+        return s > m ? s : m;
+      }, 0);
+      const { data, error } = await supabase
+        .from('store_products')
+        .insert({
+          product_key: nextKey,
+          product_name: 'New Product',
+          description: '',
+          price: 0,
+          category: activeCategory,
+          stock_quantity: 0,
+          sort_order: maxSort + 1,
+          coming_soon: false,
+          rating: 5,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      await loadProducts();
+      toast({ title: 'Product created', description: `Product #${nextKey} added.` });
+      if (data) navigate(`/admin/kitchen/stock/${nextKey}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not create product.';
+      toast({ variant: 'destructive', title: 'Create failed', description: msg });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedProduct) return;
+    try {
+      const { error } = await supabase.from('store_products').delete().eq('id', selectedProduct.id);
+      if (error) throw error;
+      await loadProducts();
+      toast({ title: 'Product deleted', description: `${selectedProduct.product_name} removed.` });
+      navigate('/admin/kitchen/stock');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not delete product.';
+      toast({ variant: 'destructive', title: 'Delete failed', description: msg });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
