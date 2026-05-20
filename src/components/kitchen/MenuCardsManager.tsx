@@ -245,10 +245,10 @@ export function MenuCardsManager() {
   const handleDelete = async () => {
     if (!selectedCard) return;
     try {
-      const { error } = await supabase.from("menu_cards").delete().eq("id", selectedCard.id);
+      const { error } = await supabase.rpc("delete_menu_card", { _target_id: selectedCard.id });
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ["menu-cards"] });
-      toast({ title: "Card deleted", description: `Card #${selectedCard.id} removed.` });
+      toast({ title: "Card deleted", description: `Card #${selectedCard.id} removed. Following cards shifted down by 1.` });
       navigate("/admin/kitchen/menu-cards");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Could not delete card.";

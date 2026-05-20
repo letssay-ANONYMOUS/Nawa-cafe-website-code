@@ -655,6 +655,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_menu_card: { Args: { _target_id: number }; Returns: undefined }
       generate_order_number: { Args: never; Returns: string }
       has_active_discount_codes: { Args: never; Returns: boolean }
       has_role: {
