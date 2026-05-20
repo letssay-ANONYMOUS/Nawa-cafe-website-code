@@ -7,6 +7,7 @@ import { ArrowLeft, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { useMenuItems, toMenuCardItem } from '@/hooks/useMenuItems';
+import { useMenuCards } from '@/hooks/useMenuCards';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AnimatePresence, motion, type Variants, useReducedMotion } from 'framer-motion';
 
@@ -35,6 +36,7 @@ const MenuItemDetail = () => {
 
   // Fetch menu items from backend
   const { data: menuItems, isLoading, error } = useMenuItems();
+  const { data: menuCards } = useMenuCards();
 
   const handleBack = useCallback(() => {
     navigate('/menu');
@@ -52,7 +54,23 @@ const MenuItemDetail = () => {
 
   // Find item by card_number (id in URL)
   const menuItem = menuItems?.find(item => item.card_number === Number(id));
-  const item = menuItem ? toMenuCardItem(menuItem) : null;
+  let item = menuItem ? toMenuCardItem(menuItem) : null;
+
+  // Fallback to menu_cards (for staff-created cards without menu_items row)
+  if (!item && menuCards) {
+    const card = menuCards.find(c => c.id === Number(id));
+    if (card) {
+      item = {
+        id: card.id,
+        name: card.name || 'Untitled',
+        description: card.description || '',
+        price: Number(card.price) || 0,
+        image: card.image_url || '/placeholder.svg',
+        options: null,
+      };
+    }
+  }
+
   const currentIndex = menuItems?.findIndex(menuItem => menuItem.card_number === Number(id)) ?? -1;
 
   const previousItem = useMemo(() => {
