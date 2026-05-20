@@ -351,6 +351,18 @@ export function MenuCardsManager() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
+                  <Label>Card Number</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={form.card_number}
+                    onChange={(e) => setForm({ ...form, card_number: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Change to reorder. If the number is taken, the existing card and all following cards shift by 1 automatically.
+                  </p>
+                </div>
+                <div className="space-y-2">
                   <Label>Name</Label>
                   <Input
                     value={form.name}
