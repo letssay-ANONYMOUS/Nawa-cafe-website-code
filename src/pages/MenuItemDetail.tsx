@@ -342,7 +342,7 @@ const MenuItemDetail = () => {
                 <div className="flex flex-col justify-start space-y-6">
                   <div>
                     <h1 className="text-4xl font-bold mb-4">{item.name}</h1>
-                    <p className="text-lg text-muted-foreground mb-6">
+                    <p className="text-lg text-muted-foreground mb-6 whitespace-pre-wrap">
                       {item.description}
                     </p>
                     <div className="text-3xl font-bold text-[#c9a962]">
