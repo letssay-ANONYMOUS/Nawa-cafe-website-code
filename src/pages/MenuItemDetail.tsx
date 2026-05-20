@@ -71,17 +71,28 @@ const MenuItemDetail = () => {
     }
   }
 
-  const currentIndex = menuItems?.findIndex(menuItem => menuItem.card_number === Number(id)) ?? -1;
+  // Build a unified ordered list of cards (menu_cards is the source of truth).
+  // Each entry exposes card_number + title so navigation works for both
+  // legacy menu_items and staff-added cards.
+  const orderedCards = useMemo(() => {
+    if (!menuCards) return [] as { card_number: number; title: string }[];
+    return [...menuCards]
+      .filter(c => typeof c.id === 'number')
+      .sort((a, b) => a.id - b.id)
+      .map(c => ({ card_number: c.id, title: c.name || 'Untitled' }));
+  }, [menuCards]);
+
+  const currentIndex = orderedCards.findIndex(c => c.card_number === Number(id));
 
   const previousItem = useMemo(() => {
-    if (!menuItems || currentIndex <= 0) return null;
-    return menuItems[currentIndex - 1];
-  }, [currentIndex, menuItems]);
+    if (currentIndex <= 0) return null;
+    return orderedCards[currentIndex - 1];
+  }, [currentIndex, orderedCards]);
 
   const nextItem = useMemo(() => {
-    if (!menuItems || currentIndex < 0 || currentIndex >= menuItems.length - 1) return null;
-    return menuItems[currentIndex + 1];
-  }, [currentIndex, menuItems]);
+    if (currentIndex < 0 || currentIndex >= orderedCards.length - 1) return null;
+    return orderedCards[currentIndex + 1];
+  }, [currentIndex, orderedCards]);
 
   useEffect(() => {
     const currentCard = Number(id);
