@@ -287,7 +287,7 @@ export function MenuCardsManager() {
                 {sectionLabel}
               </CardDescription>
               <CardTitle className="font-playfair text-2xl leading-tight">{previewName}</CardTitle>
-              <CardDescription className="leading-relaxed">{previewDescription}</CardDescription>
+              <CardDescription className="leading-relaxed whitespace-pre-wrap">{previewDescription}</CardDescription>
             </CardHeader>
             <CardContent>
               <span className="text-2xl font-bold text-primary">{previewPrice}</span>
