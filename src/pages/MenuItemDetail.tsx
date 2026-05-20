@@ -7,7 +7,7 @@ import { ArrowLeft, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { useMenuItems, toMenuCardItem } from '@/hooks/useMenuItems';
-import { useMenuCards } from '@/hooks/useMenuCards';
+import { useMenuCards, groupCardsBySections, menuSections } from '@/hooks/useMenuCards';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AnimatePresence, motion, type Variants, useReducedMotion } from 'framer-motion';
 
