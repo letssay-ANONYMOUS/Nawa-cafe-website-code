@@ -1,63 +1,37 @@
-# Store cards: smooth image animation, fix detail-page back glitch, restore Coming Soon on oil
+## Goal
+Let staff pick the card number when creating or editing a card. If the chosen number is already taken, shift that card and every following one up by 1 so nothing is overwritten and the menu order stays clean.
 
-Three small fixes scoped to the Store experience.
+## Changes
 
----
+### 1. `AdminCardModal.tsx` (staff-facing form)
+- Add a "Card Number" input (numeric, required).
+- On Create: pre-fill with the next free number in the card's section, but allow override.
+- On Edit: pre-fill with the current `id`, allow change.
+- Validate: integer ≥ 1, not equal to another card unless shift is allowed.
 
-## 1. Smooth top-to-bottom image reveal (no stutter)
+### 2. New backend logic — Supabase RPC `insert_card_at_position` and `move_card_to_position`
+Two `SECURITY DEFINER` Postgres functions on `menu_cards`:
 
-**Cause:** `<img>` currently uses `loading="eager"` + `fetchPriority="high"` for every card and animates via `grayscale opacity-70` directly on the raw element. With many images forced to load at once, decoding blocks the main thread and the cards pop in unevenly.
+- **`insert_card_at_position(target_id int, payload jsonb)`**
+  1. If `target_id` is occupied → shift every row with `id >= target_id` up by 1 (descending order, temp offset to avoid PK collisions).
+  2. Insert the new card with `id = target_id`.
 
-**Fix in `src/components/StoreProductCard.tsx`:**
-- Switch to `loading="lazy"` + `decoding="async"` (drop `fetchPriority="high"`) so images decode off the main thread and only when near viewport.
-- Add a local `loaded` state; render the `<img>` with `opacity-0` until `onLoad` fires, then animate from `translateY(-12px)` → `translateY(0)` with `opacity 0 → 1` over ~600ms ease-out (smooth top-to-bottom slide).
-- Wrap image in a sized container (already there: `aspect-[4/3] sm:h-64`) so layout is reserved before the image arrives — no layout shift / stutter even on slow connections.
-- Move the `grayscale opacity-70` look (used when `comingSoon`) onto a CSS class applied after load, so the greyscale filter doesn't repaint mid-transition.
+- **`move_card_to_position(old_id int, new_id int)`**
+  1. If `new_id` free → simple `UPDATE id = new_id`.
+  2. If occupied → temp-park the moving row, shift the affected range by ±1, drop it back at `new_id`.
 
-**Add keyframe to `src/index.css`:**
-```css
-@keyframes store-img-reveal {
-  0%   { opacity: 0; transform: translateY(-12px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-```
+Both run in a single transaction so numbering can never end up duplicated or broken.
 
----
+### 3. `MenuCardsManager.tsx` / create + edit handlers
+- Replace direct `insert` / `update` on `menu_cards` with calls to the two RPCs.
+- Invalidate the `menu-cards` query so the menu page reflects new numbering immediately.
 
-## 2. Fix back-navigation glitch on store cards
+### 4. No frontend menu changes needed
+`useMenuCards` already sorts by `id`, and `MenuItemDetail` already uses the visual order — once IDs are correct, navigation, price, and section all line up automatically.
 
-**Cause:** Back arrow on `ProductDetail` calls `navigate(-1)`, which remounts `StorePage`. The page now restores scroll inside `useLayoutEffect`, but it runs **before** product images finish loading, so the page jumps to a Y position that shrinks moments later → the visible "glitch" / flash.
+## Notes on the existing Nawa Eggs card (id 200)
+After the new system ships, staff can simply edit that card and set its number to 19. The RPC will shift nothing (19 is free in Breakfast) and the card will land in its correct position with working arrows.
 
-**Fix in `src/pages/StorePage.tsx`:**
-- Disable browser's automatic `history.scrollRestoration` on this page (`'manual'`).
-- Defer the scroll restore until after the product list has rendered AND first batch of images has either loaded or errored. Use a small `Promise.all` over the visible images' `decode()` calls with a 400ms timeout fallback, then `window.scrollTo({ top: y, behavior: 'instant' })`.
-- Save `scrollY` only on `beforeunload` / `visibilitychange` and on a router `popstate` listener — not in cleanup (which runs after layout already shifted on hot reload).
-
-**Fix in `src/pages/ProductDetail.tsx`:**
-- On mount, `window.scrollTo(0, 0)` instantly (no smooth) so the detail page doesn't briefly show the previous scroll offset before re-paint.
-
----
-
-## 3. Restore "Coming Soon" on oil cards
-
-**Cause:** During the previous DB migration the oil rows were inserted with `coming_soon = false` (default) while honey/beans got `true`. The card overlay & greyscale are now gated on `product.comingSoon`, so oil lost the badge.
-
-**Fix:** Run a one-line database update setting `coming_soon = true` for every row where `category = 'oil'`. The overlay and greyscale will return immediately.
-
-```sql
-UPDATE public.store_products SET coming_soon = true WHERE category = 'oil';
-```
-
----
-
-## Files touched
-
-```text
-src/components/StoreProductCard.tsx   image lazy-load + reveal animation
-src/index.css                          @keyframes store-img-reveal
-src/pages/StorePage.tsx                deferred scroll restore, manual scrollRestoration
-src/pages/ProductDetail.tsx            scroll-to-top on mount
-db migration                           UPDATE store_products SET coming_soon=true WHERE category='oil'
-```
-
-No changes to data fetching, cart, or the Kitchen edit modal.
+## Out of scope
+- No changes to image handling (already JPEG via `menu-images` bucket).
+- No changes to section ranges in `menuSections` — the shift logic is section-agnostic and works across the full 1–999 ID space.
