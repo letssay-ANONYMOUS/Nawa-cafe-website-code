@@ -480,9 +480,14 @@ export function StockManager() {
           <Package className="w-5 h-5" />
           Store Stock Management
         </h2>
-        <Button variant="outline" size="sm" onClick={loadProducts}>
-          <RefreshCw className="w-4 h-4 mr-1" /> Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={loadProducts}>
+            <RefreshCw className="w-4 h-4 mr-1" /> Refresh
+          </Button>
+          <Button size="sm" onClick={handleCreate}>
+            <Plus className="w-4 h-4 mr-1" /> Add Card
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-3">
