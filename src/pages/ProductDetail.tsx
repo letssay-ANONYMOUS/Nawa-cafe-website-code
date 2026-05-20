@@ -158,7 +158,7 @@ const ProductDetail = () => {
                   )}
                 </div>
 
-                <p className="text-lg text-coffee-700 mb-8 leading-relaxed">{product.description}</p>
+                <p className="text-lg text-coffee-700 mb-8 leading-relaxed whitespace-pre-wrap">{product.description}</p>
 
                 <div className="text-4xl font-bold text-coffee-600 mb-4">AED {product.price}</div>
                 {stock !== null && (
