@@ -58,20 +58,45 @@ Deno.serve(async (req) => {
     }
 
     const body: TrackVisitorRequest = await req.json();
-    const { 
-      visitor_id, 
-      fingerprint, 
-      browser, 
-      browser_version, 
-      os, 
-      device_type, 
-      screen_resolution, 
-      timezone 
+    const {
+      visitor_id,
+      fingerprint,
+      browser,
+      browser_version,
+      os,
+      device_type,
+      screen_resolution,
+      timezone
     } = body;
 
-    if (!visitor_id) {
+    // Input validation: enforce shapes & length caps to prevent analytics pollution
+    const isStr = (v: unknown, max: number) =>
+      v === undefined || v === null || (typeof v === 'string' && v.length <= max);
+
+    if (
+      !visitor_id ||
+      typeof visitor_id !== 'string' ||
+      visitor_id.length < 4 ||
+      visitor_id.length > 128 ||
+      !/^[A-Za-z0-9_\-:.]+$/.test(visitor_id)
+    ) {
       return new Response(
-        JSON.stringify({ error: 'visitor_id is required' }),
+        JSON.stringify({ error: 'Invalid visitor_id' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (
+      !isStr(fingerprint, 128) ||
+      !isStr(browser, 64) ||
+      !isStr(browser_version, 32) ||
+      !isStr(os, 64) ||
+      !isStr(device_type, 32) ||
+      !isStr(screen_resolution, 32) ||
+      !isStr(timezone, 64)
+    ) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid device metadata' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
