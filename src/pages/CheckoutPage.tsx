@@ -9,13 +9,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Lock, MapPin } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { getVisitorId } from '@/hooks/useVisitorId';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { PromoCodeInput } from '@/components/PromoCodeInput';
 import { useDiscountCode, computeCodeDiscount, round2 } from '@/hooks/useDiscountCode';
 import { useLoyaltyDiscount } from '@/hooks/useLoyaltyDiscount';
+import DeliveryAreaSelector from '@/components/DeliveryAreaSelector';
+import { calculateDeliveryFee, getFulfillmentLabel, useDeliveryArea, useOrderFulfillment } from '@/lib/delivery';
 
 const FIXED_BRANCH = 'Stadhazza Branch';
 const CHECKOUT_FORM_KEY = 'nawa_checkout_form';
@@ -39,12 +40,14 @@ const loadStoredForm = () => {
 
 const CheckoutPage = () => {
   const { toast } = useToast();
-  const { cartItems, getCartTotal, getCartCount, clearCart } = useCart();
-  const { info: discountInfo, code: discountCode, clear: clearDiscount } = useDiscountCode();
-  const navigate = useNavigate();
+  const { cartItems, getCartTotal, getCartCount } = useCart();
+  const { info: discountInfo, code: discountCode } = useDiscountCode();
   const { trackCheckoutStart, trackCheckoutComplete } = useAnalytics();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState(loadStoredForm);
+  const [deliveryError, setDeliveryError] = useState('');
+  const { area: deliveryArea } = useDeliveryArea();
+  const { fulfillment } = useOrderFulfillment();
 
   // Persist form data on every change
   useEffect(() => {
@@ -55,11 +58,17 @@ const CheckoutPage = () => {
     }
   }, [formData]);
 
+  useEffect(() => {
+    if (deliveryArea || fulfillment === 'dine_in') setDeliveryError('');
+  }, [deliveryArea, fulfillment]);
+
   const { percent: loyaltyPercent } = useLoyaltyDiscount();
   const subtotal = getCartTotal();
   const loyaltyDiscount = round2(subtotal * (loyaltyPercent / 100));
   const codeDiscount = computeCodeDiscount(cartItems, subtotal, discountInfo);
-  const total = round2(Math.max(0, subtotal - loyaltyDiscount - codeDiscount));
+  const delivery = calculateDeliveryFee(deliveryArea, subtotal, fulfillment);
+  const deliveryFee = delivery?.fee ?? 0;
+  const total = round2(Math.max(0, subtotal - loyaltyDiscount - codeDiscount) + deliveryFee);
   const itemCount = getCartCount();
 
   // Track checkout start when page loads with items
@@ -87,6 +96,18 @@ const CheckoutPage = () => {
       return;
     }
 
+    if (fulfillment === 'delivery' && !deliveryArea) {
+      setDeliveryError('Please choose your delivery area before checkout.');
+      toast({
+        title: 'Choose delivery area',
+        description: 'Please select your delivery area before checkout.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setDeliveryError('');
+
     setLoading(true);
 
     try {
@@ -95,8 +116,6 @@ const CheckoutPage = () => {
           customerName: formData.name,
           phoneNumber: formData.phone,
           visitorId: getVisitorId(),
-          latitude: null,
-          longitude: null,
           selectedBranch: FIXED_BRANCH,
           orderItems: cartItems.map(item => ({
             name: item.name,
@@ -105,6 +124,8 @@ const CheckoutPage = () => {
           })),
           additionalNotes: formData.notes || "None",
           discountCode: discountCode || null,
+          orderType: fulfillment,
+          deliveryArea,
         },
       });
 
@@ -190,6 +211,8 @@ const CheckoutPage = () => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
+                      <DeliveryAreaSelector subtotal={subtotal} error={deliveryError} />
+
                       <div>
                         <h2 className="text-xl font-semibold text-coffee-800 mb-4">
                           Customer Details
@@ -292,6 +315,19 @@ const CheckoutPage = () => {
                               <span>Promo ({discountInfo.code} −{discountInfo.percent}%)</span>
                               <span>−AED {codeDiscount.toFixed(2)}</span>
                             </div>
+                          )}
+                          <div className="flex justify-between text-sm text-coffee-700">
+                            <span>Order type</span>
+                            <span>{getFulfillmentLabel(fulfillment)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm text-coffee-700">
+                            <span>Delivery</span>
+                            <span>{fulfillment === 'dine_in' ? 'No fee' : delivery?.label || 'Choose area'}</span>
+                          </div>
+                          {fulfillment === 'delivery' && delivery?.isTbc && (
+                            <p className="text-xs font-medium text-coffee-600">
+                              We'll confirm your delivery fee by phone.
+                            </p>
                           )}
                           <div className="flex justify-between text-lg font-semibold text-coffee-800 border-t border-coffee-200 pt-2">
                             <span>Total</span>

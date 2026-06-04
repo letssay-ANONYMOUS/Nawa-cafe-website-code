@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-const homeBarista = 'https://lomqlmqsoyayuegheetv.supabase.co/storage/v1/object/public/menu-images/home/barista-cup.jpg';
+const homeBarista = 'https://uwvzfudrlgpoigwrwthd.supabase.co/storage/v1/object/public/menu-images/home/barista-cup.jpg';
 
 const HomeStory = () => {
   return (

@@ -6,6 +6,100 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Postgres unique_violation — used to detect that this order's loyalty was
+// already processed (idempotency guard via UNIQUE(order_id, type)).
+const UNIQUE_VIOLATION = "23505";
+
+/**
+ * Apply the "buy N beverages, get the next free" loyalty rules for a freshly
+ * paid order. Idempotent: the loyalty_events('earn') insert is the gate — if a
+ * row for this order already exists, we bail out before touching any counter.
+ */
+async function processLoyaltyForPaidOrder(
+  supabase: any,
+  orderId: string,
+  userId: string,
+  freeDrinkAmount: number,
+) {
+  // Load config
+  const { data: settingRows } = await supabase
+    .from("kitchen_settings")
+    .select("setting_key, setting_value")
+    .in("setting_key", ["loyalty_enabled", "loyalty_threshold", "loyalty_reward_qty", "loyalty_eligible_categories"]);
+  const settings = new Map((settingRows || []).map((r: any) => [r.setting_key, r.setting_value]));
+
+  if ((settings.get("loyalty_enabled") ?? "true") === "false") return;
+
+  const threshold = Math.max(1, Number(settings.get("loyalty_threshold")) || 10);
+  const rewardQty = Math.max(1, Number(settings.get("loyalty_reward_qty")) || 1);
+  let eligible: string[] = [];
+  try { eligible = JSON.parse(settings.get("loyalty_eligible_categories") || "[]"); } catch { eligible = []; }
+  if (eligible.length === 0) return;
+
+  // Count eligible beverage units on this order.
+  const { data: items } = await supabase
+    .from("order_items")
+    .select("quantity, item_category")
+    .eq("order_id", orderId);
+
+  const eligibleQty = (items || [])
+    .filter((it: any) => it.item_category && eligible.includes(it.item_category))
+    .reduce((sum: number, it: any) => sum + (Number(it.quantity) || 0), 0);
+
+  const redeemed = freeDrinkAmount > 0 ? 1 : 0;       // one free drink per order
+  const paidBeverages = Math.max(0, eligibleQty - redeemed); // freebie doesn't count toward the next reward
+
+  // Idempotency gate: claim this order for an 'earn' event. If it already
+  // exists, loyalty for this order has been processed — stop here.
+  const { error: earnErr } = await supabase
+    .from("loyalty_events")
+    .insert({ user_id: userId, order_id: orderId, type: "earn", beverages_counted: paidBeverages });
+  if (earnErr) {
+    if (earnErr.code === UNIQUE_VIOLATION) {
+      console.log("Loyalty already processed for order", orderId);
+      return;
+    }
+    throw earnErr;
+  }
+
+  // Load (or seed) the customer's counters.
+  const { data: acct } = await supabase
+    .from("loyalty_accounts")
+    .select("paid_beverage_count, free_drinks_available, lifetime_free_redeemed")
+    .eq("user_id", userId)
+    .maybeSingle();
+  let count = (acct?.paid_beverage_count ?? 0) + paidBeverages;
+  let free = acct?.free_drinks_available ?? 0;
+  let lifetime = acct?.lifetime_free_redeemed ?? 0;
+
+  // Award free drinks for every full threshold reached.
+  while (count >= threshold) {
+    count -= threshold;
+    free += rewardQty;
+  }
+
+  // Redeem the free drink applied to this order, if any.
+  if (redeemed > 0) {
+    free = Math.max(0, free - redeemed);
+    lifetime += redeemed;
+    await supabase
+      .from("loyalty_events")
+      .insert({ user_id: userId, order_id: orderId, type: "redeem", beverages_counted: 0 });
+  }
+
+  await supabase
+    .from("loyalty_accounts")
+    .upsert({
+      user_id: userId,
+      paid_beverage_count: count,
+      free_drinks_available: free,
+      lifetime_free_redeemed: lifetime,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "user_id" });
+
+  console.log("Loyalty updated for", userId, { paidBeverages, count, free, lifetime });
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -121,7 +215,7 @@ serve(async (req) => {
       // Verify the order exists and matches the payment reference
       const { data: existingOrder, error: fetchError } = await supabase
         .from("orders")
-        .select("id, order_number, payment_status, payment_reference")
+        .select("id, order_number, payment_status, payment_reference, user_id, loyalty_free_drink_amount")
         .eq("id", order_id)
         .single();
 
@@ -186,6 +280,22 @@ serve(async (req) => {
         }
 
         console.log("Order updated to paid successfully");
+
+        // Loyalty: count paid beverages + grant/redeem free drinks. Runs only
+        // on the pending→paid transition, and is further guarded by the
+        // UNIQUE(order_id, type) constraint on loyalty_events (see helper).
+        if (existingOrder.user_id) {
+          try {
+            await processLoyaltyForPaidOrder(
+              supabase,
+              existingOrder.id,
+              existingOrder.user_id,
+              Number(existingOrder.loyalty_free_drink_amount) || 0,
+            );
+          } catch (e) {
+            console.error("Loyalty processing failed (order still paid):", e);
+          }
+        }
       } else {
         console.log("Order already marked as:", existingOrder.payment_status);
       }

@@ -6,6 +6,92 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const UNLISTED_DELIVERY_AREA = "My area isn't listed";
+
+// Owner-editable delivery zone buckets. Move districts between arrays here
+// without changing the fee calculation logic below.
+const DISTRICT_ZONE = {
+  near: [
+    "Al Towayya",
+    "Al Mutawaa",
+    "Al Jimi",
+    "Al Mutaredh",
+    "Al Khabisi",
+    "Al Muwaiji",
+    "Al Qattara",
+    "Al Masoudi",
+  ],
+  mid: [
+    "Central District",
+    "Al Jahili",
+    "Hili",
+    "Falaj Hazza",
+    "Asharej",
+    "Al Markhaniya",
+    "Al Bateen",
+    "Al Sarooj",
+    "Tawam",
+    "Al Saniya",
+    "Al Maqam",
+    "Al Khrair",
+    "Al Niyadat",
+  ],
+  far: [
+    "Zakhir",
+    "Al Foah",
+    "Neima",
+    "Al Salamat",
+    "Al Shuaibah",
+    "Al Dhaher",
+    "Al Yahar",
+  ],
+} as const;
+
+// Owner-editable zone fees. `freeOver` means delivery is free when the cart
+// subtotal is greater than or equal to this amount.
+const ZONE_FEE = {
+  near: { fee: 5, freeOver: 50 },
+  mid: { fee: 10, freeOver: 80 },
+  far: { fee: 15, freeOver: 120 },
+} as const;
+
+type DeliveryZone = keyof typeof DISTRICT_ZONE;
+type OrderFulfillment = "dine_in" | "delivery";
+
+function getDeliveryZone(area: string): DeliveryZone | null {
+  for (const [zone, districts] of Object.entries(DISTRICT_ZONE) as [DeliveryZone, readonly string[]][]) {
+    if (districts.includes(area)) return zone;
+  }
+  return null;
+}
+
+function calculateDelivery(area: string, subtotal: number): {
+  area: string;
+  zone: DeliveryZone | null;
+  fee: number | null;
+  isTbc: boolean;
+} | null {
+  if (!area) return null;
+  if (area === UNLISTED_DELIVERY_AREA) {
+    return { area, zone: null, fee: null, isTbc: true };
+  }
+
+  const zone = getDeliveryZone(area);
+  if (!zone) return null;
+
+  const rule = ZONE_FEE[zone];
+  return {
+    area,
+    zone,
+    fee: subtotal >= rule.freeOver ? 0 : rule.fee,
+    isTbc: false,
+  };
+}
+
+function normalizeOrderType(value: unknown): OrderFulfillment {
+  return value === "dine_in" ? "dine_in" : "delivery";
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -13,63 +99,10 @@ serve(async (req) => {
   }
 
   try {
-    // ===== CAPTURE CUSTOMER IP =====
-    const forwardedFor = req.headers.get("x-forwarded-for");
-    const cfConnectingIp = req.headers.get("cf-connecting-ip");
-    const realIp = req.headers.get("x-real-ip");
-    const customerIp = cfConnectingIp || (forwardedFor ? forwardedFor.split(",")[0].trim() : null) || realIp || null;
-    console.log("Customer IP:", customerIp);
-
-    const { customerName, phoneNumber, customerEmail, orderItems: bodyOrderItems, additionalNotes, visitorId, latitude, longitude, selectedBranch, discountCode, sharedPaymentId } = await req.json();
+    const { customerName, phoneNumber, customerEmail, orderItems: bodyOrderItems, additionalNotes, visitorId, selectedBranch, discountCode, sharedPaymentId, deliveryArea, orderType } = await req.json();
     let orderItems = bodyOrderItems;
-
-    // ===== BRANCH DETECTION =====
-    // Two Nawa Cafe branches in Al Ain
-    const BRANCHES = [
-      { name: "Stadhazza Branch", lat: 24.2167, lon: 55.7708 },
-      { name: "Municipality Branch", lat: 24.2075, lon: 55.7447 },
-    ];
-
-    function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-      const R = 6371;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat / 2) ** 2 +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLon / 2) ** 2;
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    }
-
-    let customerLocation = "Unknown";
-    if (typeof latitude === "number" && typeof longitude === "number") {
-      // GPS coordinates available — calculate nearest branch
-      const distances = BRANCHES.map(b => ({
-        name: b.name,
-        distance: haversineKm(latitude, longitude, b.lat, b.lon),
-      }));
-      distances.sort((a, b) => a.distance - b.distance);
-      const nearest = distances[0];
-      customerLocation = `${nearest.name} — ${nearest.distance.toFixed(1)} km`;
-      console.log("GPS branch detection:", customerLocation, `(coords: ${latitude}, ${longitude})`);
-    } else if (selectedBranch) {
-      // Manual branch selection fallback
-      customerLocation = `${selectedBranch} (manual)`;
-      console.log("Manual branch selection:", customerLocation);
-    } else if (customerIp && customerIp !== "127.0.0.1") {
-      // Fallback to IP geolocation
-      try {
-        const geoRes = await fetch(`http://ip-api.com/json/${customerIp}?fields=status,city,regionName,country,district,zip,lat,lon`);
-        const geo = await geoRes.json();
-        if (geo.status === "success") {
-          const parts = [geo.district, geo.city, geo.regionName, geo.country].filter(Boolean);
-          const unique = [...new Set(parts)];
-          customerLocation = unique.join(", ") || "Unknown";
-          console.log("IP geolocation fallback:", customerLocation);
-        }
-      } catch (geoErr) {
-        console.warn("Geolocation API error:", geoErr);
-      }
-    }
+    const normalizedOrderType = normalizeOrderType(orderType);
+    const customerLocation = selectedBranch ? `${selectedBranch} (manual)` : "Unknown";
 
     console.log("Checkout request:", { customerName, phoneNumber, itemCount: orderItems?.length, visitorId });
 
@@ -85,6 +118,21 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Identify the customer if they are signed in. supabase-js attaches the
+    // user's JWT as the Authorization bearer when a session exists; anonymous
+    // callers send the anon key (which getUser rejects → userId stays null).
+    let userId: string | null = null;
+    try {
+      const authHeader = req.headers.get("Authorization") || "";
+      if (authHeader.startsWith("Bearer ")) {
+        const token = authHeader.slice(7);
+        const { data: { user } } = await supabase.auth.getUser(token);
+        userId = user?.id ?? null;
+      }
+    } catch (e) {
+      console.warn("Could not resolve customer from auth header:", e);
+    }
 
     let serverTotal = 0;
     const validatedItems: any[] = [];
@@ -133,7 +181,7 @@ serve(async (req) => {
       const itemNames = orderItems.map((item: any) => item.name);
       const { data: dbItems, error: menuError } = await supabase
         .from('menu_items')
-        .select('title, price')
+        .select('title, price, category')
         .in('title', itemNames)
         .eq('published', true);
 
@@ -146,8 +194,10 @@ serve(async (req) => {
       }
 
       const priceMap = new Map<string, number>();
+      const categoryMap = new Map<string, string | null>();
       for (const item of dbItems || []) {
         priceMap.set(item.title, Number(item.price));
+        categoryMap.set(item.title, item.category ?? null);
       }
 
       for (const item of orderItems) {
@@ -167,9 +217,25 @@ serve(async (req) => {
           );
         }
         serverTotal += dbPrice * qty;
-        validatedItems.push({ ...item, price: dbPrice });
+        // Trust the DB category (not the client-sent one) for loyalty eligibility.
+        validatedItems.push({ ...item, price: dbPrice, category: categoryMap.get(item.name) ?? item.category ?? null });
       }
     }
+
+    const subtotalAmount = Math.round(serverTotal * 100) / 100;
+
+    const delivery = sharedPaymentId || normalizedOrderType === "dine_in"
+      ? { area: null, zone: null, fee: 0, isTbc: false }
+      : calculateDelivery(typeof deliveryArea === "string" ? deliveryArea : "", subtotalAmount);
+
+    if (!delivery) {
+      return new Response(
+        JSON.stringify({ error: { provider: "validation", message: "Please choose a valid delivery area" } }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+
+    const deliveryFee = delivery.fee ?? 0;
 
     // Apply loyalty discount — percent is configurable via kitchen_settings
     // (key: "loyalty_discount_percent"). Defaults to 15 if unset, 0 disables.
@@ -190,7 +256,6 @@ serve(async (req) => {
       console.warn("Failed to load loyalty_discount_percent, using default 15%", e);
     }
     const DISCOUNT_RATE = loyaltyPercent / 100;
-    const subtotalAmount = Math.round(serverTotal * 100) / 100;
     const loyaltyDiscount = Math.round(serverTotal * DISCOUNT_RATE * 100) / 100;
 
 
@@ -224,11 +289,50 @@ serve(async (req) => {
       }
     }
 
+    // ===== LOYALTY FREE DRINK (buy N beverages, get the next free) =====
+    // Auto-applied for signed-in customers who have a free drink banked and an
+    // eligible beverage in the cart. Not applied to shared-payment links.
+    let loyaltyFreeDrinkAmount = 0;
+    if (userId && !sharedPaymentId) {
+      try {
+        const { data: settingRows } = await supabase
+          .from("kitchen_settings")
+          .select("setting_key, setting_value")
+          .in("setting_key", ["loyalty_enabled", "loyalty_eligible_categories"]);
+        const settings = new Map((settingRows || []).map((r: any) => [r.setting_key, r.setting_value]));
+        const enabled = (settings.get("loyalty_enabled") ?? "true") !== "false";
+
+        let eligible: string[] = [];
+        try { eligible = JSON.parse(settings.get("loyalty_eligible_categories") || "[]"); } catch { eligible = []; }
+
+        if (enabled && eligible.length > 0) {
+          const { data: loyalty } = await supabase
+            .from("loyalty_accounts")
+            .select("free_drinks_available")
+            .eq("user_id", userId)
+            .maybeSingle();
+
+          if ((loyalty?.free_drinks_available ?? 0) > 0) {
+            // Free drink = the cheapest eligible beverage unit in the cart.
+            const prices = validatedItems
+              .filter((it) => it.category && eligible.includes(it.category))
+              .map((it) => Number(it.price))
+              .filter((p) => Number.isFinite(p) && p > 0);
+            if (prices.length > 0) {
+              loyaltyFreeDrinkAmount = Math.round(Math.min(...prices) * 100) / 100;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Loyalty free-drink check failed (continuing without it):", e);
+      }
+    }
+
     const rawTotal = sharedPaymentTotal !== null
       ? sharedPaymentTotal
-      : serverTotal - loyaltyDiscount - codeDiscount;
+      : serverTotal - loyaltyDiscount - codeDiscount - loyaltyFreeDrinkAmount + deliveryFee;
     const amount = Math.max(0, Math.round(rawTotal * 100) / 100);
-    console.log("Server-validated subtotal:", subtotalAmount, "loyalty:", loyaltyDiscount, "promo:", codeDiscount, "shared:", sharedPaymentTotal, "final:", amount);
+    console.log("Server-validated subtotal:", subtotalAmount, "loyalty:", loyaltyDiscount, "promo:", codeDiscount, "freeDrink:", loyaltyFreeDrinkAmount, "delivery:", deliveryFee, "shared:", sharedPaymentTotal, "final:", amount);
 
     // Get Ziina API token
     const ziinaToken = Deno.env.get("ZIINA_API_TOKEN") || Deno.env.get("ZIINA_API_KEY");
@@ -273,19 +377,25 @@ serve(async (req) => {
         .from('orders')
         .insert({
           visitor_id: visitorId || 'unknown',
+          user_id: userId,
           customer_name: customerName,
           customer_phone: phoneNumber,
           customer_email: customerEmail || null,
           extra_notes: additionalNotes || null,
           subtotal: subtotal,
           total_amount: amount,
+          loyalty_free_drink_amount: loyaltyFreeDrinkAmount,
           payment_status: 'pending',
           payment_provider: 'ziina',
-          order_type: 'dine_in',
-          ip_address: customerIp,
+          order_type: normalizedOrderType,
+          ip_address: null,
           customer_location: customerLocation,
           applied_discount_code: appliedCode,
           code_discount_amount: codeDiscount,
+          delivery_area: delivery.area,
+          delivery_zone: delivery.zone,
+          delivery_fee: delivery.fee,
+          delivery_fee_tbc: delivery.isTbc,
         })
         .select('id, order_number')
         .single();
@@ -444,6 +554,8 @@ serve(async (req) => {
         paymentIntentId: ziinaData.id,
         orderId: orderData.id,
         orderNumber: orderData.order_number,
+        deliveryFee: delivery.fee,
+        deliveryFeeTbc: delivery.isTbc,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

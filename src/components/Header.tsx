@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Coffee, ShoppingCart } from 'lucide-react';
+import { Coffee, ShoppingCart, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
@@ -52,6 +52,11 @@ const Header = () => {
                 {item.label}
               </Link>
             ))}
+            <Link to="/account" aria-label="My account">
+              <Button variant="outline" size="icon" className="rounded-full">
+                <User className="h-5 w-5" />
+              </Button>
+            </Link>
             <Link to="/cart">
               <Button variant="outline" size="icon" className="rounded-full relative">
                 <ShoppingCart className="h-5 w-5" />
@@ -97,9 +102,18 @@ const Header = () => {
                 {item.label}
               </Link>
             ))}
-            <Link to="/cart" onClick={() => setIsMenuOpen(false)}
+            <Link to="/account" onClick={() => setIsMenuOpen(false)}
               className={`transition-all duration-300 ${isMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'}`}
               style={{ transitionDelay: isMenuOpen ? `${navItems.length * 40}ms` : '0ms' }}
+            >
+              <Button variant="outline" size="sm" className="rounded-full w-fit gap-2">
+                <User className="h-4 w-4" />
+                My Account
+              </Button>
+            </Link>
+            <Link to="/cart" onClick={() => setIsMenuOpen(false)}
+              className={`transition-all duration-300 ${isMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'}`}
+              style={{ transitionDelay: isMenuOpen ? `${(navItems.length + 1) * 40}ms` : '0ms' }}
             >
               <Button variant="outline" size="sm" className="rounded-full w-fit gap-2 relative">
                 <ShoppingCart className="h-4 w-4" />

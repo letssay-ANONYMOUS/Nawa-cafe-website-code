@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { AdminProvider } from "@/contexts/AdminContext";
+import { CustomerAuthProvider } from "@/contexts/CustomerAuthContext";
 import { RouteAwareCookieConsent } from "@/components/RouteAwareCookieConsent";
 import PageViewTracker from "@/components/PageViewTracker";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
@@ -29,6 +30,10 @@ import AdminDashboard from "./pages/AdminDashboard";
 import KitchenDashboard from "./pages/KitchenDashboard";
 import StaffLogin from "./pages/StaffLogin";
 import KitchenAuthGate from "./components/KitchenAuthGate";
+import CustomerLogin from "./pages/CustomerLogin";
+import CustomerSignup from "./pages/CustomerSignup";
+import CustomerAccountPage from "./pages/CustomerAccountPage";
+import CustomerAuthGate from "./components/CustomerAuthGate";
 import { LocationTracker } from "./hooks/LocationTracker";
 
 import NotFound from "./pages/NotFound";
@@ -79,6 +84,7 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AdminProvider>
+        <CustomerAuthProvider>
         <CartProvider>
           <TooltipProvider>
             <Toaster />
@@ -108,6 +114,9 @@ const App = () => {
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/kitchen/*" element={<KitchenAuthGate><KitchenDashboard /></KitchenAuthGate>} />
                 <Route path="/staff/login" element={<StaffLogin />} />
+                <Route path="/login" element={<CustomerLogin />} />
+                <Route path="/signup" element={<CustomerSignup />} />
+                <Route path="/account" element={<CustomerAuthGate><CustomerAccountPage /></CustomerAuthGate>} />
                 <Route path="/visitors" element={<AnalyticsDashboard />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
                 <Route path="/refund-policy" element={<RefundPolicyPage />} />
@@ -119,6 +128,7 @@ const App = () => {
             </BrowserRouter>
           </TooltipProvider>
         </CartProvider>
+        </CustomerAuthProvider>
       </AdminProvider>
     </QueryClientProvider>
   );

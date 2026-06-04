@@ -1,16 +1,39 @@
 project_id = "lomqlmqsoyayuegheetv"
 
-[functions.create-stripe-checkout]
-verify_jwt = false
-
+# Public / webhook / custom-token functions — no Supabase JWT required.
 [functions.create-ziina-checkout]
-verify_jwt = false
-
-[functions.track-visitor]
 verify_jwt = false
 
 [functions.verify-ziina-payment]
 verify_jwt = false
 
+[functions.track-visitor]
+verify_jwt = false
+
 [functions.admin-orders]
 verify_jwt = false
+
+[functions.admin-login]
+verify_jwt = false
+
+[functions.admin-session]
+verify_jwt = false
+
+[functions.admin-logout]
+verify_jwt = false
+
+# WebAuthn functions validate the bearer token themselves via auth.getUser().
+[functions.webauthn-register-options]
+verify_jwt = false
+
+[functions.webauthn-register-verify]
+verify_jwt = false
+
+[functions.webauthn-auth-options]
+verify_jwt = false
+
+[functions.webauthn-auth-verify]
+verify_jwt = false
+
+# admin-item, admin-items, admin-upload-url are intentionally omitted:
+# they default to verify_jwt = true (called by staff with a valid Supabase session).

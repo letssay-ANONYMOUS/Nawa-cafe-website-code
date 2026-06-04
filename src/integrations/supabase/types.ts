@@ -14,6 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
+      webauthn_credentials: {
+        Row: {
+          backed_up: boolean
+          counter: number
+          created_at: string
+          credential_id: string
+          device_label: string | null
+          device_type: string | null
+          id: string
+          public_key: string
+          transports: string[] | null
+          user_id: string
+        }
+        Insert: {
+          backed_up?: boolean
+          counter?: number
+          created_at?: string
+          credential_id: string
+          device_label?: string | null
+          device_type?: string | null
+          id?: string
+          public_key: string
+          transports?: string[] | null
+          user_id: string
+        }
+        Update: {
+          backed_up?: boolean
+          counter?: number
+          created_at?: string
+          credential_id?: string
+          device_label?: string | null
+          device_type?: string | null
+          id?: string
+          public_key?: string
+          transports?: string[] | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      customer_profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      loyalty_accounts: {
+        Row: {
+          free_drinks_available: number
+          lifetime_free_redeemed: number
+          paid_beverage_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          free_drinks_available?: number
+          lifetime_free_redeemed?: number
+          paid_beverage_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          free_drinks_available?: number
+          lifetime_free_redeemed?: number
+          paid_beverage_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      loyalty_events: {
+        Row: {
+          beverages_counted: number
+          created_at: string
+          id: string
+          order_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          beverages_counted?: number
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          beverages_counted?: number
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       anonymous_visitors: {
         Row: {
           browser: string | null
@@ -305,11 +422,16 @@ export type Database = {
           created_at: string
           customer_email: string | null
           customer_location: string | null
+          delivery_area: string | null
+          delivery_fee: number | null
+          delivery_fee_tbc: boolean
+          delivery_zone: string | null
           customer_name: string
           customer_phone: string
           extra_notes: string | null
           id: string
           ip_address: string | null
+          loyalty_free_drink_amount: number
           notes: string | null
           order_number: string
           order_type: Database["public"]["Enums"]["order_type"]
@@ -321,6 +443,7 @@ export type Database = {
           subtotal: number
           total_amount: number
           updated_at: string
+          user_id: string | null
           visitor_id: string
         }
         Insert: {
@@ -329,11 +452,16 @@ export type Database = {
           created_at?: string
           customer_email?: string | null
           customer_location?: string | null
+          delivery_area?: string | null
+          delivery_fee?: number | null
+          delivery_fee_tbc?: boolean
+          delivery_zone?: string | null
           customer_name: string
           customer_phone: string
           extra_notes?: string | null
           id?: string
           ip_address?: string | null
+          loyalty_free_drink_amount?: number
           notes?: string | null
           order_number: string
           order_type?: Database["public"]["Enums"]["order_type"]
@@ -345,6 +473,7 @@ export type Database = {
           subtotal?: number
           total_amount?: number
           updated_at?: string
+          user_id?: string | null
           visitor_id: string
         }
         Update: {
@@ -353,11 +482,16 @@ export type Database = {
           created_at?: string
           customer_email?: string | null
           customer_location?: string | null
+          delivery_area?: string | null
+          delivery_fee?: number | null
+          delivery_fee_tbc?: boolean
+          delivery_zone?: string | null
           customer_name?: string
           customer_phone?: string
           extra_notes?: string | null
           id?: string
           ip_address?: string | null
+          loyalty_free_drink_amount?: number
           notes?: string | null
           order_number?: string
           order_type?: Database["public"]["Enums"]["order_type"]
@@ -369,6 +503,7 @@ export type Database = {
           subtotal?: number
           total_amount?: number
           updated_at?: string
+          user_id?: string | null
           visitor_id?: string
         }
         Relationships: []
@@ -693,7 +828,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "staff"
-      order_type: "dine_in" | "takeaway"
+      order_type: "dine_in" | "takeaway" | "delivery"
       payment_method: "card" | "cash" | "ziina" | "stripe"
       payment_status: "pending" | "paid" | "failed" | "refunded" | "cancelled"
     }
@@ -824,7 +959,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "staff"],
-      order_type: ["dine_in", "takeaway"],
+      order_type: ["dine_in", "takeaway", "delivery"],
       payment_method: ["card", "cash", "ziina", "stripe"],
       payment_status: ["pending", "paid", "failed", "refunded", "cancelled"],
     },

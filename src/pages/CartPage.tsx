@@ -3,19 +3,40 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Minus, Plus, Trash2, ShoppingCart } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
 import { PromoCodeInput } from '@/components/PromoCodeInput';
 import { useDiscountCode, computeCodeDiscount, round2 } from '@/hooks/useDiscountCode';
 import ShareCartPayment from '@/components/ShareCartPayment';
+import DeliveryAreaSelector from '@/components/DeliveryAreaSelector';
+import { calculateDeliveryFee, getFulfillmentLabel, useDeliveryArea, useOrderFulfillment } from '@/lib/delivery';
+import { useToast } from '@/hooks/use-toast';
 
 const CartPage = () => {
   const { cartItems, updateQuantity, removeFromCart, getCartTotal } = useCart();
   const { info: discountInfo } = useDiscountCode();
+  const { area } = useDeliveryArea();
+  const { fulfillment } = useOrderFulfillment();
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   const subtotal = getCartTotal();
   const codeDiscount = computeCodeDiscount(cartItems, subtotal, discountInfo);
-  const total = round2(Math.max(0, subtotal - codeDiscount));
+  const delivery = calculateDeliveryFee(area, subtotal, fulfillment);
+  const deliveryFee = delivery?.fee ?? 0;
+  const total = round2(Math.max(0, subtotal - codeDiscount) + deliveryFee);
+
+  const proceedToCheckout = () => {
+    if (fulfillment === 'delivery' && !area) {
+      toast({
+        title: 'Choose delivery area',
+        description: 'Please select your delivery area before checkout.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    navigate('/checkout');
+  };
 
   return (
     <div className="min-h-screen">
@@ -110,6 +131,7 @@ const CartPage = () => {
                     <CardContent className="p-6">
                       <h2 className="text-2xl font-semibold text-coffee-800 mb-6">Order Summary</h2>
                       <div className="space-y-4 mb-6">
+                        <DeliveryAreaSelector subtotal={subtotal} />
                         <PromoCodeInput />
                         <div className="border-t border-coffee-200 pt-4 space-y-2">
                           <div className="flex justify-between text-sm text-coffee-700">
@@ -122,17 +144,32 @@ const CartPage = () => {
                               <span>−AED {codeDiscount.toFixed(2)}</span>
                             </div>
                           )}
+                          <div className="flex justify-between text-sm text-coffee-700">
+                            <span>Order type</span>
+                            <span>{getFulfillmentLabel(fulfillment)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm text-coffee-700">
+                            <span>Delivery</span>
+                            <span>{fulfillment === 'dine_in' ? 'No fee' : delivery?.label || 'Choose area'}</span>
+                          </div>
+                          {fulfillment === 'delivery' && delivery?.isTbc && (
+                            <p className="text-xs font-medium text-coffee-600">
+                              We'll confirm your delivery fee by phone.
+                            </p>
+                          )}
                           <div className="flex justify-between text-lg font-semibold text-coffee-800 border-t border-coffee-200 pt-2">
                             <span>Total</span>
                             <span>AED {total.toFixed(2)}</span>
                           </div>
                         </div>
                       </div>
-                      <Link to="/checkout">
-                        <Button size="lg" className="w-full bg-coffee-600 hover:bg-coffee-700">
-                          Proceed to Checkout
-                        </Button>
-                      </Link>
+                      <Button
+                        size="lg"
+                        className="w-full bg-coffee-600 hover:bg-coffee-700"
+                        onClick={proceedToCheckout}
+                      >
+                        Proceed to Checkout
+                      </Button>
                       <ShareCartPayment subtotal={subtotal} total={total} />
                       <Link to="/menu">
                         <Button variant="outline" size="lg" className="w-full mt-3">

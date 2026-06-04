@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 
-const homeInterior = 'https://lomqlmqsoyayuegheetv.supabase.co/storage/v1/object/public/menu-images/home/interior-nawa.jpg';
+const homeInterior = 'https://uwvzfudrlgpoigwrwthd.supabase.co/storage/v1/object/public/menu-images/home/interior-nawa.jpg';
 
 const stats = [
   { value: '50+', label: 'Menu Items' },
