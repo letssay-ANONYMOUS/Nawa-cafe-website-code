@@ -199,6 +199,24 @@ serve(async (req) => {
         categoryMap.set(item.title, item.category ?? null);
       }
 
+      // Staff-created cards may exist only in menu_cards (no menu_items row).
+      // Validate those by name against menu_cards, parsing the numeric price
+      // (strip commas first so large prices like "99,999.00" parse correctly).
+      const missingNames = itemNames.filter((n: string) => !priceMap.has(n));
+      if (missingNames.length > 0) {
+        const { data: dbCards } = await supabase
+          .from('menu_cards')
+          .select('name, price')
+          .in('name', missingNames);
+        for (const c of dbCards || []) {
+          const m = String(c.price ?? '').replace(/,/g, '').match(/\d+(?:\.\d+)?/);
+          if (c.name && m) {
+            priceMap.set(c.name, parseFloat(m[0]));
+            categoryMap.set(c.name, null);
+          }
+        }
+      }
+
       for (const item of orderItems) {
         const dbPrice = priceMap.get(item.name);
         if (dbPrice === undefined) {

@@ -60,7 +60,7 @@ const MenuItemDetail = () => {
   if (!item && menuCards) {
     const card = menuCards.find(c => c.id === Number(id));
     if (card) {
-      const priceMatch = (card.price || '').match(/[\d]+(?:\.[\d]+)?/);
+      const priceMatch = (card.price || '').replace(/,/g, '').match(/\d+(?:\.\d+)?/);
       const parsedPrice = priceMatch ? parseFloat(priceMatch[0]) : 0;
       item = {
         id: card.id,
