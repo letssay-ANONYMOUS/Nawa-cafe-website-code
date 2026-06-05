@@ -231,6 +231,12 @@ export const OrderTable = ({
                             </div>
                             <div>
                               <span className="text-muted-foreground flex items-center gap-1.5 mb-1 text-xs uppercase tracking-wider">
+                                <Receipt className="w-3 h-3" /> Invoice #
+                              </span>
+                              <p className="font-mono font-bold text-coffee-700">{(order as any).invoice_number || '—'}</p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground flex items-center gap-1.5 mb-1 text-xs uppercase tracking-wider">
                                 <Calendar className="w-3 h-3" /> Date
                               </span>
                               <p className="font-medium">{formatDate(order.created_at)}</p>
