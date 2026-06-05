@@ -5,8 +5,10 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Star } from 'lucide-react';
+import { ArrowLeft, Star, ShoppingCart } from 'lucide-react';
 import type { StoreProduct } from '@/data/storeCatalog';
+import { useCart } from '@/contexts/CartContext';
+import { toast } from 'sonner';
 
 const STORE_SCROLL_KEY = 'store:scrollY';
 const STORE_PENDING_SCROLL_KEY = 'store:pendingScrollY';
@@ -33,6 +35,7 @@ const ProductDetail = () => {
   const [stock, setStock] = useState<number | null>(null);
   const [product, setProduct] = useState<StoreProduct | null>(null);
   const [loading, setLoading] = useState(true);
+  const { addToCart } = useCart();
 
   useEffect(() => {
     if (!id) return;
@@ -170,13 +173,33 @@ const ProductDetail = () => {
               </div>
 
               <div className="space-y-4">
-                <Button
-                  size="lg"
-                  className="w-full bg-coffee-600/60 text-white rounded-full text-lg py-6 cursor-not-allowed"
-                  disabled
-                >
-                  {product.comingSoon ? 'Coming Soon' : 'Coming Soon'}
-                </Button>
+                {product.comingSoon ? (
+                  <Button size="lg" className="w-full bg-coffee-600/60 text-white rounded-full text-lg py-6 cursor-not-allowed" disabled>
+                    Coming Soon
+                  </Button>
+                ) : (stock !== null && stock <= 0) ? (
+                  <Button size="lg" className="w-full bg-coffee-400/70 text-white rounded-full text-lg py-6 cursor-not-allowed" disabled>
+                    Out of Stock
+                  </Button>
+                ) : (
+                  <Button
+                    size="lg"
+                    className="w-full bg-coffee-600 hover:bg-coffee-700 text-white rounded-full text-lg py-6"
+                    onClick={() => {
+                      addToCart({
+                        id: 9000000 + product.id,
+                        name: product.name,
+                        description: product.description ?? '',
+                        price: product.price,
+                        image: product.image || '/placeholder.svg',
+                        category: 'store',
+                      });
+                      toast.success(`${product.name} added to cart`);
+                    }}
+                  >
+                    <ShoppingCart className="w-5 h-5 mr-2" /> Add to Cart
+                  </Button>
+                )}
               </div>
             </div>
           </div>

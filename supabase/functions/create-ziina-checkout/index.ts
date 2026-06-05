@@ -215,6 +215,21 @@ serve(async (req) => {
             categoryMap.set(c.name, null);
           }
         }
+
+        // Store products — only sellable ones (not coming-soon and in stock).
+        const stillMissing = missingNames.filter((n: string) => !priceMap.has(n));
+        if (stillMissing.length > 0) {
+          const { data: dbStore } = await supabase
+            .from('store_products')
+            .select('product_name, price, coming_soon, stock_quantity')
+            .in('product_name', stillMissing);
+          for (const s of dbStore || []) {
+            if (s.product_name && !s.coming_soon && Number(s.stock_quantity ?? 0) > 0) {
+              priceMap.set(s.product_name, Number(s.price));
+              categoryMap.set(s.product_name, 'store');
+            }
+          }
+        }
       }
 
       for (const item of orderItems) {

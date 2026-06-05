@@ -133,12 +133,34 @@ const StoreProductCard = ({ product, stock, onEdit, onDelete }: StoreProductCard
       </CardContent>
       
       <CardFooter className="p-3 sm:p-6 pt-0 sm:pt-0 w-full">
-        <Button 
-          className="w-full bg-coffee-600/60 text-white rounded-full text-xs sm:text-sm h-9 sm:h-10 px-2 sm:px-4 cursor-not-allowed"
-          disabled
-        >
-          <span className="truncate">Coming Soon</span>
-        </Button>
+        {product.comingSoon ? (
+          <Button className="w-full bg-coffee-600/60 text-white rounded-full text-xs sm:text-sm h-9 sm:h-10 px-2 sm:px-4 cursor-not-allowed" disabled>
+            <span className="truncate">Coming Soon</span>
+          </Button>
+        ) : (stock !== null && stock !== undefined && stock <= 0) ? (
+          <Button className="w-full bg-coffee-400/70 text-white rounded-full text-xs sm:text-sm h-9 sm:h-10 px-2 sm:px-4 cursor-not-allowed" disabled>
+            <span className="truncate">Out of Stock</span>
+          </Button>
+        ) : (
+          <Button
+            className="w-full bg-coffee-600 hover:bg-coffee-700 text-white rounded-full text-xs sm:text-sm h-9 sm:h-10 px-2 sm:px-4"
+            onClick={(e) => {
+              e.stopPropagation();
+              addToCart({
+                id: 9000000 + product.id,
+                name: product.name,
+                description: product.description ?? '',
+                price: product.price,
+                image: product.image ?? '/placeholder.svg',
+                category: 'store',
+              });
+              toast.success(`${product.name} added to cart`);
+            }}
+          >
+            <ShoppingCart className="w-4 h-4 mr-1 shrink-0" />
+            <span className="truncate">Add to Cart</span>
+          </Button>
+        )}
       </CardFooter>
 
       {/* Coming Soon Overlay */}
