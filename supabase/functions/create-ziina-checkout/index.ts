@@ -47,12 +47,11 @@ const DISTRICT_ZONE = {
   ],
 } as const;
 
-// Owner-editable zone fees. `freeOver` means delivery is free when the cart
-// subtotal is greater than or equal to this amount.
+// Flat AED 15 delivery for every area; never free over a threshold.
 const ZONE_FEE = {
-  near: { fee: 5, freeOver: 50 },
-  mid: { fee: 10, freeOver: 80 },
-  far: { fee: 15, freeOver: 120 },
+  near: { fee: 15, freeOver: Number.MAX_SAFE_INTEGER },
+  mid: { fee: 15, freeOver: Number.MAX_SAFE_INTEGER },
+  far: { fee: 15, freeOver: Number.MAX_SAFE_INTEGER },
 } as const;
 
 type DeliveryZone = keyof typeof DISTRICT_ZONE;
