@@ -1,37 +1,35 @@
-## Goal
-Let staff pick the card number when creating or editing a card. If the chosen number is already taken, shift that card and every following one up by 1 so nothing is overwritten and the menu order stays clean.
+## Export Plan
 
-## Changes
+Generate downloadable files in `/mnt/documents/` containing every order from the beginning of the database, plus a calculator-style revenue summary.
 
-### 1. `AdminCardModal.tsx` (staff-facing form)
-- Add a "Card Number" input (numeric, required).
-- On Create: pre-fill with the next free number in the card's section, but allow override.
-- On Edit: pre-fill with the current `id`, allow change.
-- Validate: integer ≥ 1, not equal to another card unless shift is allowed.
+### Files to produce
 
-### 2. New backend logic — Supabase RPC `insert_card_at_position` and `move_card_to_position`
-Two `SECURITY DEFINER` Postgres functions on `menu_cards`:
+1. **`orders_all.csv`** — every row from `orders` (paid + pending + any other status), oldest to newest, with all customer-facing columns:
+   - order_number, created_at, paid_at, payment_status, payment_method, payment_provider, payment_reference
+   - customer_name, customer_phone, customer_email, customer_location, ip_address
+   - order_type, subtotal, total_amount, applied_discount_code, code_discount_amount
+   - notes, extra_notes, visitor_id, id
 
-- **`insert_card_at_position(target_id int, payload jsonb)`**
-  1. If `target_id` is occupied → shift every row with `id >= target_id` up by 1 (descending order, temp offset to avoid PK collisions).
-  2. Insert the new card with `id = target_id`.
+2. **`order_items.csv`** — every row from `order_items`, joined by `order_id` so each line item is traceable to its order.
 
-- **`move_card_to_position(old_id int, new_id int)`**
-  1. If `new_id` free → simple `UPDATE id = new_id`.
-  2. If occupied → temp-park the moving row, shift the affected range by ±1, drop it back at `new_id`.
+3. **`orders_paid.csv`** — filtered view: `payment_status = 'paid'` only (what the Kitchen "Paid" tab shows).
 
-Both run in a single transaction so numbering can never end up duplicated or broken.
+4. **`orders_pending.csv`** — filtered view: `payment_status = 'pending'` only.
 
-### 3. `MenuCardsManager.tsx` / create + edit handlers
-- Replace direct `insert` / `update` on `menu_cards` with calls to the two RPCs.
-- Invalidate the `menu-cards` query so the menu page reflects new numbering immediately.
+5. **`calculator_summary.csv`** — the same numbers the in-app Revenue Calculator computes from paid orders:
+   - Today / Yesterday / This week / Last week / This month / Last month / All-time
+   - For each bucket: order count, gross revenue (AED), average order value
+   - Plus a daily breakdown (date, orders, revenue) for the last 90 days
 
-### 4. No frontend menu changes needed
-`useMenuCards` already sorts by `id`, and `MenuItemDetail` already uses the visual order — once IDs are correct, navigation, price, and section all line up automatically.
+### How
 
-## Notes on the existing Nawa Eggs card (id 200)
-After the new system ships, staff can simply edit that card and set its number to 19. The RPC will shift nothing (19 is free in Breakfast) and the card will land in its correct position with working arrows.
+Run `psql` `COPY ... TO STDOUT WITH CSV HEADER` for files 1–4 (one shell call, parallel-safe since each writes a different file). For file 5, run a single SQL aggregation query and pipe to CSV.
 
-## Out of scope
-- No changes to image handling (already JPEG via `menu-images` bucket).
-- No changes to section ranges in `menuSections` — the shift logic is section-agnostic and works across the full 1–999 ID space.
+All five files land in `/mnt/documents/` and are returned as `<presentation-artifact>` tags so you can download them directly from chat.
+
+### Not included
+- No schema/DDL (you already have the migration export).
+- No edge-function code (already in the export).
+- No storage objects (images).
+
+If you also want `shared_payments`, `discount_codes`, or analytics tables (`page_views`, `site_events`, `visitor_sessions`) exported in the same batch, say the word and I'll add them — otherwise I'll stick to the 5 files above to keep credits low.
