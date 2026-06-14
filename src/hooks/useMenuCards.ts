@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface MenuCard {
@@ -17,9 +18,11 @@ export interface MenuSection {
   startId: number;
   endId: number;
   cardIds?: number[];
+  imageUrl?: string | null;
+  sortOrder?: number;
 }
 
-export const menuSections: MenuSection[] = [
+export const FALLBACK_MENU_SECTIONS: MenuSection[] = [
   { id: 'nawa-breakfast', name: 'NAWA Breakfast', startId: 1, endId: 19 },
   { id: 'coffee', name: 'COFFEE', startId: 24, endId: 42 },
   { id: 'cold-beverages', name: 'Cold Beverages', startId: 43, endId: 58, cardIds: [43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,119,120,121,122,123,124,125] },
@@ -43,6 +46,8 @@ export const menuSections: MenuSection[] = [
   { id: 'croissants-bakery', name: 'Croissants & Bakery', startId: 158, endId: 169 },
 ];
 
+export const menuSections = FALLBACK_MENU_SECTIONS;
+
 async function fetchMenuCards(): Promise<MenuCard[]> {
   const { data, error } = await supabase
     .from('menu_cards')
@@ -57,6 +62,31 @@ async function fetchMenuCards(): Promise<MenuCard[]> {
   return data || [];
 }
 
+async function fetchMenuSections(): Promise<MenuSection[]> {
+  const { data, error } = await supabase
+    .from('menu_categories')
+    .select('id,name,image_url,start_id,end_id,card_ids,sort_order')
+    .order('sort_order', { ascending: true })
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching menu categories:', error);
+    return FALLBACK_MENU_SECTIONS;
+  }
+
+  if (!data?.length) return FALLBACK_MENU_SECTIONS;
+
+  return data.map((section) => ({
+    id: section.id,
+    name: section.name,
+    imageUrl: section.image_url,
+    startId: section.start_id,
+    endId: section.end_id,
+    cardIds: section.card_ids?.length ? section.card_ids : undefined,
+    sortOrder: section.sort_order,
+  }));
+}
+
 export function useMenuCards() {
   return useQuery({
     queryKey: ['menu-cards'],
@@ -66,12 +96,43 @@ export function useMenuCards() {
   });
 }
 
+export function useMenuSections() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('menu-categories-live')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'menu_categories' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['menu-sections'] });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  return useQuery({
+    queryKey: ['menu-sections'],
+    queryFn: fetchMenuSections,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+}
+
 // Group cards by section, honoring per-card `section` override
-export function groupCardsBySections(cards: MenuCard[]): Record<string, MenuCard[]> {
+export function groupCardsBySections(
+  cards: MenuCard[],
+  sections: MenuSection[] = menuSections,
+): Record<string, MenuCard[]> {
   const grouped: Record<string, MenuCard[]> = {};
   const overridden = new Set<number>();
 
-  for (const section of menuSections) grouped[section.id] = [];
+  for (const section of sections) grouped[section.id] = [];
 
   for (const card of cards) {
     if (card.section && grouped[card.section]) {
@@ -80,7 +141,7 @@ export function groupCardsBySections(cards: MenuCard[]): Record<string, MenuCard
     }
   }
 
-  for (const section of menuSections) {
+  for (const section of sections) {
     const defaults = section.cardIds
       ? cards.filter((c) => section.cardIds?.includes(c.id) && !overridden.has(c.id))
       : cards.filter((c) => c.id >= section.startId && c.id <= section.endId && !overridden.has(c.id));
@@ -94,8 +155,11 @@ export function groupCardsBySections(cards: MenuCard[]): Record<string, MenuCard
   return grouped;
 }
 
-export function defaultSectionIdForCard(id: number): string | null {
-  const s = menuSections.find((sec) =>
+export function defaultSectionIdForCard(
+  id: number,
+  sections: MenuSection[] = menuSections,
+): string | null {
+  const s = sections.find((sec) =>
     sec.cardIds ? sec.cardIds.includes(id) : id >= sec.startId && id <= sec.endId
   );
   return s?.id ?? null;

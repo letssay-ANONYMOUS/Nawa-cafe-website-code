@@ -7,7 +7,7 @@ import { ArrowLeft, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { useMenuItems, toMenuCardItem } from '@/hooks/useMenuItems';
-import { useMenuCards, groupCardsBySections, menuSections } from '@/hooks/useMenuCards';
+import { useMenuCards, groupCardsBySections, menuSections, useMenuSections } from '@/hooks/useMenuCards';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AnimatePresence, motion, type Variants, useReducedMotion } from 'framer-motion';
 
@@ -37,6 +37,7 @@ const MenuItemDetail = () => {
   // Fetch menu items from backend
   const { data: menuItems, isLoading, error } = useMenuItems();
   const { data: menuCards } = useMenuCards();
+  const { data: sections = menuSections } = useMenuSections();
 
   const handleBack = useCallback(() => {
     navigate('/menu');
@@ -77,15 +78,15 @@ const MenuItemDetail = () => {
   // iterate sections in declared order, and within each section use grouped cards.
   const orderedCards = useMemo(() => {
     if (!menuCards) return [] as { card_number: number; title: string }[];
-    const grouped = groupCardsBySections(menuCards);
+    const grouped = groupCardsBySections(menuCards, sections);
     const list: { card_number: number; title: string }[] = [];
-    for (const section of menuSections) {
+    for (const section of sections) {
       for (const c of grouped[section.id] || []) {
         list.push({ card_number: c.id, title: c.name || 'Untitled' });
       }
     }
     return list;
-  }, [menuCards]);
+  }, [menuCards, sections]);
 
   const currentIndex = orderedCards.findIndex(c => c.card_number === Number(id));
 

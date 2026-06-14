@@ -6,58 +6,44 @@ const FULFILLMENT_STORAGE_KEY = 'nawa_order_fulfillment';
 
 export type OrderFulfillment = 'dine_in' | 'delivery';
 
-// Owner-editable delivery zone buckets. Move districts between arrays here
-// without changing the fee calculation logic below.
-export const DISTRICT_ZONE = {
-  near: [
-    'Al Towayya',
-    'Al Mutawaa',
-    'Al Jimi',
-    'Al Mutaredh',
-    'Al Khabisi',
-    'Al Muwaiji',
-    'Al Qattara',
-    'Al Masoudi',
-  ],
-  mid: [
-    'Central District',
-    'Al Jahili',
-    'Hili',
-    'Falaj Hazza',
-    'Asharej',
-    'Al Markhaniya',
-    'Al Bateen',
-    'Al Sarooj',
-    'Tawam',
-    'Al Saniya',
-    'Al Maqam',
-    'Al Khrair',
-    'Al Niyadat',
-  ],
-  far: [
-    'Zakhir',
-    'Al Foah',
-    'Neima',
-    'Al Salamat',
-    'Al Shuaibah',
-    'Al Dhaher',
-    'Al Yahar',
-  ],
+// Owner-editable delivery fee table from the latest delivery spreadsheet.
+// Update only fee values here when Nawa changes delivery pricing.
+export const DISTRICT_DELIVERY_FEE = {
+  'Al Bateen': 15,
+  'Al Dhaher': 20,
+  'Al Foah': 20,
+  'Al Jahili': 15,
+  'Al Jimi': 15,
+  'Al Khabisi': 15,
+  'Al Khrair': 20,
+  'Al Maqam': 15,
+  'Al Markhaniya': 15,
+  'Al Masoudi': 15,
+  'Al Mutaredh': 15,
+  'Al Mutawaa': 15,
+  'Al Muwaiji': 15,
+  'Al Niyadat': 15,
+  'Al Qattara': 15,
+  'Al Salamat': 15,
+  'Al Saniya': 15,
+  'Al Sarooj': 15,
+  'Al Shuaibah': 20,
+  'Al Towayya': 15,
+  'Al Yahar': 25,
+  Asharej: 15,
+  'Central District': 15,
+  'Falaj Hazza': 15,
+  Hili: 20,
+  Neima: 20,
+  Tawam: 15,
+  Zakhir: 15,
 } as const;
 
-// Owner-editable zone fees. `freeOver` means delivery is free when the cart
-// subtotal is greater than or equal to this amount.
-// Flat AED 15 delivery for every area; never free over a threshold.
-export const ZONE_FEE = {
-  near: { fee: 15, freeOver: Number.MAX_SAFE_INTEGER },
-  mid: { fee: 15, freeOver: Number.MAX_SAFE_INTEGER },
-  far: { fee: 15, freeOver: Number.MAX_SAFE_INTEGER },
-} as const;
-
-export type DeliveryZone = keyof typeof DISTRICT_ZONE;
+export type DeliveryArea = keyof typeof DISTRICT_DELIVERY_FEE;
+export type DeliveryZone = 'standard' | 'extended' | 'remote';
 
 export const DELIVERY_AREAS = [
-  ...Object.values(DISTRICT_ZONE).flat(),
+  ...Object.keys(DISTRICT_DELIVERY_FEE),
 ].sort((a, b) => a.localeCompare(b));
 
 export const DELIVERY_OPTIONS = [...DELIVERY_AREAS, UNLISTED_DELIVERY_AREA];
@@ -77,9 +63,10 @@ export function getFulfillmentLabel(fulfillment: OrderFulfillment): string {
 }
 
 export function getDeliveryZone(area: string): DeliveryZone | null {
-  for (const [zone, districts] of Object.entries(DISTRICT_ZONE) as [DeliveryZone, readonly string[]][]) {
-    if (districts.includes(area)) return zone;
-  }
+  const fee = DISTRICT_DELIVERY_FEE[area as DeliveryArea];
+  if (fee === 15) return 'standard';
+  if (fee === 20) return 'extended';
+  if (fee === 25) return 'remote';
   return null;
 }
 
@@ -117,17 +104,15 @@ export function calculateDeliveryFee(
   const zone = getDeliveryZone(area);
   if (!zone) return null;
 
-  const rule = ZONE_FEE[zone];
-  const isFree = subtotal >= rule.freeOver;
-  const fee = isFree ? 0 : rule.fee;
+  const fee = DISTRICT_DELIVERY_FEE[area as DeliveryArea];
   return {
     area,
     zone,
     fee,
-    freeOver: rule.freeOver,
-    isFree,
+    freeOver: null,
+    isFree: false,
     isTbc: false,
-    label: isFree ? 'Free' : `AED ${fee.toFixed(2)}`,
+    label: `AED ${fee.toFixed(2)}`,
   };
 }
 

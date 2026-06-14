@@ -36,8 +36,10 @@ import { useToast } from "@/hooks/use-toast";
 import {
   useMenuCards,
   menuSections,
+  useMenuSections,
   defaultSectionIdForCard,
   type MenuCard,
+  type MenuSection,
 } from "@/hooks/useMenuCards";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -53,13 +55,21 @@ interface EditForm {
   card_number: string; // editable card id
 }
 
-const sectionNameById = (id: string | null): string => {
+const slugifyCategoryName = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const sectionNameById = (id: string | null, sections: MenuSection[]): string => {
   if (!id) return "—";
-  return menuSections.find((s) => s.id === id)?.name ?? "—";
+  return sections.find((s) => s.id === id)?.name ?? "—";
 };
 
-const effectiveSectionId = (card: MenuCard): string | null =>
-  card.section || defaultSectionIdForCard(card.id);
+const effectiveSectionId = (card: MenuCard, sections: MenuSection[]): string | null =>
+  card.section || defaultSectionIdForCard(card.id, sections);
 
 const getCardIdFromPath = (pathname: string): number | null => {
   const m = pathname.match(/\/admin\/kitchen\/menu-cards\/(\d+)/);
@@ -68,6 +78,7 @@ const getCardIdFromPath = (pathname: string): number | null => {
 
 export function MenuCardsManager() {
   const { data: cards = [], isLoading, refetch } = useMenuCards();
+  const { data: sections = menuSections, isLoading: isSectionsLoading } = useMenuSections();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -80,6 +91,9 @@ export function MenuCardsManager() {
   const [form, setForm] = useState<EditForm | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [categoryName, setCategoryName] = useState("");
+  const [categoryImageUrl, setCategoryImageUrl] = useState("");
+  const [savingCategory, setSavingCategory] = useState(false);
 
   const selectedId = getCardIdFromPath(location.pathname);
   const selectedCard = useMemo(
@@ -105,12 +119,12 @@ export function MenuCardsManager() {
   const filtered = useMemo(() => {
     let list = cards;
     if (activeSection !== ALL_ID) {
-      list = list.filter((c) => effectiveSectionId(c) === activeSection);
+      list = list.filter((c) => effectiveSectionId(c, sections) === activeSection);
     }
     const q = search.trim().toLowerCase();
     if (q) {
       list = list.filter((c) =>
-        [c.name, c.description, c.price, String(c.id), sectionNameById(effectiveSectionId(c))]
+        [c.name, c.description, c.price, String(c.id), sectionNameById(effectiveSectionId(c, sections), sections)]
           .filter(Boolean)
           .join(" ")
           .toLowerCase()
@@ -118,7 +132,7 @@ export function MenuCardsManager() {
       );
     }
     return [...list].sort((a, b) => a.id - b.id);
-  }, [cards, activeSection, search]);
+  }, [cards, sections, activeSection, search]);
 
   const handleSectionChange = (id: string) => {
     setActiveSection(id);
@@ -203,8 +217,8 @@ export function MenuCardsManager() {
       // Default suggestion: end of active section, or next free overall
       let suggestedId: number;
       if (activeSection !== ALL_ID) {
-        const sec = menuSections.find((s) => s.id === activeSection);
-        const sectionCards = cards.filter((c) => effectiveSectionId(c) === activeSection);
+        const sec = sections.find((s) => s.id === activeSection);
+        const sectionCards = cards.filter((c) => effectiveSectionId(c, sections) === activeSection);
         const maxInSec = sectionCards.reduce((m, c) => (c.id > m ? c.id : m), 0);
         suggestedId = maxInSec ? maxInSec + 1 : (sec?.startId ?? 1);
       } else {
@@ -242,6 +256,75 @@ export function MenuCardsManager() {
     }
   };
 
+  const handleCreateCategory = async () => {
+    const name = categoryName.trim();
+    if (!name) {
+      toast({ variant: "destructive", title: "Name required", description: "Enter a category name." });
+      return;
+    }
+
+    const id = slugifyCategoryName(name);
+    if (!id) {
+      toast({ variant: "destructive", title: "Invalid name", description: "Use letters or numbers in the category name." });
+      return;
+    }
+
+    setSavingCategory(true);
+    try {
+      const nextSortOrder = sections.reduce((max, section) => Math.max(max, section.sortOrder ?? 0), 0) + 10;
+      const { error } = await supabase.from("menu_categories").insert({
+        id,
+        name,
+        image_url: categoryImageUrl.trim() || null,
+        start_id: 10000,
+        end_id: 99999,
+        card_ids: [],
+        sort_order: nextSortOrder,
+      });
+      if (error) throw error;
+      setCategoryName("");
+      setCategoryImageUrl("");
+      await queryClient.invalidateQueries({ queryKey: ["menu-sections"] });
+      toast({ title: "Category added", description: name });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Could not add category.";
+      toast({ variant: "destructive", title: "Category failed", description: msg });
+    } finally {
+      setSavingCategory(false);
+    }
+  };
+
+  const handleDeleteCategory = async (section: MenuSection) => {
+    setSavingCategory(true);
+    try {
+      const { error: updateError } = await supabase
+        .from("menu_cards")
+        .update({ section: null })
+        .eq("section", section.id);
+      if (updateError) throw updateError;
+
+      const { error: deleteError } = await supabase
+        .from("menu_categories")
+        .delete()
+        .eq("id", section.id);
+      if (deleteError) throw deleteError;
+
+      if (activeSection === section.id) {
+        handleSectionChange(ALL_ID);
+      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["menu-sections"] }),
+        queryClient.invalidateQueries({ queryKey: ["menu-cards"] }),
+      ]);
+      toast({ title: "Category deleted", description: section.name });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Could not delete category.";
+      toast({ variant: "destructive", title: "Delete failed", description: msg });
+    } finally {
+      setSavingCategory(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!selectedCard) return;
     try {
@@ -256,7 +339,7 @@ export function MenuCardsManager() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isSectionsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <RefreshCw className="w-8 h-8 animate-spin text-primary" />
@@ -270,7 +353,7 @@ export function MenuCardsManager() {
     const previewName = form.name || "Untitled";
     const previewPrice = form.price || "—";
     const previewDescription = form.description || "";
-    const sectionLabel = sectionNameById(form.section || defaultSectionIdForCard(selectedCard.id));
+    const sectionLabel = sectionNameById(form.section || defaultSectionIdForCard(selectedCard.id, sections), sections);
 
     return (
       <div className="space-y-5">
@@ -398,9 +481,9 @@ export function MenuCardsManager() {
                     </SelectTrigger>
                     <SelectContent className="max-h-72">
                       <SelectItem value="__default__">
-                        Default ({sectionNameById(defaultSectionIdForCard(selectedCard.id))})
+                        Default ({sectionNameById(defaultSectionIdForCard(selectedCard.id, sections), sections)})
                       </SelectItem>
-                      {menuSections.map((s) => (
+                      {sections.map((s) => (
                         <SelectItem key={s.id} value={s.id}>
                           {s.name}
                         </SelectItem>
@@ -488,6 +571,70 @@ export function MenuCardsManager() {
         </div>
       </div>
 
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Categories</CardTitle>
+          <CardDescription>Add or remove public menu categories.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-[minmax(180px,1fr)_minmax(220px,1.4fr)_auto]">
+            <Input
+              value={categoryName}
+              onChange={(e) => setCategoryName(e.target.value)}
+              placeholder="Category name"
+            />
+            <Input
+              value={categoryImageUrl}
+              onChange={(e) => setCategoryImageUrl(e.target.value)}
+              placeholder="Optional category image URL"
+            />
+            <Button onClick={handleCreateCategory} disabled={savingCategory}>
+              <Plus className="w-4 h-4 mr-1" /> Add Category
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {sections.map((section) => (
+              <div
+                key={section.id}
+                className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/40 py-1 pl-3 pr-1 text-sm"
+              >
+                <span>{section.name}</span>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive"
+                      disabled={savingCategory}
+                      aria-label={`Delete ${section.name}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete {section.name}?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Cards currently assigned to this category move back to their default section. This cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleDeleteCategory(section)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex flex-wrap gap-2">
         <Button
           variant={activeSection === ALL_ID ? "default" : "outline"}
@@ -497,7 +644,7 @@ export function MenuCardsManager() {
         >
           All
         </Button>
-        {menuSections.map((s) => (
+        {sections.map((s) => (
           <Button
             key={s.id}
             variant={activeSection === s.id ? "default" : "outline"}
@@ -512,15 +659,15 @@ export function MenuCardsManager() {
 
       <div className="flex justify-between items-center gap-3">
         <h3 className="font-playfair text-2xl font-bold text-foreground">
-          {activeSection === ALL_ID ? "All Menu Cards" : sectionNameById(activeSection)}
+          {activeSection === ALL_ID ? "All Menu Cards" : sectionNameById(activeSection, sections)}
         </h3>
         <span className="text-sm text-muted-foreground">{filtered.length} cards</span>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         {filtered.map((card) => {
-          const sectId = effectiveSectionId(card);
-          const isOverridden = !!card.section && card.section !== defaultSectionIdForCard(card.id);
+          const sectId = effectiveSectionId(card, sections);
+          const isOverridden = !!card.section && card.section !== defaultSectionIdForCard(card.id, sections);
           return (
             <Card
               key={card.id}
@@ -552,7 +699,7 @@ export function MenuCardsManager() {
               </div>
               <CardHeader className="p-3 sm:p-4 pb-1">
                 <CardDescription className="text-[10px] uppercase tracking-wider truncate">
-                  {sectionNameById(sectId)}
+                  {sectionNameById(sectId, sections)}
                 </CardDescription>
                 <CardTitle className="text-sm sm:text-base font-semibold leading-tight line-clamp-2">
                   {card.name || "Untitled"}

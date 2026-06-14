@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
 import { PromoCodeInput } from '@/components/PromoCodeInput';
 import { useDiscountCode, computeCodeDiscount, round2 } from '@/hooks/useDiscountCode';
+import { useLoyaltyDiscount } from '@/hooks/useLoyaltyDiscount';
 import ShareCartPayment from '@/components/ShareCartPayment';
 import DeliveryAreaSelector from '@/components/DeliveryAreaSelector';
 import { calculateDeliveryFee, getFulfillmentLabel, useDeliveryArea, useOrderFulfillment } from '@/lib/delivery';
@@ -15,16 +16,18 @@ import { useToast } from '@/hooks/use-toast';
 const CartPage = () => {
   const { cartItems, updateQuantity, removeFromCart, getCartTotal } = useCart();
   const { info: discountInfo } = useDiscountCode();
+  const { percent: loyaltyPercent } = useLoyaltyDiscount();
   const { area } = useDeliveryArea();
   const { fulfillment } = useOrderFulfillment();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const subtotal = getCartTotal();
+  const loyaltyDiscount = round2(subtotal * (loyaltyPercent / 100));
   const codeDiscount = computeCodeDiscount(cartItems, subtotal, discountInfo);
   const delivery = calculateDeliveryFee(area, subtotal, fulfillment);
   const deliveryFee = delivery?.fee ?? 0;
-  const total = round2(Math.max(0, subtotal - codeDiscount) + deliveryFee);
+  const total = round2(Math.max(0, subtotal - loyaltyDiscount - codeDiscount) + deliveryFee);
 
   const proceedToCheckout = () => {
     if (fulfillment === 'delivery' && !area) {
@@ -138,6 +141,12 @@ const CartPage = () => {
                             <span>Subtotal</span>
                             <span>AED {subtotal.toFixed(2)}</span>
                           </div>
+                          {loyaltyDiscount > 0 && (
+                            <div className="flex justify-between text-sm text-green-600 font-medium">
+                              <span>Loyalty discount ({loyaltyPercent}%)</span>
+                              <span>-AED {loyaltyDiscount.toFixed(2)}</span>
+                            </div>
+                          )}
                           {codeDiscount > 0 && discountInfo && (
                             <div className="flex justify-between text-sm text-green-700 font-medium">
                               <span>Promo ({discountInfo.code} −{discountInfo.percent}%)</span>

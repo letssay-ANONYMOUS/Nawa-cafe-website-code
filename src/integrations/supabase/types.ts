@@ -242,6 +242,42 @@ export type Database = {
         }
         Relationships: []
       }
+      menu_categories: {
+        Row: {
+          card_ids: number[]
+          created_at: string
+          end_id: number
+          id: string
+          image_url: string | null
+          name: string
+          sort_order: number
+          start_id: number
+          updated_at: string
+        }
+        Insert: {
+          card_ids?: number[]
+          created_at?: string
+          end_id?: number
+          id: string
+          image_url?: string | null
+          name: string
+          sort_order?: number
+          start_id?: number
+          updated_at?: string
+        }
+        Update: {
+          card_ids?: number[]
+          created_at?: string
+          end_id?: number
+          id?: string
+          image_url?: string | null
+          name?: string
+          sort_order?: number
+          start_id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       menu_cards: {
         Row: {
           description: string | null

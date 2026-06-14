@@ -120,9 +120,12 @@ export const OrderTable = ({
 
                       {/* Mobile Top Row: Time & Order Number */}
                       <div className="flex items-center justify-between md:hidden pb-2 border-b border-border/50">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-1">
                           <span className="font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded text-sm">
                             {order.order_number}
+                          </span>
+                          <span className="font-mono text-[11px] text-muted-foreground">
+                            INV {(order as any).invoice_number || '-'}
                           </span>
                         </div>
                         <div className="flex flex-col items-end">
@@ -138,9 +141,12 @@ export const OrderTable = ({
                       </div>
 
                       {/* Desktop Column 2: Order Number (Hidden on Mobile) */}
-                      <div className="hidden md:flex items-center">
+                      <div className="hidden md:flex flex-col justify-center gap-1">
                         <span className="font-mono font-bold text-primary bg-primary/10 px-2 py-1 rounded text-sm lg:text-base">
                           {order.order_number}
+                        </span>
+                        <span className="font-mono text-xs text-muted-foreground">
+                          INV {(order as any).invoice_number || '-'}
                         </span>
                       </div>
 

@@ -111,11 +111,9 @@ export function DeliveryAreaSelector({ subtotal, error }: DeliveryAreaSelectorPr
         </p>
       )}
 
-      {isDelivery && delivery && !delivery.isTbc && delivery.freeOver !== null && (
+      {isDelivery && delivery && !delivery.isTbc && (
         <p className="text-sm text-coffee-600">
-          {delivery.isFree
-            ? `Delivery is free for ${area}.`
-            : `Delivery to ${area} is ${delivery.label}. Free over AED ${delivery.freeOver.toFixed(2)}.`}
+          Delivery to {area} is {delivery.label}.
         </p>
       )}
 

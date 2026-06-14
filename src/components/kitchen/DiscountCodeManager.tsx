@@ -183,24 +183,44 @@ export function DiscountCodeManager() {
       expires_at = new Date(Date.now() + preset.hours * 60 * 60 * 1000).toISOString();
     }
 
+    const payload = {
+      code: cleanCode,
+      percent: pct,
+      scope,
+      target_source,
+      target_name,
+      expires_at,
+      active: true,
+    };
+
     setSaving(true);
-    const { data: createdRow, error } = await supabase
+    const { data: existingRows, error: existingError } = await supabase
       .from('discount_codes')
-      .upsert({
-        code: cleanCode,
-        percent: pct,
-        scope,
-        target_source,
-        target_name,
-        expires_at,
-        active: true,
-      }, { onConflict: 'code' })
-      .select('*')
-      .single();
+      .select('id')
+      .eq('code', cleanCode)
+      .limit(1);
+
+    if (existingError) {
+      setSaving(false);
+      toast({ variant: 'destructive', title: 'Failed to check code', description: existingError.message });
+      return;
+    }
+
+    const existingId = existingRows?.[0]?.id;
+    const saveQuery = existingId
+      ? supabase.from('discount_codes').update(payload).eq('id', existingId)
+      : supabase.from('discount_codes').insert(payload);
+
+    const { data: savedRows, error } = await saveQuery.select('*').limit(1);
     setSaving(false);
 
     if (error) {
       toast({ variant: 'destructive', title: 'Failed to create code', description: error.message });
+      return;
+    }
+    const createdRow = savedRows?.[0];
+    if (!createdRow) {
+      toast({ variant: 'destructive', title: 'Save failed', description: 'No discount code was returned after saving.' });
       return;
     }
     loadSeq.current += 1;

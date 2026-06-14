@@ -1,7 +1,7 @@
 import { Search, ArrowUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useState, useEffect } from 'react';
-import { useMenuCards, menuSections, groupCardsBySections, type MenuCard } from '@/hooks/useMenuCards';
+import { useMenuCards, menuSections, groupCardsBySections, useMenuSections, type MenuCard } from '@/hooks/useMenuCards';
 import { Card } from '@/components/ui/card';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -10,12 +10,13 @@ const Menu = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
   const { data: menuCards, isLoading, error } = useMenuCards();
+  const { data: sections = menuSections, isLoading: isSectionsLoading } = useMenuSections();
   const navigate = useNavigate();
   const location = useLocation();
 
   // Scroll to a specific card when ?card=ID is present in the URL
   useEffect(() => {
-    if (isLoading || !menuCards) return;
+    if (isLoading || isSectionsLoading || !menuCards) return;
     const params = new URLSearchParams(location.search);
     const cardId = params.get('card');
     if (!cardId) return;
@@ -53,7 +54,7 @@ const Menu = () => {
     };
     // Wait for menu cards to render and start their entrance animation
     setTimeout(tryScroll, 600);
-  }, [isLoading, menuCards, location.search]);
+  }, [isLoading, isSectionsLoading, menuCards, location.search]);
 
   // Show scroll-to-top button once user scrolls past the 10th card
   useEffect(() => {
@@ -106,7 +107,7 @@ const Menu = () => {
     requestAnimationFrame(animate);
   };
 
-  const grouped = menuCards ? groupCardsBySections(menuCards) : {};
+  const grouped = menuCards ? groupCardsBySections(menuCards, sections) : {};
 
   const filterCards = (cards: MenuCard[]) => {
     if (!searchQuery.trim()) return cards;
@@ -136,7 +137,7 @@ const Menu = () => {
   const shouldKeepEmptySection = (sectionId: string) =>
     sectionId === 'manual-brew' && !searchQuery.trim();
 
-  if (isLoading) {
+  if (isLoading || isSectionsLoading) {
     return (
       <section className="min-h-screen bg-gradient-to-b from-[#4a5f4a]/30 via-[#5a6f5a]/20 to-[#4a5f4a]/30 flex items-center justify-center">
         <div className="text-center">
@@ -186,11 +187,10 @@ const Menu = () => {
       <div className="overflow-x-auto py-4 px-3 sm:px-6 lg:px-8 scrollbar-hide">
         <div className="container mx-auto">
           <div className="flex gap-3 sm:gap-4 min-w-max justify-start">
-            {menuSections.map((section) => {
+            {sections.map((section) => {
               const sectionCards = grouped[section.id] || [];
               if (sectionCards.length === 0 && !shouldKeepEmptySection(section.id)) return null;
-              // Use the first card's image as section thumbnail
-              const thumbImage = sectionCards[0]?.image_url || '/menu-images/manual-brew-1.jpg';
+              const thumbImage = section.imageUrl || sectionCards[0]?.image_url || '/menu-images/manual-brew-1.jpg';
               return (
                 <button
                   key={section.id}
@@ -219,7 +219,7 @@ const Menu = () => {
 
       {/* Menu Cards Grid by Section */}
       <div className="container mx-auto px-3 sm:px-6 lg:px-8 pb-20">
-        {menuSections.map((section) => {
+        {sections.map((section) => {
           const sectionCards = grouped[section.id] || [];
           const filtered = filterCards(sectionCards);
           if (filtered.length === 0 && !shouldKeepEmptySection(section.id)) return null;
