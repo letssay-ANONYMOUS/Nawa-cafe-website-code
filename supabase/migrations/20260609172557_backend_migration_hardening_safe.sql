@@ -1,4 +1,4 @@
--- Low-risk backend hardening after the Lovable -> Supabase migration.
+-- Low-risk backend hardening after the Supabase backend migration.
 -- This intentionally does NOT change auth settings, staff login behavior,
 -- public checkout/tracking insert policies, GraphQL exposure, storage bucket
 -- policies, or public discount-code RPC access.

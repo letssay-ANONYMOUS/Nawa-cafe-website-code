@@ -376,11 +376,10 @@ serve(async (req) => {
     console.log("Server-validated subtotal:", subtotalAmount, "loyalty:", loyaltyDiscount, "promo:", codeDiscount, "freeDrink:", loyaltyFreeDrinkAmount, "delivery:", deliveryFee, "shared:", sharedPaymentTotal, "final:", amount);
 
     // Get origin for redirect URLs
-    const origin = req.headers.get("origin") || "https://cafe-delight-website-builder.lovable.app";
+    const origin = req.headers.get("origin") || "https://nawacafe.com";
 
     const isPreviewOrigin =
       origin.includes("id-preview--") ||
-      origin.includes("lovableproject.com") ||
       origin.includes("localhost");
 
     // Build payment request - amount in fils (base units)

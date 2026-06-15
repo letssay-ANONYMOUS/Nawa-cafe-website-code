@@ -1,4 +1,4 @@
--- Harden discount-code data integrity after the backend migration from Lovable.
+-- Harden discount-code data integrity after the backend migration.
 -- The original schema had these constraints, but the exported Supabase backend
 -- can miss them. Keep this migration idempotent so it is safe on projects that
 -- already have part of the original schema.

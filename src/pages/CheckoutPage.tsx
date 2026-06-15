@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ const loadStoredForm = () => {
 
 const CheckoutPage = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { cartItems, getCartTotal, getCartCount } = useCart();
   const { info: discountInfo, code: discountCode } = useDiscountCode();
   const { trackCheckoutStart, trackCheckoutComplete } = useAnalytics();
