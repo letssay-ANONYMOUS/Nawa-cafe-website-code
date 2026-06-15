@@ -32,6 +32,7 @@ interface OrderTableProps {
   type: 'pending' | 'paid';
   unacknowledged?: Set<string>;
   onAcknowledge?: (orderId: string) => void;
+  onMarkPaid?: (orderId: string) => void;
 }
 
 const formatTime = (dateString: string) => {
@@ -68,6 +69,7 @@ export const OrderTable = ({
   type,
   unacknowledged = new Set(),
   onAcknowledge,
+  onMarkPaid,
 }: OrderTableProps) => {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
@@ -216,23 +218,35 @@ export const OrderTable = ({
                       {/* Column 6: Actions & Total (Desktop) */}
                       <div className="flex items-center justify-between md:flex-col md:items-end md:justify-center gap-2 mt-2 md:mt-0 pt-2 md:pt-0 border-t border-border/50 md:border-0">
                         <div className="flex items-center gap-2">
-                          {isUnacked ? (
+                          {isUnacked && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="animate-pulse h-8 text-xs"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onAcknowledge?.(order.id);
+                                }}
+                              >
+                                <Bell className="w-3 h-3 mr-1" /> ACK
+                              </Button>
+                            )}
+                          {isCashDineIn && onMarkPaid ? (
                             <Button
                               size="sm"
-                              variant="destructive"
-                              className="animate-pulse h-8 text-xs"
+                              className="h-8 bg-green-600 text-xs hover:bg-green-700"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                onAcknowledge?.(order.id);
+                                onMarkPaid(order.id);
                               }}
                             >
-                              <Bell className="w-3 h-3 mr-1" /> ACK
+                              <Check className="w-3 h-3 mr-1" /> Mark Paid
                             </Button>
-                          ) : (
+                          ) : !isUnacked ? (
                             <Badge variant="outline" className={`h-6 ${isPaid ? "bg-green-50 text-green-700 border-green-300" : "bg-yellow-50 text-yellow-700 border-yellow-300"}`}>
                               <Check className="w-3 h-3 mr-1" /> {isPaid ? 'Paid' : isCashDineIn ? 'Cash' : 'Seen'}
                             </Badge>
-                          )}
+                          ) : null}
                         </div>
 
                         <div className="flex items-center gap-2 text-right">
@@ -322,6 +336,16 @@ export const OrderTable = ({
                                   {order.payment_reference}
                                 </span>
                               </div>
+                            )}
+                            {isCashDineIn && onMarkPaid && (
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700"
+                                onClick={() => onMarkPaid(order.id)}
+                              >
+                                <Check className="w-4 h-4 mr-2" />
+                                Mark Cash Paid
+                              </Button>
                             )}
                           </div>
 

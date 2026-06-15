@@ -437,6 +437,45 @@ const KitchenDashboard = () => {
     });
   }, []);
 
+  const handleMarkPaid = useCallback(async (orderId: string) => {
+    const paidAt = new Date().toISOString();
+    const { error } = await supabase
+      .from('orders')
+      .update({
+        payment_status: 'paid',
+        payment_method: 'cash',
+        paid_at: paidAt,
+      })
+      .eq('id', orderId);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Could not mark paid",
+        description: error.message,
+      });
+      return;
+    }
+
+    seenPaidIdsRef.current.add(orderId);
+    persistSeenIds(seenPaidIdsRef.current);
+    setUnacknowledgedOrders(prev => {
+      const next = new Set(prev);
+      next.delete(orderId);
+      return next;
+    });
+    setOrders(prev => prev.map(order =>
+      order.id === orderId
+        ? { ...order, payment_status: 'paid', payment_method: 'cash', paid_at: paidAt }
+        : order
+    ));
+    toast({
+      title: "Order marked paid",
+      description: "Cash payment recorded.",
+      className: "bg-green-50 border-green-300",
+    });
+  }, [toast]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/staff/login');
@@ -645,6 +684,7 @@ const KitchenDashboard = () => {
                 type={activeView as "paid" | "pending"}
                 unacknowledged={unacknowledgedOrders}
                 onAcknowledge={handleAcknowledge}
+                onMarkPaid={handleMarkPaid}
               />
             )}
           </main>
