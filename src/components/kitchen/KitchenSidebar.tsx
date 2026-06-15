@@ -21,6 +21,7 @@ interface KitchenSidebarProps {
   paidCount: number;
   pendingCount: number;
   unacknowledgedCount: number;
+  dineInAlertCount?: number;
 }
 
 const navItems = [
@@ -74,6 +75,7 @@ export function KitchenSidebar({
   paidCount,
   pendingCount,
   unacknowledgedCount,
+  dineInAlertCount = 0,
 }: KitchenSidebarProps) {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -108,7 +110,9 @@ export function KitchenSidebar({
               {navItems.map((item) => {
                 const isActive = activeView === item.id;
                 const count = getCount(item.id);
-                const showAlert = item.id === "paid" && unacknowledgedCount > 0;
+                const showAlert =
+                  (item.id === "paid" && unacknowledgedCount > 0) ||
+                  (item.id === "pending" && dineInAlertCount > 0);
 
                 return (
                   <SidebarMenuItem key={item.id}>
@@ -135,11 +139,15 @@ export function KitchenSidebar({
                             <span
                               className={cn(
                                 "ml-auto text-xs font-bold px-2 py-0.5 rounded-full",
-                                isActive ? item.bgColor : "bg-muted",
-                                isActive ? item.color : "text-muted-foreground"
+                                item.id === "pending" && dineInAlertCount > 0
+                                  ? "bg-red-100 text-red-700"
+                                  : isActive ? item.bgColor : "bg-muted",
+                                item.id === "pending" && dineInAlertCount > 0
+                                  ? "text-red-700"
+                                  : isActive ? item.color : "text-muted-foreground"
                               )}
                             >
-                              {count}
+                              {item.id === "pending" && dineInAlertCount > 0 ? dineInAlertCount : count}
                             </span>
                           )}
                         </>

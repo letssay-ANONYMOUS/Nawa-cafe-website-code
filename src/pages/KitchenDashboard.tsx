@@ -15,6 +15,9 @@ import {
   Package,
   ExternalLink,
   Music,
+  CircleDot,
+  Hash,
+  Utensils,
 } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useKitchenAlert } from "@/hooks/useKitchenAlert";
@@ -79,6 +82,9 @@ const isCashDineInOrder = (order: Pick<Order, 'order_type' | 'payment_method' | 
   order.order_type === 'dine_in' &&
   order.payment_method === 'cash' &&
   order.payment_status === 'pending';
+
+const isLiveDineInOrder = (order: Pick<Order, 'order_type' | 'payment_status'>) =>
+  order.order_type === 'dine_in' && order.payment_status === 'pending';
 
 const isActionableKitchenOrder = (order: Pick<Order, 'order_type' | 'payment_method' | 'payment_status'>) =>
   order.payment_status === 'paid' || isCashDineInOrder(order);
@@ -324,9 +330,11 @@ const KitchenDashboard = () => {
               });
             } else if (newOrder.payment_status === 'pending') {
               toast({
-                title: "📋 New Pending Order",
-                description: `Order ${newOrder.order_number} from ${newOrder.customer_name}`,
-                className: "bg-yellow-50 border-yellow-300",
+                title: newOrder.order_type === 'dine_in' ? "🍽 New Dine-in Order!" : "📋 New Pending Order",
+                description: newOrder.order_type === 'dine_in'
+                  ? `Table ${(newOrder as any).table_number || '—'} • ${newOrder.order_number} from ${newOrder.customer_name}`
+                  : `Order ${newOrder.order_number} from ${newOrder.customer_name}`,
+                className: newOrder.order_type === 'dine_in' ? "bg-red-50 border-red-300" : "bg-yellow-50 border-yellow-300",
               });
             } else if (newOrder.payment_status === 'paid') {
               setUnacknowledgedOrders(prev => new Set([...Array.from(prev), newOrder.id]));
@@ -511,6 +519,7 @@ const KitchenDashboard = () => {
 
   const paidOrders = orders.filter(o => o.payment_status === 'paid');
   const pendingOrders = orders.filter(o => o.payment_status === 'pending');
+  const liveDineInOrders = pendingOrders.filter(isLiveDineInOrder);
   const currentOrders = activeView === 'paid' ? paidOrders : pendingOrders;
 
   return (
@@ -522,6 +531,7 @@ const KitchenDashboard = () => {
           paidCount={paidOrders.length}
           pendingCount={pendingOrders.length}
           unacknowledgedCount={unacknowledgedOrders.size}
+          dineInAlertCount={liveDineInOrders.length}
         />
 
         <div className="flex-1 flex flex-col">
@@ -668,24 +678,80 @@ const KitchenDashboard = () => {
               <div className="flex items-center justify-center h-64">
                 <RefreshCw className="w-8 h-8 animate-spin text-primary" />
               </div>
-            ) : currentOrders.length === 0 ? (
-              <Card className="text-center py-16">
-                <CardContent>
-                  <Package className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                  <h2 className="text-xl font-semibold text-muted-foreground mb-2">
-                    No {activeView === 'paid' ? 'Paid' : 'Pending'} Orders
-                  </h2>
-                  <p className="text-muted-foreground/70">Orders will appear here in real-time</p>
-                </CardContent>
-              </Card>
             ) : (
-              <OrderTable
-                orders={currentOrders}
-                type={activeView as "paid" | "pending"}
-                unacknowledged={unacknowledgedOrders}
-                onAcknowledge={handleAcknowledge}
-                onMarkPaid={handleMarkPaid}
-              />
+              <div className="space-y-4">
+                <Card className={`border ${liveDineInOrders.length > 0 ? 'border-red-300 bg-red-50/70 shadow-sm' : 'border-border bg-card'}`}>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`relative grid h-12 w-12 place-items-center rounded-full ${liveDineInOrders.length > 0 ? 'bg-red-100 text-red-700' : 'bg-muted text-muted-foreground'}`}>
+                          <Utensils className="h-5 w-5" />
+                          {liveDineInOrders.length > 0 && (
+                            <span className="absolute -right-1 -top-1 flex h-4 w-4">
+                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
+                              <span className="relative inline-flex h-4 w-4 rounded-full bg-red-600" />
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <CircleDot className={`h-4 w-4 ${liveDineInOrders.length > 0 ? 'text-red-600' : 'text-muted-foreground'}`} />
+                            <h2 className="text-base font-bold text-foreground">Live Dine-in Dashboard</h2>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {liveDineInOrders.length > 0
+                              ? `${liveDineInOrders.length} dine-in order${liveDineInOrders.length === 1 ? '' : 's'} waiting for table service`
+                              : 'No dine-in tables waiting'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-1 flex-wrap gap-2 lg:justify-end">
+                        {liveDineInOrders.length > 0 ? (
+                          liveDineInOrders.slice(0, 8).map((order) => (
+                            <button
+                              key={order.id}
+                              type="button"
+                              onClick={() => handleViewChange('pending')}
+                              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-red-200 bg-white px-3 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-100"
+                            >
+                              <Hash className="h-3.5 w-3.5" />
+                              Table {(order as any).table_number || '—'}
+                              <span className="font-mono text-xs text-red-500">
+                                {order.order_number.split('-').pop()}
+                              </span>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="rounded-full border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                            Live table queue clear
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {currentOrders.length === 0 ? (
+                  <Card className="text-center py-16">
+                    <CardContent>
+                      <Package className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
+                      <h2 className="text-xl font-semibold text-muted-foreground mb-2">
+                        No {activeView === 'paid' ? 'Paid' : 'Pending'} Orders
+                      </h2>
+                      <p className="text-muted-foreground/70">Orders will appear here in real-time</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <OrderTable
+                    orders={currentOrders}
+                    type={activeView as "paid" | "pending"}
+                    unacknowledged={unacknowledgedOrders}
+                    onAcknowledge={handleAcknowledge}
+                    onMarkPaid={handleMarkPaid}
+                  />
+                )}
+              </div>
             )}
           </main>
         </div>
