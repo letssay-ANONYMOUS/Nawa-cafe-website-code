@@ -66,6 +66,7 @@ async function fetchMenuSections(): Promise<MenuSection[]> {
   const { data, error } = await supabase
     .from('menu_categories')
     .select('id,name,image_url,start_id,end_id,card_ids,sort_order')
+    .is('deleted_at', null)
     .order('sort_order', { ascending: true })
     .order('name', { ascending: true });
 

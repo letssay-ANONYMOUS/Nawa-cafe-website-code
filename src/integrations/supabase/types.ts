@@ -246,6 +246,8 @@ export type Database = {
         Row: {
           card_ids: number[]
           created_at: string
+          delete_expires_at: string | null
+          deleted_at: string | null
           end_id: number
           id: string
           image_url: string | null
@@ -257,6 +259,8 @@ export type Database = {
         Insert: {
           card_ids?: number[]
           created_at?: string
+          delete_expires_at?: string | null
+          deleted_at?: string | null
           end_id?: number
           id: string
           image_url?: string | null
@@ -268,6 +272,8 @@ export type Database = {
         Update: {
           card_ids?: number[]
           created_at?: string
+          delete_expires_at?: string | null
+          deleted_at?: string | null
           end_id?: number
           id?: string
           image_url?: string | null
@@ -854,6 +860,9 @@ export type Database = {
         Args: { _new_id: number; _old_id: number }
         Returns: number
       }
+      purge_expired_deleted_menu_categories: { Args: never; Returns: number }
+      restore_menu_category: { Args: { _id: string }; Returns: undefined }
+      soft_delete_menu_category: { Args: { _id: string }; Returns: undefined }
       validate_discount_code: {
         Args: { _code: string }
         Returns: {

@@ -20,7 +20,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { ArrowLeft, ImageIcon, LayoutGrid, Plus, RefreshCw, Save, Search, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, Clock, ImageIcon, LayoutGrid, Plus, RefreshCw, RotateCcw, Save, Search, Trash2, Upload } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,7 +41,7 @@ import {
   type MenuCard,
   type MenuSection,
 } from "@/hooks/useMenuCards";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const SECTION_KEY = "kitchen_menu_card_section";
 const ALL_ID = "__all__";
@@ -53,6 +53,14 @@ interface EditForm {
   image_url: string;
   section: string; // section id, "" = default
   card_number: string; // editable card id
+}
+
+interface DeletedMenuCategory {
+  id: string;
+  name: string;
+  image_url: string | null;
+  deleted_at: string | null;
+  delete_expires_at: string | null;
 }
 
 const slugifyCategoryName = (value: string) =>
@@ -76,9 +84,37 @@ const getCardIdFromPath = (pathname: string): number | null => {
   return m ? Number(m[1]) : null;
 };
 
+const formatExpiryDate = (value: string | null) => {
+  if (!value) return "soon";
+  return new Intl.DateTimeFormat("en-AE", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+};
+
+async function fetchDeletedMenuCategories(): Promise<DeletedMenuCategory[]> {
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("menu_categories")
+    .select("id,name,image_url,deleted_at,delete_expires_at")
+    .not("deleted_at", "is", null)
+    .gt("delete_expires_at", now)
+    .order("deleted_at", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
 export function MenuCardsManager() {
   const { data: cards = [], isLoading, refetch } = useMenuCards();
   const { data: sections = menuSections, isLoading: isSectionsLoading } = useMenuSections();
+  const { data: deletedCategories = [], isLoading: isDeletedCategoriesLoading } = useQuery({
+    queryKey: ["deleted-menu-categories"],
+    queryFn: fetchDeletedMenuCategories,
+    staleTime: 30 * 1000,
+  });
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -100,6 +136,43 @@ export function MenuCardsManager() {
     () => cards.find((c) => c.id === selectedId) ?? null,
     [cards, selectedId],
   );
+
+  const invalidateCategories = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["menu-sections"] }),
+      queryClient.invalidateQueries({ queryKey: ["deleted-menu-categories"] }),
+      queryClient.invalidateQueries({ queryKey: ["menu-cards"] }),
+    ]);
+  }, [queryClient]);
+
+  useEffect(() => {
+    const purgeExpired = async () => {
+      const { error } = await supabase.rpc("purge_expired_deleted_menu_categories");
+      if (error) {
+        console.warn("Could not purge expired deleted menu categories:", error);
+      } else {
+        await queryClient.invalidateQueries({ queryKey: ["deleted-menu-categories"] });
+      }
+    };
+
+    purgeExpired();
+
+    const channel = supabase
+      .channel("staff-menu-categories-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "menu_categories" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["menu-sections"] });
+          queryClient.invalidateQueries({ queryKey: ["deleted-menu-categories"] });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   useEffect(() => {
     if (!selectedCard) {
@@ -284,7 +357,7 @@ export function MenuCardsManager() {
       if (error) throw error;
       setCategoryName("");
       setCategoryImageUrl("");
-      await queryClient.invalidateQueries({ queryKey: ["menu-sections"] });
+      await invalidateCategories();
       toast({ title: "Category added", description: name });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Could not add category.";
@@ -297,29 +370,35 @@ export function MenuCardsManager() {
   const handleDeleteCategory = async (section: MenuSection) => {
     setSavingCategory(true);
     try {
-      const { error: updateError } = await supabase
-        .from("menu_cards")
-        .update({ section: null })
-        .eq("section", section.id);
-      if (updateError) throw updateError;
-
-      const { error: deleteError } = await supabase
-        .from("menu_categories")
-        .delete()
-        .eq("id", section.id);
-      if (deleteError) throw deleteError;
+      const { error } = await supabase.rpc("soft_delete_menu_category", { _id: section.id });
+      if (error) throw error;
 
       if (activeSection === section.id) {
         handleSectionChange(ALL_ID);
       }
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["menu-sections"] }),
-        queryClient.invalidateQueries({ queryKey: ["menu-cards"] }),
-      ]);
-      toast({ title: "Category deleted", description: section.name });
+      await invalidateCategories();
+      toast({
+        title: "Category moved to deleted",
+        description: `${section.name} can be restored for 7 days.`,
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Could not delete category.";
       toast({ variant: "destructive", title: "Delete failed", description: msg });
+    } finally {
+      setSavingCategory(false);
+    }
+  };
+
+  const handleRestoreCategory = async (category: DeletedMenuCategory) => {
+    setSavingCategory(true);
+    try {
+      const { error } = await supabase.rpc("restore_menu_category", { _id: category.id });
+      if (error) throw error;
+      await invalidateCategories();
+      toast({ title: "Category restored", description: category.name });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Could not restore category.";
+      toast({ variant: "destructive", title: "Restore failed", description: msg });
     } finally {
       setSavingCategory(false);
     }
@@ -574,7 +653,7 @@ export function MenuCardsManager() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Categories</CardTitle>
-          <CardDescription>Add or remove public menu categories.</CardDescription>
+          <CardDescription>Add categories, delete them temporarily, or restore deleted categories within 7 days.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-[minmax(180px,1fr)_minmax(220px,1.4fr)_auto]">
@@ -615,7 +694,7 @@ export function MenuCardsManager() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete {section.name}?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Cards currently assigned to this category move back to their default section. This cannot be undone.
+                        This hides the category from the public menu and moves it to Deleted categories for 7 days. Restoring it brings its card assignments back.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -631,6 +710,57 @@ export function MenuCardsManager() {
                 </AlertDialog>
               </div>
             ))}
+          </div>
+          <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Deleted categories</h3>
+                <p className="text-xs text-muted-foreground">
+                  Restore deleted categories within 7 days. Expired ones are automatically removed from this list.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => queryClient.invalidateQueries({ queryKey: ["deleted-menu-categories"] })}
+                disabled={isDeletedCategoriesLoading}
+              >
+                <RefreshCw className={`mr-1 h-3.5 w-3.5 ${isDeletedCategoriesLoading ? "animate-spin" : ""}`} />
+                Refresh deleted
+              </Button>
+            </div>
+            {deletedCategories.length > 0 ? (
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                {deletedCategories.map((category) => (
+                  <div
+                    key={category.id}
+                    className="flex items-center justify-between gap-3 rounded-md border bg-background p-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">{category.name}</p>
+                      <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        Available until {formatExpiryDate(category.delete_expires_at)}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRestoreCategory(category)}
+                      disabled={savingCategory}
+                      className="shrink-0"
+                    >
+                      <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                      Restore
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-md bg-background px-3 py-2 text-sm text-muted-foreground">
+                No deleted categories available to restore.
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
