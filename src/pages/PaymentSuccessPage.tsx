@@ -20,10 +20,25 @@ const PaymentSuccessPage = () => {
   
   const paymentId = searchParams.get('payment_id');
   const orderId = searchParams.get('order_id');
+  const cashOrder = searchParams.get('cash') === '1';
+  const cashOrderNumber = searchParams.get('order_number');
   const sharedPaymentId = searchParams.get('sp');
 
   useEffect(() => {
     const verifyPayment = async () => {
+      if (cashOrder) {
+        setVerified(true);
+        setOrderNumber(cashOrderNumber || null);
+        clearCart();
+        try { localStorage.removeItem('nawa_checkout_form'); } catch {}
+        toast({
+          title: "Order Sent to Kitchen",
+          description: "Please pay cash at the cafe. Staff will prepare your dine-in order.",
+        });
+        setVerifying(false);
+        return;
+      }
+
       if (!orderId) {
         setError('Missing order information. Please contact support.');
         setVerifying(false);
@@ -73,7 +88,7 @@ const PaymentSuccessPage = () => {
     };
 
     verifyPayment();
-  }, [orderId, paymentId, toast]);
+  }, [orderId, paymentId, cashOrder, cashOrderNumber, toast, clearCart, sharedPaymentId]);
 
   if (verifying) {
     return (
@@ -156,7 +171,9 @@ const PaymentSuccessPage = () => {
             </h1>
             
             <p className="text-lg text-coffee-600 mb-2">
-              Your order has been placed successfully.
+              {cashOrder
+                ? 'Your dine-in order has been sent to the kitchen.'
+                : 'Your order has been placed successfully.'}
             </p>
             
             {orderNumber && (

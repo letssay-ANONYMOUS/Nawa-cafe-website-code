@@ -477,6 +477,7 @@ export type Database = {
           payment_reference: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           subtotal: number
+          table_number: string | null
           total_amount: number
           updated_at: string
           user_id: string | null
@@ -507,6 +508,7 @@ export type Database = {
           payment_reference?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           subtotal?: number
+          table_number?: string | null
           total_amount?: number
           updated_at?: string
           user_id?: string | null
@@ -537,6 +539,7 @@ export type Database = {
           payment_reference?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           subtotal?: number
+          table_number?: string | null
           total_amount?: number
           updated_at?: string
           user_id?: string | null

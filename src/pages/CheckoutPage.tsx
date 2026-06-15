@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Lock, MapPin } from 'lucide-react';
+import { Banknote, CreditCard, Hash, Lock, MapPin } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { supabase } from '@/integrations/supabase/client';
 import { getVisitorId } from '@/hooks/useVisitorId';
@@ -30,12 +30,14 @@ const loadStoredForm = () => {
         name: parsed.name || '',
         phone: parsed.phone || '',
         notes: parsed.notes || '',
+        tableNumber: parsed.tableNumber || '',
+        paymentMethod: parsed.paymentMethod === 'cash' ? 'cash' : 'online',
       };
     }
   } catch (e) {
     console.error('Failed to load checkout form:', e);
   }
-  return { name: '', phone: '', notes: '' };
+  return { name: '', phone: '', notes: '', tableNumber: '', paymentMethod: 'online' };
 };
 
 const CheckoutPage = () => {
@@ -70,6 +72,7 @@ const CheckoutPage = () => {
   const deliveryFee = delivery?.fee ?? 0;
   const total = round2(Math.max(0, subtotal - loyaltyDiscount - codeDiscount) + deliveryFee);
   const itemCount = getCartCount();
+  const selectedPaymentMethod = fulfillment === 'dine_in' ? formData.paymentMethod : 'online';
 
   // Track checkout start when page loads with items
   useEffect(() => {
@@ -106,6 +109,15 @@ const CheckoutPage = () => {
       return;
     }
 
+    if (fulfillment === 'dine_in' && !formData.tableNumber.trim()) {
+      toast({
+        title: 'Table number required',
+        description: 'Please enter your table number so staff can bring the order to you.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setDeliveryError('');
 
     setLoading(true);
@@ -125,6 +137,8 @@ const CheckoutPage = () => {
           additionalNotes: formData.notes || "None",
           discountCode: discountCode || null,
           orderType: fulfillment,
+          paymentMethod: selectedPaymentMethod,
+          tableNumber: fulfillment === 'dine_in' ? formData.tableNumber.trim() : null,
           deliveryArea,
         },
       });
@@ -141,7 +155,18 @@ const CheckoutPage = () => {
         throw new Error(`${msg}${code}${status}`);
       }
 
-      console.log('Ziina payment intent created:', data);
+      console.log('Checkout response:', data);
+
+      if (data?.cashOrder) {
+        trackCheckoutComplete({
+          orderId: data.orderId || 'unknown',
+          total: total,
+          itemCount: itemCount
+        });
+        try { localStorage.removeItem(CHECKOUT_FORM_KEY); } catch {}
+        navigate(`/payment-success?cash=1&order_id=${encodeURIComponent(data.orderId)}&order_number=${encodeURIComponent(data.orderNumber || '')}`);
+        return;
+      }
 
       if (!data?.url) {
         throw new Error('No redirect URL received from Ziina');
@@ -198,7 +223,9 @@ const CheckoutPage = () => {
                   <CardContent className="p-6 md:p-8">
                     <div className="flex items-center gap-2 mb-6">
                       <Lock className="w-5 h-5 text-green-600" />
-                      <span className="text-sm text-coffee-600">Secure payment powered by Ziina</span>
+                      <span className="text-sm text-coffee-600">
+                        {selectedPaymentMethod === 'cash' ? 'Cash dine-in order' : 'Secure payment powered by Ziina'}
+                      </span>
                     </div>
 
                     {/* Branch Location */}
@@ -212,6 +239,60 @@ const CheckoutPage = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                       <DeliveryAreaSelector subtotal={subtotal} error={deliveryError} />
+
+                      {fulfillment === 'dine_in' && (
+                        <div className="rounded-lg border border-coffee-200 bg-cream-50 p-4">
+                          <h2 className="mb-4 text-xl font-semibold text-coffee-800">
+                            Dine-in Details
+                          </h2>
+                          <div className="space-y-4">
+                            <div>
+                              <Label htmlFor="tableNumber" className="flex items-center gap-2">
+                                <Hash className="h-4 w-4" />
+                                Table Number
+                              </Label>
+                              <Input
+                                id="tableNumber"
+                                name="tableNumber"
+                                required={fulfillment === 'dine_in'}
+                                value={formData.tableNumber}
+                                onChange={handleInputChange}
+                                placeholder="e.g. 7"
+                                className="mt-1"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Payment Method</Label>
+                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'online' }))}
+                                  className={`flex min-h-12 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors active:scale-[0.98] ${
+                                    formData.paymentMethod === 'online'
+                                      ? 'border-coffee-600 bg-coffee-600 text-white'
+                                      : 'border-coffee-200 bg-white text-coffee-700 hover:bg-cream-100'
+                                  }`}
+                                >
+                                  <CreditCard className="h-4 w-4" />
+                                  Pay online
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'cash' }))}
+                                  className={`flex min-h-12 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors active:scale-[0.98] ${
+                                    formData.paymentMethod === 'cash'
+                                      ? 'border-coffee-600 bg-coffee-600 text-white'
+                                      : 'border-coffee-200 bg-white text-coffee-700 hover:bg-cream-100'
+                                  }`}
+                                >
+                                  <Banknote className="h-4 w-4" />
+                                  Pay cash at cafe
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       <div>
                         <h2 className="text-xl font-semibold text-coffee-800 mb-4">
@@ -257,16 +338,24 @@ const CheckoutPage = () => {
                         </div>
                       </div>
 
-                      <div className="bg-cream-100 p-4 rounded-lg">
-                        <p className="text-sm text-coffee-700 mb-2">
-                          You'll be redirected to Ziina's secure payment page where you can pay with:
-                        </p>
-                        <ul className="text-sm text-coffee-600 list-disc list-inside space-y-1">
-                          <li>Credit/Debit Card</li>
-                          <li>Apple Pay <span className="text-coffee-500">(on supported Apple devices)</span></li>
-                          <li>Google Pay <span className="text-coffee-500">(on supported Android devices)</span></li>
-                        </ul>
-                      </div>
+                      {selectedPaymentMethod === 'cash' ? (
+                        <div className="rounded-lg bg-cream-100 p-4">
+                          <p className="text-sm text-coffee-700">
+                            Your order goes straight to the kitchen. Please pay cash at the cafe.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="bg-cream-100 p-4 rounded-lg">
+                          <p className="text-sm text-coffee-700 mb-2">
+                            You'll be redirected to Ziina's secure payment page where you can pay with:
+                          </p>
+                          <ul className="text-sm text-coffee-600 list-disc list-inside space-y-1">
+                            <li>Credit/Debit Card</li>
+                            <li>Apple Pay <span className="text-coffee-500">(on supported Apple devices)</span></li>
+                            <li>Google Pay <span className="text-coffee-500">(on supported Android devices)</span></li>
+                          </ul>
+                        </div>
+                      )}
 
                       <Button
                         type="submit"
@@ -274,7 +363,11 @@ const CheckoutPage = () => {
                         disabled={loading}
                         className="w-full bg-coffee-600 hover:bg-coffee-700"
                       >
-                        {loading ? 'Processing...' : `Proceed to Payment - AED ${total.toFixed(2)}`}
+                        {loading
+                          ? 'Processing...'
+                          : selectedPaymentMethod === 'cash'
+                            ? `Place Cash Order - AED ${total.toFixed(2)}`
+                            : `Proceed to Payment - AED ${total.toFixed(2)}`}
                       </Button>
                     </form>
                   </CardContent>
@@ -320,6 +413,18 @@ const CheckoutPage = () => {
                             <span>Order type</span>
                             <span>{getFulfillmentLabel(fulfillment)}</span>
                           </div>
+                          {fulfillment === 'dine_in' && (
+                            <>
+                              <div className="flex justify-between text-sm text-coffee-700">
+                                <span>Table</span>
+                                <span>{formData.tableNumber.trim() || 'Enter table number'}</span>
+                              </div>
+                              <div className="flex justify-between text-sm text-coffee-700">
+                                <span>Payment</span>
+                                <span>{selectedPaymentMethod === 'cash' ? 'Cash at cafe' : 'Online'}</span>
+                              </div>
+                            </>
+                          )}
                           <div className="flex justify-between text-sm text-coffee-700">
                             <span>Delivery</span>
                             <span>{fulfillment === 'dine_in' ? 'No fee' : delivery?.label || 'Choose area'}</span>

@@ -102,6 +102,7 @@ export const OrderTable = ({
                 const isUnacked = unacknowledged.has(order.id);
                 const isExpanded = expandedOrder === order.id;
                 const totalItems = getTotalItemCount(order.items);
+                const isCashDineIn = order.order_type === 'dine_in' && order.payment_method === 'cash' && order.payment_status === 'pending';
 
                 return (
                   <div key={order.id} className="flex flex-col gap-2">
@@ -127,6 +128,11 @@ export const OrderTable = ({
                           <span className="font-mono text-[11px] text-muted-foreground">
                             INV {(order as any).invoice_number || '-'}
                           </span>
+                          {(order as any).table_number && (
+                            <span className="font-mono text-[11px] font-semibold text-coffee-700">
+                              Table {(order as any).table_number}
+                            </span>
+                          )}
                         </div>
                         <div className="flex flex-col items-end">
                           <span className="font-semibold text-sm">{formatTime(order.created_at)}</span>
@@ -148,6 +154,11 @@ export const OrderTable = ({
                         <span className="font-mono text-xs text-muted-foreground">
                           INV {(order as any).invoice_number || '-'}
                         </span>
+                        {(order as any).table_number && (
+                          <span className="font-mono text-xs font-semibold text-coffee-700">
+                            Table {(order as any).table_number}
+                          </span>
+                        )}
                       </div>
 
                       {/* Column 3: Customer Details */}
@@ -175,6 +186,14 @@ export const OrderTable = ({
                           <div className="flex items-center gap-1.5">
                             <MapPin className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
                             <span className="text-xs sm:text-sm text-muted-foreground/50">Dine-in / Pickup</span>
+                          </div>
+                        )}
+                        {(order as any).table_number && (
+                          <div className="flex items-center gap-1.5">
+                            <Hash className="w-3.5 h-3.5 text-primary shrink-0" />
+                            <span className="text-xs sm:text-sm font-semibold text-coffee-700">
+                              Table {(order as any).table_number}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -211,7 +230,7 @@ export const OrderTable = ({
                             </Button>
                           ) : (
                             <Badge variant="outline" className={`h-6 ${isPaid ? "bg-green-50 text-green-700 border-green-300" : "bg-yellow-50 text-yellow-700 border-yellow-300"}`}>
-                              <Check className="w-3 h-3 mr-1" /> {isPaid ? 'Paid' : 'Seen'}
+                              <Check className="w-3 h-3 mr-1" /> {isPaid ? 'Paid' : isCashDineIn ? 'Cash' : 'Seen'}
                             </Badge>
                           )}
                         </div>
@@ -267,6 +286,14 @@ export const OrderTable = ({
                                 {(order as any).customer_location || 'Dine-in / Pickup'}
                               </p>
                             </div>
+                            {(order as any).table_number && (
+                              <div>
+                                <span className="text-muted-foreground flex items-center gap-1.5 mb-1 text-xs uppercase tracking-wider">
+                                  <Hash className="w-3 h-3" /> Table
+                                </span>
+                                <p className="font-mono font-bold text-primary">{(order as any).table_number}</p>
+                              </div>
+                            )}
                           </div>
 
                           {/* Payment Info */}

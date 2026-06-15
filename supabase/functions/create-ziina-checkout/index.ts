@@ -44,6 +44,7 @@ const DISTRICT_DELIVERY_FEE = {
 type DeliveryArea = keyof typeof DISTRICT_DELIVERY_FEE;
 type DeliveryZone = "standard" | "extended" | "remote";
 type OrderFulfillment = "dine_in" | "delivery";
+type CheckoutPaymentMethod = "online" | "cash";
 
 function getDeliveryZone(area: string): DeliveryZone | null {
   const fee = DISTRICT_DELIVERY_FEE[area as DeliveryArea];
@@ -79,6 +80,14 @@ function normalizeOrderType(value: unknown): OrderFulfillment {
   return value === "dine_in" ? "dine_in" : "delivery";
 }
 
+function normalizePaymentMethod(value: unknown, orderType: OrderFulfillment): CheckoutPaymentMethod {
+  return orderType === "dine_in" && value === "cash" ? "cash" : "online";
+}
+
+function normalizeTableNumber(value: unknown): string {
+  return typeof value === "string" ? value.trim().slice(0, 24) : "";
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -86,17 +95,29 @@ serve(async (req) => {
   }
 
   try {
-    const { customerName, phoneNumber, customerEmail, orderItems: bodyOrderItems, additionalNotes, visitorId, selectedBranch, discountCode, sharedPaymentId, deliveryArea, orderType } = await req.json();
+    const { customerName, phoneNumber, customerEmail, orderItems: bodyOrderItems, additionalNotes, visitorId, selectedBranch, discountCode, sharedPaymentId, deliveryArea, orderType, paymentMethod, tableNumber } = await req.json();
     let orderItems = bodyOrderItems;
     const normalizedOrderType = normalizeOrderType(orderType);
-    const customerLocation = selectedBranch ? `${selectedBranch} (manual)` : "Unknown";
+    const normalizedPaymentMethod = normalizePaymentMethod(paymentMethod, normalizedOrderType);
+    const normalizedTableNumber = normalizeTableNumber(tableNumber);
+    const isCashDineIn = normalizedOrderType === "dine_in" && normalizedPaymentMethod === "cash";
+    const customerLocation = normalizedOrderType === "dine_in" && normalizedTableNumber
+      ? `Table ${normalizedTableNumber}${selectedBranch ? ` - ${selectedBranch}` : ""}`
+      : selectedBranch ? `${selectedBranch} (manual)` : "Unknown";
 
-    console.log("Checkout request:", { customerName, phoneNumber, itemCount: orderItems?.length, visitorId });
+    console.log("Checkout request:", { customerName, phoneNumber, itemCount: orderItems?.length, visitorId, normalizedOrderType, normalizedPaymentMethod });
 
     // Validate required fields
     if (!customerName || !phoneNumber || !orderItems || orderItems.length === 0) {
       return new Response(
         JSON.stringify({ error: { provider: "validation", message: "Missing required fields" } }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+
+    if (normalizedOrderType === "dine_in" && !normalizedTableNumber) {
+      return new Response(
+        JSON.stringify({ error: { provider: "validation", message: "Please enter your table number" } }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
@@ -354,16 +375,6 @@ serve(async (req) => {
     const amount = Math.max(0, Math.round(rawTotal * 100) / 100);
     console.log("Server-validated subtotal:", subtotalAmount, "loyalty:", loyaltyDiscount, "promo:", codeDiscount, "freeDrink:", loyaltyFreeDrinkAmount, "delivery:", deliveryFee, "shared:", sharedPaymentTotal, "final:", amount);
 
-    // Get Ziina API token
-    const ziinaToken = Deno.env.get("ZIINA_API_TOKEN") || Deno.env.get("ZIINA_API_KEY");
-    if (!ziinaToken) {
-      console.error("No Ziina token configured");
-      return new Response(
-        JSON.stringify({ error: { provider: "ziina", message: "Payment gateway not configured" } }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-      );
-    }
-
     // Get origin for redirect URLs
     const origin = req.headers.get("origin") || "https://cafe-delight-website-builder.lovable.app";
 
@@ -406,10 +417,12 @@ serve(async (req) => {
           total_amount: amount,
           loyalty_free_drink_amount: loyaltyFreeDrinkAmount,
           payment_status: 'pending',
-          payment_provider: 'ziina',
+          payment_method: isCashDineIn ? 'cash' : null,
+          payment_provider: isCashDineIn ? 'cash' : 'ziina',
           order_type: normalizedOrderType,
           ip_address: null,
           customer_location: customerLocation,
+          table_number: normalizedOrderType === "dine_in" ? normalizedTableNumber : null,
           applied_discount_code: appliedCode,
           code_discount_amount: codeDiscount,
           delivery_area: delivery.area,
@@ -469,6 +482,33 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,
         }
+      );
+    }
+
+    if (isCashDineIn) {
+      return new Response(
+        JSON.stringify({
+          cashOrder: true,
+          orderId: orderData.id,
+          orderNumber: orderData.order_number,
+          tableNumber: normalizedTableNumber,
+          total: amount,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    }
+
+    // Get Ziina API token after cash orders have been created because cash
+    // dine-in orders do not need a payment gateway.
+    const ziinaToken = Deno.env.get("ZIINA_API_TOKEN") || Deno.env.get("ZIINA_API_KEY");
+    if (!ziinaToken) {
+      console.error("No Ziina token configured");
+      return new Response(
+        JSON.stringify({ error: { provider: "ziina", message: "Payment gateway not configured" } }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
 

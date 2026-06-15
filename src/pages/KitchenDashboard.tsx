@@ -75,6 +75,14 @@ const persistSeenIds = (ids: Set<string>) => {
   } catch {}
 };
 
+const isCashDineInOrder = (order: Pick<Order, 'order_type' | 'payment_method' | 'payment_status'>) =>
+  order.order_type === 'dine_in' &&
+  order.payment_method === 'cash' &&
+  order.payment_status === 'pending';
+
+const isActionableKitchenOrder = (order: Pick<Order, 'order_type' | 'payment_method' | 'payment_status'>) =>
+  order.payment_status === 'paid' || isCashDineInOrder(order);
+
 const KitchenDashboard = () => {
   const mountedRef = useRef(true);
   const seenPaidIdsRef = useRef<Set<string>>(loadSeenIds());
@@ -198,7 +206,7 @@ const KitchenDashboard = () => {
         // fire just because someone signed in.
         if (!initialLoadDoneRef.current) {
           for (const o of ordersData) {
-            if (o.payment_status === 'paid') {
+            if (isActionableKitchenOrder(o)) {
               seenPaidIdsRef.current.add(o.id);
             }
           }
@@ -207,7 +215,7 @@ const KitchenDashboard = () => {
         } else {
           const missed: string[] = [];
           for (const o of ordersData) {
-            if (o.payment_status === 'paid' && !seenPaidIdsRef.current.has(o.id)) {
+            if (isActionableKitchenOrder(o) && !seenPaidIdsRef.current.has(o.id)) {
               missed.push(o.id);
             }
           }
@@ -307,7 +315,14 @@ const KitchenDashboard = () => {
           const now = Date.now();
           if (now - lastToastTime > 1000) {
             lastToastTime = now;
-            if (newOrder.payment_status === 'pending') {
+            if (isCashDineInOrder(newOrder)) {
+              setUnacknowledgedOrders(prev => new Set([...Array.from(prev), newOrder.id]));
+              toast({
+                title: "🍽 New Cash Dine-in Order!",
+                description: `Table ${(newOrder as any).table_number || '—'} • ${newOrder.order_number} from ${newOrder.customer_name}`,
+                className: "bg-green-50 border-green-300",
+              });
+            } else if (newOrder.payment_status === 'pending') {
               toast({
                 title: "📋 New Pending Order",
                 description: `Order ${newOrder.order_number} from ${newOrder.customer_name}`,
@@ -339,8 +354,12 @@ const KitchenDashboard = () => {
           const updatedOrder = payload.new as Order;
           const oldOrder = payload.old as Partial<Order>;
 
-          // Only trigger Paid alerts if it transitioned from pending -> paid
-          if (updatedOrder.payment_status === 'paid' && oldOrder.payment_status !== 'paid') {
+          const wasActionable = oldOrder.payment_status === 'paid' ||
+            (oldOrder.payment_status === 'pending' && oldOrder.order_type === 'dine_in' && oldOrder.payment_method === 'cash');
+          const isActionable = isActionableKitchenOrder(updatedOrder);
+
+          // Trigger alerts when an order becomes actionable for the kitchen.
+          if (isActionable && !wasActionable) {
             setUnacknowledgedOrders(prev => new Set([...Array.from(prev), updatedOrder.id]));
 
             // Only force active view change if they aren't actively looking at something else
@@ -361,8 +380,10 @@ const KitchenDashboard = () => {
             if (now - lastToastTime > 1000) {
               lastToastTime = now;
               toast({
-                title: "💰 New Paid Order!",
-                description: `Order ${updatedOrder.order_number} from ${updatedOrder.customer_name} is ready to prepare!`,
+                title: isCashDineInOrder(updatedOrder) ? "🍽 New Cash Dine-in Order!" : "💰 New Paid Order!",
+                description: isCashDineInOrder(updatedOrder)
+                  ? `Table ${(updatedOrder as any).table_number || '—'} • ${updatedOrder.order_number} from ${updatedOrder.customer_name}`
+                  : `Order ${updatedOrder.order_number} from ${updatedOrder.customer_name} is ready to prepare!`,
                 className: "bg-green-50 border-green-300",
               });
             }
