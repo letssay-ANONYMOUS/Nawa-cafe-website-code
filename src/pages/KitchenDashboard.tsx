@@ -206,17 +206,26 @@ const KitchenDashboard = () => {
           items: (itemsData || []).filter(item => item.order_id === order.id),
         })));
 
-        // SAFETY NET: only alert for paid orders that appear AFTER the initial
-        // load on this device. On first load (e.g. fresh login / page refresh),
-        // seed seenPaidIds with everything already paid so the alert does NOT
-        // fire just because someone signed in.
+        // SAFETY NET: seed existing paid orders on first load so a fresh login
+        // does not alarm for old online payments. Pending cash dine-in orders
+        // still alert because they are active table-service work.
         if (!initialLoadDoneRef.current) {
+          const activeDineInCash: string[] = [];
           for (const o of ordersData) {
-            if (isActionableKitchenOrder(o)) {
+            if (o.payment_status === 'paid') {
               seenPaidIdsRef.current.add(o.id);
+            } else if (isCashDineInOrder(o) && !seenPaidIdsRef.current.has(o.id)) {
+              activeDineInCash.push(o.id);
             }
           }
           persistSeenIds(seenPaidIdsRef.current);
+          if (activeDineInCash.length > 0) {
+            setUnacknowledgedOrders(prev => {
+              const next = new Set(prev);
+              activeDineInCash.forEach(id => next.add(id));
+              return next;
+            });
+          }
           initialLoadDoneRef.current = true;
         } else {
           const missed: string[] = [];
@@ -326,7 +335,7 @@ const KitchenDashboard = () => {
               toast({
                 title: "🍽 New Cash Dine-in Order!",
                 description: `Table ${(newOrder as any).table_number || '—'} • ${newOrder.order_number} from ${newOrder.customer_name}`,
-                className: "bg-green-50 border-green-300",
+                className: "bg-red-50 border-red-300",
               });
             } else if (newOrder.payment_status === 'pending') {
               toast({
