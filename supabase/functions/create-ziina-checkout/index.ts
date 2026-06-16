@@ -42,15 +42,42 @@ const DISTRICT_DELIVERY_FEE = {
 } as const;
 
 type DeliveryArea = keyof typeof DISTRICT_DELIVERY_FEE;
-type DeliveryZone = "standard" | "extended" | "remote";
+type DeliveryZone = "near" | "mid" | "far";
 type OrderFulfillment = "dine_in" | "delivery";
 type CheckoutPaymentMethod = "online" | "cash";
+type CheckoutOrderItem = {
+  name: string;
+  quantity: number;
+  category?: string | null;
+  price?: number | string;
+  extras?: unknown;
+  notes?: unknown;
+};
+type ValidatedItem = Omit<CheckoutOrderItem, "price" | "quantity" | "category"> & {
+  price: number;
+  quantity: number;
+  category: string | null;
+};
+type KitchenSettingRow = {
+  setting_key: string;
+  setting_value: string | null;
+};
+type ZiinaResponse = Record<string, unknown> & {
+  id?: string;
+  message?: string;
+  code?: string | number;
+  statusCode?: string | number;
+  error?: {
+    message?: string;
+    code?: string | number;
+  };
+};
 
 function getDeliveryZone(area: string): DeliveryZone | null {
   const fee = DISTRICT_DELIVERY_FEE[area as DeliveryArea];
-  if (fee === 15) return "standard";
-  if (fee === 20) return "extended";
-  if (fee === 25) return "remote";
+  if (fee === 15) return "near";
+  if (fee === 20) return "mid";
+  if (fee === 25) return "far";
   return null;
 }
 
@@ -88,6 +115,21 @@ function normalizeTableNumber(value: unknown): string {
   return typeof value === "string" ? value.trim().slice(0, 24) : "";
 }
 
+function getZiinaRedirectUrl(data: Record<string, unknown>): string | null {
+  const candidates = [
+    data.redirect_url,
+    data.redirectUrl,
+    data.checkout_url,
+    data.checkoutUrl,
+    data.payment_url,
+    data.paymentUrl,
+    data.url,
+  ];
+
+  const url = candidates.find((value): value is string => typeof value === "string" && value.trim().length > 0);
+  return url?.trim() || null;
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -96,7 +138,7 @@ serve(async (req) => {
 
   try {
     const { customerName, phoneNumber, customerEmail, orderItems: bodyOrderItems, additionalNotes, visitorId, selectedBranch, discountCode, sharedPaymentId, deliveryArea, orderType, paymentMethod, tableNumber } = await req.json();
-    let orderItems = bodyOrderItems;
+    let orderItems = Array.isArray(bodyOrderItems) ? bodyOrderItems as CheckoutOrderItem[] : [];
     const normalizedOrderType = normalizeOrderType(orderType);
     const normalizedPaymentMethod = normalizePaymentMethod(paymentMethod, normalizedOrderType);
     const normalizedTableNumber = normalizeTableNumber(tableNumber);
@@ -143,7 +185,7 @@ serve(async (req) => {
     }
 
     let serverTotal = 0;
-    const validatedItems: any[] = [];
+    const validatedItems: ValidatedItem[] = [];
 
     let sharedPaymentTotal: number | null = null;
     if (sharedPaymentId) {
@@ -171,7 +213,7 @@ serve(async (req) => {
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
         );
       }
-      const cart = Array.isArray(spRow.cart) ? spRow.cart : [];
+      const cart = Array.isArray(spRow.cart) ? spRow.cart as CheckoutOrderItem[] : [];
       for (const it of cart) {
         const price = Number(it.price);
         const qty = Number(it.quantity);
@@ -186,7 +228,7 @@ serve(async (req) => {
       sharedPaymentTotal = Number(spRow.total);
     } else {
       // ===== SERVER-SIDE PRICE VALIDATION (regular cart) =====
-      const itemNames = orderItems.map((item: any) => item.name);
+      const itemNames = orderItems.map((item) => item.name);
       const { data: dbItems, error: menuError } = await supabase
         .from('menu_items')
         .select('title, price, category')
@@ -211,7 +253,7 @@ serve(async (req) => {
       // Staff-created cards may exist only in menu_cards (no menu_items row).
       // Validate those by name against menu_cards, parsing the numeric price
       // (strip commas first so large prices like "99,999.00" parse correctly).
-      const missingNames = itemNames.filter((n: string) => !priceMap.has(n));
+      const missingNames = itemNames.filter((n) => !priceMap.has(n));
       if (missingNames.length > 0) {
         const { data: dbCards } = await supabase
           .from('menu_cards')
@@ -226,7 +268,7 @@ serve(async (req) => {
         }
 
         // Store products — only sellable ones (not coming-soon and in stock).
-        const stillMissing = missingNames.filter((n: string) => !priceMap.has(n));
+        const stillMissing = missingNames.filter((n) => !priceMap.has(n));
         if (stillMissing.length > 0) {
           const { data: dbStore } = await supabase
             .from('store_products')
@@ -340,7 +382,7 @@ serve(async (req) => {
           .from("kitchen_settings")
           .select("setting_key, setting_value")
           .in("setting_key", ["loyalty_enabled", "loyalty_eligible_categories"]);
-        const settings = new Map((settingRows || []).map((r: any) => [r.setting_key, r.setting_value]));
+        const settings = new Map((settingRows || []).map((r: KitchenSettingRow) => [r.setting_key, r.setting_value]));
         const enabled = (settings.get("loyalty_enabled") ?? "true") !== "false";
 
         let eligible: string[] = [];
@@ -450,7 +492,7 @@ serve(async (req) => {
 
       // Insert order items using validated prices from DB
       if (validatedItems && validatedItems.length > 0) {
-        const orderItemsToInsert = validatedItems.map((item: any) => ({
+        const orderItemsToInsert = validatedItems.map((item) => ({
           order_id: orderData!.id,
           item_name: item.name,
           quantity: item.quantity,
@@ -538,7 +580,7 @@ serve(async (req) => {
     console.log("Ziina response status:", ziinaResponse.status);
     console.log("Ziina response body:", responseText);
 
-    let ziinaData: any;
+    let ziinaData: ZiinaResponse;
     try {
       ziinaData = JSON.parse(responseText);
     } catch {
@@ -577,8 +619,10 @@ serve(async (req) => {
       );
     }
 
+    const redirectUrl = getZiinaRedirectUrl(ziinaData);
+
     // Success - we have a redirect URL
-    if (!ziinaData.redirect_url) {
+    if (!redirectUrl) {
       console.error("No redirect URL in Ziina response:", ziinaData);
       return new Response(
         JSON.stringify({
@@ -609,7 +653,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        url: ziinaData.redirect_url,
+        url: redirectUrl,
         paymentIntentId: ziinaData.id,
         orderId: orderData.id,
         orderNumber: orderData.order_number,

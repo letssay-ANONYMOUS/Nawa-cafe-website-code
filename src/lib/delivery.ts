@@ -40,7 +40,7 @@ export const DISTRICT_DELIVERY_FEE = {
 } as const;
 
 export type DeliveryArea = keyof typeof DISTRICT_DELIVERY_FEE;
-export type DeliveryZone = 'standard' | 'extended' | 'remote';
+export type DeliveryZone = 'near' | 'mid' | 'far';
 
 export const DELIVERY_AREAS = [
   ...Object.keys(DISTRICT_DELIVERY_FEE),
@@ -64,9 +64,9 @@ export function getFulfillmentLabel(fulfillment: OrderFulfillment): string {
 
 export function getDeliveryZone(area: string): DeliveryZone | null {
   const fee = DISTRICT_DELIVERY_FEE[area as DeliveryArea];
-  if (fee === 15) return 'standard';
-  if (fee === 20) return 'extended';
-  if (fee === 25) return 'remote';
+  if (fee === 15) return 'near';
+  if (fee === 20) return 'mid';
+  if (fee === 25) return 'far';
   return null;
 }
 

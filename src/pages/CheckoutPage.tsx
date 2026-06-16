@@ -21,6 +21,7 @@ import { calculateDeliveryFee, getFulfillmentLabel, useDeliveryArea, useOrderFul
 
 const FIXED_BRANCH = 'Stadhazza Branch';
 const CHECKOUT_FORM_KEY = 'nawa_checkout_form';
+const CHECKOUT_PAYMENT_REDIRECT_KEY = 'nawa_checkout_payment_redirect';
 
 const loadStoredForm = () => {
   try {
@@ -83,6 +84,16 @@ const CheckoutPage = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const resetAfterGatewayBack = () => {
+      if (!sessionStorage.getItem(CHECKOUT_PAYMENT_REDIRECT_KEY)) return;
+      sessionStorage.removeItem(CHECKOUT_PAYMENT_REDIRECT_KEY);
+      setLoading(false);
+    };
+
+    window.addEventListener('pageshow', resetAfterGatewayBack);
+    return () => window.removeEventListener('pageshow', resetAfterGatewayBack);
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -165,7 +176,11 @@ const CheckoutPage = () => {
           total: total,
           itemCount: itemCount
         });
-        try { localStorage.removeItem(CHECKOUT_FORM_KEY); } catch {}
+        try {
+          localStorage.removeItem(CHECKOUT_FORM_KEY);
+        } catch (storageError) {
+          console.warn('Failed to clear checkout form after cash order:', storageError);
+        }
         navigate(`/payment-success?cash=1&order_id=${encodeURIComponent(data.orderId)}&order_number=${encodeURIComponent(data.orderNumber || '')}`);
         return;
       }
@@ -185,6 +200,7 @@ const CheckoutPage = () => {
       // - The browser back button naturally returns to /checkout
       // - Form data is restored from localStorage on return
       // - Cart remains intact since we don't clear it until /payment-success
+      sessionStorage.setItem(CHECKOUT_PAYMENT_REDIRECT_KEY, '1');
       window.location.href = data.url;
 
     } catch (error) {
