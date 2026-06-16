@@ -716,6 +716,42 @@ export type Database = {
         }
         Relationships: []
       }
+      store_categories: {
+        Row: {
+          created_at: string
+          delete_expires_at: string | null
+          deleted_at: string | null
+          hero_description: string
+          hero_title: string
+          id: string
+          label: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delete_expires_at?: string | null
+          deleted_at?: string | null
+          hero_description?: string
+          hero_title: string
+          id: string
+          label: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delete_expires_at?: string | null
+          deleted_at?: string | null
+          hero_description?: string
+          hero_title?: string
+          id?: string
+          label?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       store_products: {
         Row: {
           badge: string | null
@@ -861,8 +897,11 @@ export type Database = {
         Returns: number
       }
       purge_expired_deleted_menu_categories: { Args: never; Returns: number }
+      purge_expired_deleted_store_categories: { Args: never; Returns: number }
       restore_menu_category: { Args: { _id: string }; Returns: undefined }
+      restore_store_category: { Args: { _id: string }; Returns: undefined }
       soft_delete_menu_category: { Args: { _id: string }; Returns: undefined }
+      soft_delete_store_category: { Args: { _id: string }; Returns: undefined }
       validate_discount_code: {
         Args: { _code: string }
         Returns: {

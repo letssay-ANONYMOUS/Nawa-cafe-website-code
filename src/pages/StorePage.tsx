@@ -6,7 +6,8 @@ import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/ca
 import { Leaf, Award, Package } from 'lucide-react';
 import StoreProductCard from '@/components/StoreProductCard';
 import { supabase } from '@/integrations/supabase/client';
-import { STORE_CATEGORIES, type StoreCategory, type StoreProduct } from '@/data/storeCatalog';
+import { FALLBACK_STORE_CATEGORIES, type StoreCategory, type StoreProduct } from '@/data/storeCatalog';
+import { useStoreCategories } from '@/hooks/useStoreCategories';
 
 const CATEGORY_KEY = 'store:activeCategory';
 const SCROLL_KEY = 'store:scrollY';
@@ -31,12 +32,14 @@ type StoreProductRow = {
 const StorePage = () => {
   const [activeCategory, setActiveCategoryState] = useState<StoreCategory>(() => {
     const saved = sessionStorage.getItem(CATEGORY_KEY) as StoreCategory | null;
-    return saved && STORE_CATEGORIES.some(c => c.id === saved) ? saved : 'oil';
+    return saved || 'oil';
   });
+  const { data: categories = [] } = useStoreCategories();
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [stockMap, setStockMap] = useState<Record<number, number>>({});
   const [loaded, setLoaded] = useState(false);
-  const activeCategoryConfig = STORE_CATEGORIES.find((c) => c.id === activeCategory) ?? STORE_CATEGORIES[0];
+  const visibleCategories = categories.length ? categories : FALLBACK_STORE_CATEGORIES;
+  const activeCategoryConfig = visibleCategories.find((c) => c.id === activeCategory) ?? visibleCategories[0];
   const filteredProducts = products.filter((product) => product.category === activeCategory);
 
   const setActiveCategory = (cat: StoreCategory) => {
@@ -76,6 +79,15 @@ const StorePage = () => {
     };
     loadProducts();
   }, []);
+
+  useEffect(() => {
+    if (!visibleCategories.length) return;
+    if (!visibleCategories.some((category) => category.id === activeCategory)) {
+      const nextCategory = visibleCategories[0].id;
+      sessionStorage.setItem(CATEGORY_KEY, nextCategory);
+      setActiveCategoryState(nextCategory);
+    }
+  }, [activeCategory, visibleCategories]);
 
   // Disable browser auto scroll restoration on this page
   useEffect(() => {
@@ -149,7 +161,7 @@ const StorePage = () => {
             {activeCategoryConfig.heroDescription}
           </p>
           <div className="flex flex-wrap justify-center gap-3 mb-10">
-            {STORE_CATEGORIES.map((category) => (
+            {visibleCategories.map((category) => (
               <Button
                 key={category.id}
                 variant={activeCategory === category.id ? 'default' : 'outline'}
@@ -181,7 +193,7 @@ const StorePage = () => {
         <div className="w-full sm:container sm:mx-auto">
           <div className="flex justify-between items-center mb-12 px-4 sm:px-0">
             <h2 className="font-playfair text-4xl font-bold text-coffee-900">
-              {activeCategoryConfig.label} Selection
+            {activeCategoryConfig?.label ?? 'Store'} Selection
             </h2>
           </div>
 
@@ -200,7 +212,7 @@ const StorePage = () => {
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-coffee-100 via-cream-50 to-coffee-50">
         <div className="container mx-auto">
           <h2 className="font-playfair text-4xl font-bold text-coffee-900 text-center mb-12">
-            Why Choose Our {activeCategoryConfig.label}?
+            Why Choose Our {activeCategoryConfig?.label ?? 'Store'}?
           </h2>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">

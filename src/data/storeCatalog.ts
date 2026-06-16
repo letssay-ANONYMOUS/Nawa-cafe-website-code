@@ -1,4 +1,4 @@
-export type StoreCategory = 'oil' | 'honey' | 'coffee-beans';
+export type StoreCategory = string;
 
 export interface StoreProduct {
   id: number;
@@ -19,9 +19,10 @@ export interface StoreCategoryConfig {
   label: string;
   heroTitle: string;
   heroDescription: string;
+  sortOrder?: number;
 }
 
-export const STORE_CATEGORIES: StoreCategoryConfig[] = [
+export const FALLBACK_STORE_CATEGORIES: StoreCategoryConfig[] = [
   {
     id: 'oil',
     label: 'Oil',
@@ -44,6 +45,8 @@ export const STORE_CATEGORIES: StoreCategoryConfig[] = [
       'Browse our upcoming coffee bean range featuring curated roast profiles and origin-led selections. We will replace these placeholders with the final details later.',
   },
 ];
+
+export const STORE_CATEGORIES = FALLBACK_STORE_CATEGORIES;
 
 // Fallback data (used while DB is loading). DB is source of truth.
 export const STORE_PRODUCTS: StoreProduct[] = [];

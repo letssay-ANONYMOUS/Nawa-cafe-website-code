@@ -8,9 +8,18 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, ImageIcon, Minus, Package, Plus, RefreshCw, Save, Star, Trash2, Upload } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ArrowLeft, Clock, ImageIcon, Minus, Package, Plus, RefreshCw, RotateCcw, Save, Star, Trash2, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { STORE_CATEGORIES, type StoreCategory } from '@/data/storeCatalog';
+import { FALLBACK_STORE_CATEGORIES, type StoreCategory } from '@/data/storeCatalog';
+import { useStoreCategories } from '@/hooks/useStoreCategories';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,6 +50,15 @@ export interface StoreCardData {
 
 type EditableStoreCard = Partial<StoreCardData>;
 
+interface DeletedStoreCategory {
+  id: string;
+  label: string;
+  hero_title: string;
+  hero_description: string;
+  deleted_at: string | null;
+  delete_expires_at: string | null;
+}
+
 const CATEGORY_KEY = 'kitchen_stock_category';
 
 const getProductKeyFromPath = (pathname: string) => {
@@ -48,8 +66,36 @@ const getProductKeyFromPath = (pathname: string) => {
   return match ? Number(match[1]) : null;
 };
 
-const isStoreCategory = (value: string | null): value is StoreCategory =>
-  !!value && STORE_CATEGORIES.some((category) => category.id === value);
+const slugifyCategoryName = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+const formatExpiryDate = (value: string | null) => {
+  if (!value) return 'soon';
+  return new Intl.DateTimeFormat('en-AE', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(value));
+};
+
+async function fetchDeletedStoreCategories(): Promise<DeletedStoreCategory[]> {
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('store_categories')
+    .select('id,label,hero_title,hero_description,deleted_at,delete_expires_at')
+    .not('deleted_at', 'is', null)
+    .gt('delete_expires_at', now)
+    .order('deleted_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
 
 const stockToneClass = (quantity: number) => {
   if (quantity === 0) return 'text-destructive';
@@ -58,21 +104,40 @@ const stockToneClass = (quantity: number) => {
 };
 
 export function StockManager() {
+  const { data: categories = [], isLoading: categoriesLoading } = useStoreCategories();
+  const { data: deletedCategories = [], isLoading: deletedCategoriesLoading } = useQuery({
+    queryKey: ['deleted-store-categories'],
+    queryFn: fetchDeletedStoreCategories,
+    staleTime: 30 * 1000,
+  });
+  const queryClient = useQueryClient();
   const [products, setProducts] = useState<StoreCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [savingCategory, setSavingCategory] = useState(false);
   const [adjustment, setAdjustment] = useState('');
   const [form, setForm] = useState<EditableStoreCard>({});
+  const [categoryName, setCategoryName] = useState('');
+  const [categoryHeroTitle, setCategoryHeroTitle] = useState('');
+  const [categoryHeroDescription, setCategoryHeroDescription] = useState('');
   const [activeCategory, setActiveCategory] = useState<StoreCategory>(() => {
     const saved = localStorage.getItem(CATEGORY_KEY);
-    return isStoreCategory(saved) ? saved : 'oil';
+    return saved || 'oil';
   });
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const selectedProductKey = getProductKeyFromPath(location.pathname);
+  const visibleCategories = categories.length ? categories : FALLBACK_STORE_CATEGORIES;
+
+  const invalidateCategories = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['store-categories'] }),
+      queryClient.invalidateQueries({ queryKey: ['deleted-store-categories'] }),
+    ]);
+  }, [queryClient]);
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -91,6 +156,45 @@ export function StockManager() {
 
   useEffect(() => { loadProducts(); }, [loadProducts]);
 
+  useEffect(() => {
+    const purgeExpired = async () => {
+      const { error } = await supabase.rpc('purge_expired_deleted_store_categories');
+      if (error) {
+        console.warn('Could not purge expired deleted store categories:', error);
+      } else {
+        await queryClient.invalidateQueries({ queryKey: ['deleted-store-categories'] });
+      }
+    };
+
+    purgeExpired();
+
+    const channel = supabase
+      .channel('staff-store-categories-live')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'store_categories' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['store-categories'] });
+          queryClient.invalidateQueries({ queryKey: ['deleted-store-categories'] });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  useEffect(() => {
+    if (!visibleCategories.length) return;
+    if (!visibleCategories.some((category) => category.id === activeCategory)) {
+      const nextCategory = visibleCategories[0].id;
+      localStorage.setItem(CATEGORY_KEY, nextCategory);
+      setActiveCategory(nextCategory);
+      navigate('/admin/kitchen/stock');
+    }
+  }, [activeCategory, navigate, visibleCategories]);
+
   const selectedProduct = useMemo(
     () => products.find((product) => product.product_key === selectedProductKey) ?? null,
     [products, selectedProductKey]
@@ -99,14 +203,14 @@ export function StockManager() {
   useEffect(() => {
     if (!selectedProduct) return;
     setForm(selectedProduct);
-    if (isStoreCategory(selectedProduct.category)) {
+    if (selectedProduct.category) {
       setActiveCategory(selectedProduct.category);
       localStorage.setItem(CATEGORY_KEY, selectedProduct.category);
     }
   }, [selectedProduct]);
 
   const filtered = products.filter((product) => (product.category ?? 'oil') === activeCategory);
-  const activeCategoryConfig = STORE_CATEGORIES.find((category) => category.id === activeCategory) ?? STORE_CATEGORIES[0];
+  const activeCategoryConfig = visibleCategories.find((category) => category.id === activeCategory) ?? visibleCategories[0];
 
   const handleCategoryChange = (category: StoreCategory) => {
     localStorage.setItem(CATEGORY_KEY, category);
@@ -115,7 +219,7 @@ export function StockManager() {
   };
 
   const openProduct = (product: StoreCardData) => {
-    if (isStoreCategory(product.category)) {
+    if (product.category) {
       localStorage.setItem(CATEGORY_KEY, product.category);
       setActiveCategory(product.category);
     }
@@ -178,6 +282,7 @@ export function StockManager() {
       volume: form.volume ?? '',
       origin: form.origin ?? '',
       badge: form.badge ?? '',
+      category: form.category || selectedProduct.category || activeCategory,
       coming_soon: !!form.coming_soon,
       stock_quantity: Math.max(0, Number(form.stock_quantity ?? 0)),
     };
@@ -196,6 +301,86 @@ export function StockManager() {
     setProducts((prev) => prev.map((item) => item.id === selectedProduct.id ? { ...item, ...updates } : item));
     setForm((prev) => ({ ...prev, ...updates }));
     toast({ title: 'Saved', description: 'Card page updated.' });
+  };
+
+  const handleCreateCategory = async () => {
+    const label = categoryName.trim();
+    if (!label) {
+      toast({ variant: 'destructive', title: 'Name required', description: 'Enter a store category name.' });
+      return;
+    }
+
+    const id = slugifyCategoryName(label);
+    if (!id) {
+      toast({ variant: 'destructive', title: 'Invalid name', description: 'Use letters or numbers in the category name.' });
+      return;
+    }
+
+    setSavingCategory(true);
+    try {
+      const nextSortOrder = visibleCategories.reduce((max, category) => Math.max(max, category.sortOrder ?? 0), 0) + 10;
+      const { error } = await supabase.from('store_categories').insert({
+        id,
+        label,
+        hero_title: categoryHeroTitle.trim() || `${label} Collection`,
+        hero_description: categoryHeroDescription.trim() || `Explore Nawa Cafe's ${label.toLowerCase()} selection.`,
+        sort_order: nextSortOrder,
+      });
+      if (error) throw error;
+
+      setCategoryName('');
+      setCategoryHeroTitle('');
+      setCategoryHeroDescription('');
+      await invalidateCategories();
+      handleCategoryChange(id);
+      toast({ title: 'Store category added', description: label });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not add store category.';
+      toast({ variant: 'destructive', title: 'Category failed', description: msg });
+    } finally {
+      setSavingCategory(false);
+    }
+  };
+
+  const handleDeleteCategory = async (category: { id: string; label: string }) => {
+    setSavingCategory(true);
+    try {
+      const { error } = await supabase.rpc('soft_delete_store_category', { _id: category.id });
+      if (error) throw error;
+
+      if (activeCategory === category.id) {
+        const nextCategory = visibleCategories.find((item) => item.id !== category.id)?.id || 'oil';
+        localStorage.setItem(CATEGORY_KEY, nextCategory);
+        setActiveCategory(nextCategory);
+        navigate('/admin/kitchen/stock');
+      }
+
+      await invalidateCategories();
+      toast({
+        title: 'Store category moved to deleted',
+        description: `${category.label} can be restored for 7 days.`,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not delete store category.';
+      toast({ variant: 'destructive', title: 'Delete failed', description: msg });
+    } finally {
+      setSavingCategory(false);
+    }
+  };
+
+  const handleRestoreCategory = async (category: DeletedStoreCategory) => {
+    setSavingCategory(true);
+    try {
+      const { error } = await supabase.rpc('restore_store_category', { _id: category.id });
+      if (error) throw error;
+      await invalidateCategories();
+      toast({ title: 'Store category restored', description: category.label });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not restore store category.';
+      toast({ variant: 'destructive', title: 'Restore failed', description: msg });
+    } finally {
+      setSavingCategory(false);
+    }
   };
 
   const handleCreate = async () => {
@@ -369,6 +554,24 @@ export function StockManager() {
                   <Label>Description</Label>
                   <Textarea rows={5} value={form.description ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
                 </div>
+                <div className="space-y-2">
+                  <Label>Store Category</Label>
+                  <Select
+                    value={form.category || selectedProduct.category || activeCategory}
+                    onValueChange={(value) => setForm((prev) => ({ ...prev, category: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {visibleCategories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Price (AED)</Label>
@@ -490,20 +693,133 @@ export function StockManager() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        {STORE_CATEGORIES.map((category) => (
-          <Button
-            key={category.id}
-            variant={activeCategory === category.id ? 'default' : 'outline'}
-            onClick={() => handleCategoryChange(category.id)}
-            className={activeCategory === category.id
-              ? 'bg-coffee-600 hover:bg-coffee-700 text-white rounded-full px-6'
-              : 'border-coffee-300 text-coffee-700 hover:bg-coffee-50 rounded-full px-6'}
-          >
-            {category.label}
-          </Button>
-        ))}
-      </div>
+      <Card className="border-coffee-200">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Store Categories</CardTitle>
+          <CardDescription>Add store categories, delete them temporarily, or restore them within 7 days.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 lg:grid-cols-[minmax(160px,0.8fr)_minmax(180px,1fr)_minmax(240px,1.5fr)_auto]">
+            <Input
+              value={categoryName}
+              onChange={(event) => setCategoryName(event.target.value)}
+              placeholder="Category name"
+            />
+            <Input
+              value={categoryHeroTitle}
+              onChange={(event) => setCategoryHeroTitle(event.target.value)}
+              placeholder="Hero title"
+            />
+            <Input
+              value={categoryHeroDescription}
+              onChange={(event) => setCategoryHeroDescription(event.target.value)}
+              placeholder="Hero description"
+            />
+            <Button onClick={handleCreateCategory} disabled={savingCategory}>
+              <Plus className="w-4 h-4 mr-1" /> Add Category
+            </Button>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            {visibleCategories.map((category) => (
+              <div
+                key={category.id}
+                className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/40 py-1 pl-3 pr-1 text-sm"
+              >
+                <button
+                  type="button"
+                  onClick={() => handleCategoryChange(category.id)}
+                  className={activeCategory === category.id ? 'font-semibold text-primary' : 'text-foreground'}
+                >
+                  {category.label}
+                </button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive"
+                      disabled={savingCategory}
+                      aria-label={`Delete ${category.label}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete {category.label}?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This hides the category from the public store and moves it to Recently deleted for 7 days. Restoring it brings its products back.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleDeleteCategory(category)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Recently deleted</h3>
+                <p className="text-xs text-muted-foreground">
+                  Restore deleted store categories within 7 days. Expired ones are automatically removed from this list.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => queryClient.invalidateQueries({ queryKey: ['deleted-store-categories'] })}
+                disabled={deletedCategoriesLoading}
+              >
+                <RefreshCw className={`mr-1 h-3.5 w-3.5 ${deletedCategoriesLoading ? 'animate-spin' : ''}`} />
+                Refresh deleted
+              </Button>
+            </div>
+            {deletedCategories.length > 0 ? (
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                {deletedCategories.map((category) => (
+                  <div
+                    key={category.id}
+                    className="flex items-center justify-between gap-3 rounded-md border bg-background p-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">{category.label}</p>
+                      <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        Available until {formatExpiryDate(category.delete_expires_at)}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRestoreCategory(category)}
+                      disabled={savingCategory}
+                      className="shrink-0"
+                    >
+                      <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                      Restore
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-md bg-background px-3 py-2 text-sm text-muted-foreground">
+                No recently deleted store categories.
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="flex justify-between items-center gap-3">
         <h3 className="font-playfair text-3xl font-bold text-coffee-900">
