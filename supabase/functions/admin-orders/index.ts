@@ -6,6 +6,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-admin-token",
 };
 
+type OrderRow = {
+  id: string;
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -161,9 +165,9 @@ serve(async (req) => {
     if (ordersError) throw ordersError;
 
     // Fetch order items
-    let items: any[] = [];
+    let items: Record<string, unknown>[] = [];
     if (ordersData && ordersData.length > 0) {
-      const orderIds = ordersData.map((o: any) => o.id);
+      const orderIds = (ordersData as OrderRow[]).map((o) => o.id);
       const { data: itemsData, error: itemsError } = await supabase
         .from("order_items")
         .select("*")

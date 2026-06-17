@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Minus, Plus, Trash2, ShoppingCart } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Gift, Minus, Plus, Trash2, ShoppingCart, UserPlus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
 import { PromoCodeInput } from '@/components/PromoCodeInput';
@@ -12,6 +14,7 @@ import ShareCartPayment from '@/components/ShareCartPayment';
 import DeliveryAreaSelector from '@/components/DeliveryAreaSelector';
 import { calculateDeliveryFee, getFulfillmentLabel, useDeliveryArea, useOrderFulfillment } from '@/lib/delivery';
 import { useToast } from '@/hooks/use-toast';
+import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
 
 const CartPage = () => {
   const { cartItems, updateQuantity, removeFromCart, getCartTotal } = useCart();
@@ -20,7 +23,9 @@ const CartPage = () => {
   const { area } = useDeliveryArea();
   const { fulfillment } = useOrderFulfillment();
   const { toast } = useToast();
+  const { user } = useCustomerAuth();
   const navigate = useNavigate();
+  const [rewardsPromptOpen, setRewardsPromptOpen] = useState(false);
 
   const subtotal = getCartTotal();
   const loyaltyDiscount = round2(subtotal * (loyaltyPercent / 100));
@@ -38,6 +43,16 @@ const CartPage = () => {
       });
       return;
     }
+    if (!user) {
+      setRewardsPromptOpen(true);
+      return;
+    }
+
+    navigate('/checkout');
+  };
+
+  const continueToCheckout = () => {
+    setRewardsPromptOpen(false);
     navigate('/checkout');
   };
 
@@ -193,6 +208,45 @@ const CartPage = () => {
           </div>
         </div>
       </section>
+
+      <Dialog open={rewardsPromptOpen} onOpenChange={setRewardsPromptOpen}>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-md rounded-lg p-5 sm:p-6">
+          <DialogHeader className="space-y-3 text-left">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-coffee-100 text-coffee-700">
+              <Gift className="h-6 w-6" />
+            </div>
+            <div className="space-y-1">
+              <DialogTitle className="text-2xl text-coffee-800">Unlock free drinks</DialogTitle>
+              <DialogDescription className="text-sm leading-6 text-coffee-600">
+                Sign up for offers, better prices, and every 11th beverage free.
+              </DialogDescription>
+            </div>
+          </DialogHeader>
+          <DialogFooter className="mt-3 flex flex-col gap-2 sm:flex-col">
+            <Button
+              className="h-12 w-full bg-coffee-600 hover:bg-coffee-700"
+              onClick={() => navigate('/signup')}
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              Sign up for rewards
+            </Button>
+            <Button
+              variant="outline"
+              className="h-12 w-full"
+              onClick={() => navigate('/login')}
+            >
+              I already have an account
+            </Button>
+            <Button
+              variant="ghost"
+              className="h-11 w-full text-coffee-700"
+              onClick={continueToCheckout}
+            >
+              Continue as guest
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

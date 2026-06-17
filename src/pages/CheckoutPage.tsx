@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Banknote, CreditCard, Hash, Lock, MapPin } from 'lucide-react';
+import { Banknote, CreditCard, Hash, Lock, Mail, MapPin } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { supabase } from '@/integrations/supabase/client';
 import { getVisitorId } from '@/hooks/useVisitorId';
@@ -18,6 +18,7 @@ import { useDiscountCode, computeCodeDiscount, round2 } from '@/hooks/useDiscoun
 import { useLoyaltyDiscount } from '@/hooks/useLoyaltyDiscount';
 import DeliveryAreaSelector from '@/components/DeliveryAreaSelector';
 import { calculateDeliveryFee, getFulfillmentLabel, useDeliveryArea, useOrderFulfillment } from '@/lib/delivery';
+import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
 
 const FIXED_BRANCH = 'Stadhazza Branch';
 const CHECKOUT_FORM_KEY = 'nawa_checkout_form';
@@ -31,6 +32,7 @@ const loadStoredForm = () => {
       return {
         name: parsed.name || '',
         phone: parsed.phone || '',
+        email: parsed.email || '',
         notes: parsed.notes || '',
         tableNumber: parsed.tableNumber || '',
         paymentMethod: parsed.paymentMethod === 'cash' ? 'cash' : 'online',
@@ -39,18 +41,21 @@ const loadStoredForm = () => {
   } catch (e) {
     console.error('Failed to load checkout form:', e);
   }
-  return { name: '', phone: '', notes: '', tableNumber: '', paymentMethod: 'online' };
+  return { name: '', phone: '', email: '', notes: '', tableNumber: '', paymentMethod: 'online' };
 };
 
 const CheckoutPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { cartItems, getCartTotal, getCartCount } = useCart();
+  const { user } = useCustomerAuth();
+  const accountEmail = user?.email ?? '';
   const { info: discountInfo, code: discountCode } = useDiscountCode();
   const { trackCheckoutStart, trackCheckoutComplete } = useAnalytics();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState(loadStoredForm);
   const [deliveryError, setDeliveryError] = useState('');
+  const checkoutStartTracked = useRef(false);
   const { area: deliveryArea } = useDeliveryArea();
   const { fulfillment } = useOrderFulfillment();
 
@@ -67,6 +72,11 @@ const CheckoutPage = () => {
     if (deliveryArea || fulfillment === 'dine_in') setDeliveryError('');
   }, [deliveryArea, fulfillment]);
 
+  useEffect(() => {
+    if (!accountEmail) return;
+    setFormData(prev => (prev.email ? prev : { ...prev, email: accountEmail }));
+  }, [accountEmail]);
+
   const { percent: loyaltyPercent } = useLoyaltyDiscount();
   const subtotal = getCartTotal();
   const loyaltyDiscount = round2(subtotal * (loyaltyPercent / 100));
@@ -76,13 +86,14 @@ const CheckoutPage = () => {
   const total = round2(Math.max(0, subtotal - loyaltyDiscount - codeDiscount) + deliveryFee);
   const itemCount = getCartCount();
   const selectedPaymentMethod = fulfillment === 'dine_in' ? formData.paymentMethod : 'online';
+  const checkoutEmail = accountEmail || formData.email;
 
   // Track checkout start when page loads with items
   useEffect(() => {
-    if (cartItems.length > 0) {
-      trackCheckoutStart(total, itemCount);
-    }
-  }, []);
+    if (checkoutStartTracked.current || cartItems.length === 0) return;
+    checkoutStartTracked.current = true;
+    trackCheckoutStart(total, itemCount);
+  }, [cartItems.length, itemCount, total, trackCheckoutStart]);
 
   useEffect(() => {
     const resetAfterGatewayBack = () => {
@@ -140,6 +151,7 @@ const CheckoutPage = () => {
         body: {
           customerName: formData.name,
           phoneNumber: formData.phone,
+          customerEmail: checkoutEmail.trim() || null,
           visitorId: getVisitorId(),
           selectedBranch: FIXED_BRANCH,
           orderItems: cartItems.map(item => ({
@@ -341,6 +353,27 @@ const CheckoutPage = () => {
                               placeholder="+971 50 123 4567"
                               className="mt-1"
                             />
+                          </div>
+                          <div>
+                            <Label htmlFor="email" className="flex items-center gap-2">
+                              <Mail className="h-4 w-4" />
+                              Email <span className="font-normal text-coffee-500">(optional)</span>
+                            </Label>
+                            <Input
+                              id="email"
+                              name="email"
+                              type="email"
+                              value={checkoutEmail}
+                              onChange={handleInputChange}
+                              placeholder="you@example.com"
+                              disabled={Boolean(accountEmail)}
+                              className="mt-1"
+                            />
+                            <p className="mt-1 text-xs leading-5 text-coffee-500">
+                              {accountEmail
+                                ? 'Using your account email for rewards and order history.'
+                                : 'Add your email or sign up for offers, better prices, and free beverages.'}
+                            </p>
                           </div>
                           <div>
                             <Label htmlFor="notes">Additional Notes (Optional)</Label>

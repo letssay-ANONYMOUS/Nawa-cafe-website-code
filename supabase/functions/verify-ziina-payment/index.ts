@@ -10,13 +10,30 @@ const corsHeaders = {
 // already processed (idempotency guard via UNIQUE(order_id, type)).
 const UNIQUE_VIOLATION = "23505";
 
+type SupabaseClient = ReturnType<typeof createClient>;
+
+type SettingRow = {
+  setting_key: string;
+  setting_value: string | null;
+};
+
+type LoyaltyItemRow = {
+  quantity: number | string | null;
+  item_category: string | null;
+};
+
+type ZiinaPaymentIntent = {
+  status?: string;
+  message?: string;
+};
+
 /**
  * Apply the "buy N beverages, get the next free" loyalty rules for a freshly
  * paid order. Idempotent: the loyalty_events('earn') insert is the gate — if a
  * row for this order already exists, we bail out before touching any counter.
  */
 async function processLoyaltyForPaidOrder(
-  supabase: any,
+  supabase: SupabaseClient,
   orderId: string,
   userId: string,
   freeDrinkAmount: number,
@@ -26,7 +43,7 @@ async function processLoyaltyForPaidOrder(
     .from("kitchen_settings")
     .select("setting_key, setting_value")
     .in("setting_key", ["loyalty_enabled", "loyalty_threshold", "loyalty_reward_qty", "loyalty_eligible_categories"]);
-  const settings = new Map((settingRows || []).map((r: any) => [r.setting_key, r.setting_value]));
+  const settings = new Map((settingRows || []).map((r: SettingRow) => [r.setting_key, r.setting_value]));
 
   if ((settings.get("loyalty_enabled") ?? "true") === "false") return;
 
@@ -43,8 +60,8 @@ async function processLoyaltyForPaidOrder(
     .eq("order_id", orderId);
 
   const eligibleQty = (items || [])
-    .filter((it: any) => it.item_category && eligible.includes(it.item_category))
-    .reduce((sum: number, it: any) => sum + (Number(it.quantity) || 0), 0);
+    .filter((it: LoyaltyItemRow) => it.item_category && eligible.includes(it.item_category))
+    .reduce((sum: number, it: LoyaltyItemRow) => sum + (Number(it.quantity) || 0), 0);
 
   const redeemed = freeDrinkAmount > 0 ? 1 : 0;       // one free drink per order
   const paidBeverages = Math.max(0, eligibleQty - redeemed); // freebie doesn't count toward the next reward
@@ -174,7 +191,7 @@ serve(async (req) => {
     const responseText = await ziinaResponse.text();
     console.log("Ziina status response:", ziinaResponse.status, responseText);
 
-    let ziinaData: any;
+    let ziinaData: ZiinaPaymentIntent;
     try {
       ziinaData = JSON.parse(responseText);
     } catch {

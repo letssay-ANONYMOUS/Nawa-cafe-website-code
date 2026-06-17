@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
     const cfConnectingIp = req.headers.get('cf-connecting-ip');
     
     // Priority: CF > X-Forwarded-For > X-Real-IP
-    let ipAddress = cfConnectingIp || (forwardedFor?.split(',')[0]?.trim()) || realIp || 'unknown';
+    const ipAddress = cfConnectingIp || (forwardedFor?.split(',')[0]?.trim()) || realIp || 'unknown';
     
     console.log('Track visitor request received');
     console.log('Resolved IP:', ipAddress);
