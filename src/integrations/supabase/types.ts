@@ -896,12 +896,22 @@ export type Database = {
         Args: { _new_id: number; _old_id: number }
         Returns: number
       }
+      link_customer_orders_to_account: {
+        Args: { _user_id: string }
+        Returns: number
+      }
+      normalize_customer_phone: {
+        Args: { _phone: string }
+        Returns: string
+      }
       purge_expired_deleted_menu_categories: { Args: never; Returns: number }
       purge_expired_deleted_store_categories: { Args: never; Returns: number }
+      recalculate_customer_loyalty: { Args: { _user_id: string }; Returns: Json }
       restore_menu_category: { Args: { _id: string }; Returns: undefined }
       restore_store_category: { Args: { _id: string }; Returns: undefined }
       soft_delete_menu_category: { Args: { _id: string }; Returns: undefined }
       soft_delete_store_category: { Args: { _id: string }; Returns: undefined }
+      sync_customer_account_orders: { Args: { _user_id: string }; Returns: Json }
       validate_discount_code: {
         Args: { _code: string }
         Returns: {

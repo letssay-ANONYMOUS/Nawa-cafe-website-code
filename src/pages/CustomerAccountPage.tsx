@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { hasPlatformAuthenticator, registerPasskey } from '@/lib/webauthn';
 import Header from '@/components/Header';
-import { Coffee, Fingerprint, Gift, LogOut, ShieldCheck } from 'lucide-react';
+import { Coffee, Fingerprint, Gift, History, LogOut, ShieldCheck } from 'lucide-react';
 
 const DEFAULT_THRESHOLD = 10;
 
@@ -16,6 +16,14 @@ interface PasskeyCredential {
   id: string;
   device_label: string | null;
   created_at: string;
+}
+
+interface CustomerOrderSummary {
+  id: string;
+  order_number: string;
+  created_at: string;
+  total_amount: number;
+  payment_status: string;
 }
 
 const CustomerAccountPage = () => {
@@ -29,13 +37,19 @@ const CustomerAccountPage = () => {
   const [threshold, setThreshold] = useState(DEFAULT_THRESHOLD);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [credentials, setCredentials] = useState<PasskeyCredential[]>([]);
+  const [recentOrders, setRecentOrders] = useState<CustomerOrderSummary[]>([]);
   const [canAddPasskey, setCanAddPasskey] = useState(false);
   const [addingPasskey, setAddingPasskey] = useState(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user) return;
 
-    const [{ data: loyalty }, { data: profile }, { data: setting }, { data: creds }] =
+    const { error: syncError } = await supabase.rpc('sync_customer_account_orders', { _user_id: user.id });
+    if (syncError) {
+      console.warn('Could not sync customer order history:', syncError);
+    }
+
+    const [{ data: loyalty }, { data: profile }, { data: setting }, { data: creds }, { data: orders }] =
       await Promise.all([
         supabase.from('loyalty_accounts')
           .select('paid_beverage_count, free_drinks_available')
@@ -48,6 +62,11 @@ const CustomerAccountPage = () => {
           .select('id, device_label, created_at')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false }),
+        supabase.from('orders')
+          .select('id, order_number, created_at, total_amount, payment_status')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(5),
       ]);
 
     setPaidCount(loyalty?.paid_beverage_count ?? 0);
@@ -57,8 +76,9 @@ const CustomerAccountPage = () => {
     if (Number.isFinite(t) && t > 0) setThreshold(t);
     const rawCreds = (creds ?? []) as Array<{ id: string; device_label: string | null; created_at: string }>;
     setCredentials(rawCreds);
+    setRecentOrders((orders ?? []) as CustomerOrderSummary[]);
     setLoadingData(false);
-  };
+  }, [user]);
 
   useEffect(() => {
     let mounted = true;
@@ -68,7 +88,7 @@ const CustomerAccountPage = () => {
     // Check if this device can enroll a passkey.
     hasPlatformAuthenticator().then((ok) => { if (mounted) setCanAddPasskey(ok); });
     return () => { mounted = false; };
-  }, [user]);
+  }, [user, loadData]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -87,11 +107,12 @@ const CustomerAccountPage = () => {
       await registerPasskey(label);
       toast({ title: 'Device added!', description: 'You can now sign in with Face ID or fingerprint.' });
       loadData(); // Refresh credentials list
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Please try again.';
       toast({
         variant: 'destructive',
         title: 'Could not add device',
-        description: error?.message || 'Please try again.',
+        description: message,
       });
     } finally {
       setAddingPasskey(false);
@@ -158,6 +179,44 @@ const CustomerAccountPage = () => {
                     : `${remaining} more beverage${remaining > 1 ? 's' : ''} until your next free drink.`}
                 </p>
               </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent orders */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="w-5 h-5 text-primary" /> Recent orders
+            </CardTitle>
+            <CardDescription>Orders linked to this account by sign-in, email, or phone.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingData ? (
+              <div className="h-12 w-full animate-pulse rounded bg-muted" />
+            ) : recentOrders.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No orders linked yet.</p>
+            ) : (
+              <div className="divide-y rounded-lg border bg-white/70">
+                {recentOrders.map((order) => (
+                  <div key={order.id} className="flex items-center justify-between gap-4 p-3">
+                    <div>
+                      <p className="font-mono text-sm font-semibold text-coffee-900">{order.order_number}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(order.created_at).toLocaleDateString('en-AE', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-coffee-800">AED {Number(order.total_amount).toFixed(2)}</p>
+                      <p className="text-xs capitalize text-muted-foreground">{order.payment_status}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
