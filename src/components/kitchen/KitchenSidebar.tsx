@@ -40,18 +40,18 @@ const navItems = [
     bgColor: "bg-yellow-50 dark:bg-yellow-950/30",
   },
   {
+    id: "menu-cards" as const,
+    title: "Menu Cards",
+    icon: LayoutGrid,
+    color: "text-amber-600",
+    bgColor: "bg-amber-50 dark:bg-amber-950/30",
+  },
+  {
     id: "stock" as const,
-    title: "Store Stock",
+    title: "Store Cards",
     icon: Package,
     color: "text-blue-600",
     bgColor: "bg-blue-50 dark:bg-blue-950/30",
-  },
-  {
-    id: "calculator" as const,
-    title: "Calculator",
-    icon: Calculator,
-    color: "text-purple-600",
-    bgColor: "bg-purple-50 dark:bg-purple-950/30",
   },
   {
     id: "discounts" as const,
@@ -61,11 +61,11 @@ const navItems = [
     bgColor: "bg-pink-50 dark:bg-pink-950/30",
   },
   {
-    id: "menu-cards" as const,
-    title: "Menu Cards",
-    icon: LayoutGrid,
-    color: "text-amber-600",
-    bgColor: "bg-amber-50 dark:bg-amber-950/30",
+    id: "calculator" as const,
+    title: "Calculator",
+    icon: Calculator,
+    color: "text-purple-600",
+    bgColor: "bg-purple-50 dark:bg-purple-950/30",
   },
 ];
 

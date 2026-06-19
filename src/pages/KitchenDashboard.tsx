@@ -551,10 +551,10 @@ const KitchenDashboard = () => {
                   <SidebarTrigger />
                   <div className="min-w-0">
                     <h1 className="text-sm sm:text-lg font-bold text-foreground truncate">
-                      {activeView === 'stock' ? '📦 Store Stock' : activeView === 'calculator' ? '🧮 Revenue Calculator' : activeView === 'discounts' ? '🏷 Discount Codes' : activeView === 'menu-cards' ? '🍽 Menu Cards' : activeView === 'paid' ? '✅ Paid Orders' : '⏳ Pending Orders'}
+                      {activeView === 'stock' ? 'Store Cards' : activeView === 'calculator' ? 'Revenue Calculator' : activeView === 'discounts' ? 'Discount Codes' : activeView === 'menu-cards' ? 'Menu Cards' : activeView === 'paid' ? 'Paid Orders' : 'Pending Orders'}
                     </h1>
                     <p className="text-[10px] sm:text-xs text-muted-foreground">
-                      {activeView === 'stock' ? 'Editable product cards' : activeView === 'calculator' ? 'Auto gains per day, week, month' : activeView === 'discounts' ? 'Create and manage promo codes' : activeView === 'menu-cards' ? 'Edit menu card content and images' : `Last ${dateRangeLabels[dateRange].toLowerCase()} • ${currentOrders.length} orders`}
+                      {activeView === 'stock' ? 'Edit store card content, stock, and images' : activeView === 'calculator' ? 'Auto gains per day, week, month' : activeView === 'discounts' ? 'Create and manage promo codes' : activeView === 'menu-cards' ? 'Edit menu card content and images' : `Last ${dateRangeLabels[dateRange].toLowerCase()} • ${currentOrders.length} orders`}
                     </p>
                   </div>
                 </div>
