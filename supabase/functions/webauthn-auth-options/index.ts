@@ -7,6 +7,22 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function resolveRpId(req: Request): string {
+  const fallbackRpId = Deno.env.get("WEBAUTHN_RP_ID") || "nawacafe.com";
+  const origin = req.headers.get("Origin") || Deno.env.get("WEBAUTHN_ORIGIN") || `https://${fallbackRpId}`;
+
+  try {
+    const { hostname } = new URL(origin);
+    if (hostname === "localhost" || hostname === "127.0.0.1") return hostname;
+    if (hostname === "nawacafe.com" || hostname === "www.nawacafe.com") return "nawacafe.com";
+    if (hostname.endsWith(".vercel.app")) return hostname;
+  } catch {
+    // Use configured/default RP ID below.
+  }
+
+  return fallbackRpId;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -34,7 +50,7 @@ serve(async (req) => {
       });
     }
 
-    const rpId = Deno.env.get("WEBAUTHN_RP_ID") || "nawacafe.com";
+    const rpId = resolveRpId(req);
 
     // Load this user's registered credentials.
     const { data: credentials } = await supabase

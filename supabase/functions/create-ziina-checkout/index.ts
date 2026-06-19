@@ -57,6 +57,7 @@ type ValidatedItem = Omit<CheckoutOrderItem, "price" | "quantity" | "category"> 
   price: number;
   quantity: number;
   category: string | null;
+  source: "menu" | "store";
 };
 type KitchenSettingRow = {
   setting_key: string;
@@ -214,12 +215,29 @@ serve(async (req) => {
         );
       }
       const cart = Array.isArray(spRow.cart) ? spRow.cart as CheckoutOrderItem[] : [];
+      const sharedNames = cart.map((item) => item.name);
+      const { data: sharedStoreRows } = sharedNames.length > 0
+        ? await supabase
+          .from("store_products")
+          .select("product_name, category")
+          .in("product_name", sharedNames)
+        : { data: [] };
+      const sharedStoreCategories = new Map(
+        (sharedStoreRows || []).map((item) => [item.product_name, item.category ?? ""]),
+      );
       for (const it of cart) {
         const price = Number(it.price);
         const qty = Number(it.quantity);
         if (!Number.isFinite(price) || price < 0 || !Number.isInteger(qty) || qty < 1) continue;
         serverTotal += price * qty;
-        validatedItems.push({ name: it.name, price, quantity: qty, category: it.category || null });
+        const isStoreItem = sharedStoreCategories.has(it.name);
+        validatedItems.push({
+          name: it.name,
+          price,
+          quantity: qty,
+          category: isStoreItem ? sharedStoreCategories.get(it.name) || null : it.category || null,
+          source: isStoreItem ? "store" : "menu",
+        });
       }
       orderItems = validatedItems;
       // Use the exact total saved on the shared payment row — no loyalty or
@@ -245,9 +263,11 @@ serve(async (req) => {
 
       const priceMap = new Map<string, number>();
       const categoryMap = new Map<string, string | null>();
+      const sourceMap = new Map<string, "menu" | "store">();
       for (const item of dbItems || []) {
         priceMap.set(item.title, Number(item.price));
         categoryMap.set(item.title, item.category ?? null);
+        sourceMap.set(item.title, "menu");
       }
 
       // Staff-created cards may exist only in menu_cards (no menu_items row).
@@ -257,13 +277,14 @@ serve(async (req) => {
       if (missingNames.length > 0) {
         const { data: dbCards } = await supabase
           .from('menu_cards')
-          .select('name, price')
+          .select('name, price, section')
           .in('name', missingNames);
         for (const c of dbCards || []) {
           const m = String(c.price ?? '').replace(/,/g, '').match(/\d+(?:\.\d+)?/);
           if (c.name && m) {
             priceMap.set(c.name, parseFloat(m[0]));
-            categoryMap.set(c.name, null);
+            categoryMap.set(c.name, c.section ?? null);
+            sourceMap.set(c.name, "menu");
           }
         }
 
@@ -272,12 +293,13 @@ serve(async (req) => {
         if (stillMissing.length > 0) {
           const { data: dbStore } = await supabase
             .from('store_products')
-            .select('product_name, price, coming_soon, stock_quantity')
+            .select('product_name, price, category, coming_soon, stock_quantity')
             .in('product_name', stillMissing);
           for (const s of dbStore || []) {
             if (s.product_name && !s.coming_soon && Number(s.stock_quantity ?? 0) > 0) {
               priceMap.set(s.product_name, Number(s.price));
-              categoryMap.set(s.product_name, 'store');
+              categoryMap.set(s.product_name, s.category ?? null);
+              sourceMap.set(s.product_name, "store");
             }
           }
         }
@@ -301,7 +323,12 @@ serve(async (req) => {
         }
         serverTotal += dbPrice * qty;
         // Trust the DB category (not the client-sent one) for loyalty eligibility.
-        validatedItems.push({ ...item, price: dbPrice, category: categoryMap.get(item.name) ?? item.category ?? null });
+        validatedItems.push({
+          ...item,
+          price: dbPrice,
+          category: categoryMap.get(item.name) ?? item.category ?? null,
+          source: sourceMap.get(item.name) ?? "menu",
+        });
       }
     }
 
@@ -320,26 +347,30 @@ serve(async (req) => {
 
     const deliveryFee = delivery.fee ?? 0;
 
-    // Apply loyalty discount — percent is configurable via kitchen_settings
-    // (key: "loyalty_discount_percent"). Defaults to 15 if unset, 0 disables.
-    let loyaltyPercent = 15;
-    try {
-      const { data: lpRow } = await supabase
-        .from("kitchen_settings")
-        .select("setting_value")
-        .eq("setting_key", "loyalty_discount_percent")
-        .maybeSingle();
-      if (lpRow?.setting_value !== undefined && lpRow?.setting_value !== null) {
-        const parsed = Number(lpRow.setting_value);
-        if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 100) {
-          loyaltyPercent = parsed;
+    // ===== GLOBAL DISCOUNT (automatic, server-side) =====
+    let globalDiscountCode: string | null = null;
+    let globalDiscount = 0;
+    if (!sharedPaymentId) {
+      const { data: globalRows, error: globalError } = await supabase.rpc("get_active_global_discount");
+      if (globalError) {
+        console.warn("Global discount lookup failed:", globalError);
+      } else if (Array.isArray(globalRows) && globalRows[0]) {
+        const row = globalRows[0] as { code: string; percent: number; scope: string; target_name: string | null };
+        const pct = Math.min(100, Math.max(0, Number(row.percent))) / 100;
+        if (row.scope === "cart") {
+          globalDiscount = serverTotal * pct;
+        } else if (row.scope === "item" && row.target_name) {
+          const target = row.target_name.trim().toLowerCase();
+          for (const item of validatedItems) {
+            if (item.name.trim().toLowerCase() === target) {
+              globalDiscount += item.price * item.quantity * pct;
+            }
+          }
         }
+        globalDiscount = Math.round(globalDiscount * 100) / 100;
+        globalDiscountCode = row.code;
       }
-    } catch (e) {
-      console.warn("Failed to load loyalty_discount_percent, using default 15%", e);
     }
-    const DISCOUNT_RATE = loyaltyPercent / 100;
-    const loyaltyDiscount = Math.round(serverTotal * DISCOUNT_RATE * 100) / 100;
 
 
     // ===== PROMO CODE VALIDATION (server-side) =====
@@ -381,14 +412,16 @@ serve(async (req) => {
         const { data: settingRows } = await supabase
           .from("kitchen_settings")
           .select("setting_key, setting_value")
-          .in("setting_key", ["loyalty_enabled", "loyalty_eligible_categories"]);
+        .in("setting_key", ["loyalty_enabled", "loyalty_eligible_categories", "loyalty_eligible_items"]);
         const settings = new Map((settingRows || []).map((r: KitchenSettingRow) => [r.setting_key, r.setting_value]));
         const enabled = (settings.get("loyalty_enabled") ?? "true") !== "false";
 
-        let eligible: string[] = [];
-        try { eligible = JSON.parse(settings.get("loyalty_eligible_categories") || "[]"); } catch { eligible = []; }
+        let eligibleCategories: string[] = [];
+        let eligibleItems: string[] = [];
+        try { eligibleCategories = JSON.parse(settings.get("loyalty_eligible_categories") || "[]"); } catch { eligibleCategories = []; }
+        try { eligibleItems = JSON.parse(settings.get("loyalty_eligible_items") || "[]"); } catch { eligibleItems = []; }
 
-        if (enabled && eligible.length > 0) {
+        if (enabled && (eligibleCategories.length > 0 || eligibleItems.length > 0)) {
           const { data: loyalty } = await supabase
             .from("loyalty_accounts")
             .select("free_drinks_available")
@@ -398,7 +431,11 @@ serve(async (req) => {
           if ((loyalty?.free_drinks_available ?? 0) > 0) {
             // Free drink = the cheapest eligible beverage unit in the cart.
             const prices = validatedItems
-              .filter((it) => it.category && eligible.includes(it.category))
+              .filter((item) => {
+                const categoryKey = `${item.source}:${item.category || ""}`.toLowerCase();
+                const itemKey = `${item.source}:${item.name}`.toLowerCase();
+                return eligibleCategories.includes(categoryKey) || eligibleItems.includes(itemKey);
+              })
               .map((it) => Number(it.price))
               .filter((p) => Number.isFinite(p) && p > 0);
             if (prices.length > 0) {
@@ -413,9 +450,9 @@ serve(async (req) => {
 
     const rawTotal = sharedPaymentTotal !== null
       ? sharedPaymentTotal
-      : serverTotal - loyaltyDiscount - codeDiscount - loyaltyFreeDrinkAmount + deliveryFee;
+      : serverTotal - globalDiscount - codeDiscount - loyaltyFreeDrinkAmount + deliveryFee;
     const amount = Math.max(0, Math.round(rawTotal * 100) / 100);
-    console.log("Server-validated subtotal:", subtotalAmount, "loyalty:", loyaltyDiscount, "promo:", codeDiscount, "freeDrink:", loyaltyFreeDrinkAmount, "delivery:", deliveryFee, "shared:", sharedPaymentTotal, "final:", amount);
+    console.log("Server-validated subtotal:", subtotalAmount, "global:", globalDiscount, "promo:", codeDiscount, "freeReward:", loyaltyFreeDrinkAmount, "delivery:", deliveryFee, "shared:", sharedPaymentTotal, "final:", amount);
 
     // Get origin for redirect URLs
     const origin = req.headers.get("origin") || "https://nawacafe.com";
@@ -466,6 +503,8 @@ serve(async (req) => {
           table_number: normalizedOrderType === "dine_in" ? normalizedTableNumber : null,
           applied_discount_code: appliedCode,
           code_discount_amount: codeDiscount,
+          global_discount_code: globalDiscountCode,
+          global_discount_amount: globalDiscount,
           delivery_area: delivery.area,
           delivery_zone: delivery.zone,
           delivery_fee: delivery.fee,
@@ -499,6 +538,7 @@ serve(async (req) => {
           unit_price: item.price, // DB-validated price
           total_price: item.price * item.quantity,
           item_category: item.category || null,
+          item_source: item.source,
           extras: item.extras || null,
           notes: item.notes || null,
         }));

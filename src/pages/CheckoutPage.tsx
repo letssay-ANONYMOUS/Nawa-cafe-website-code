@@ -15,10 +15,11 @@ import { getVisitorId } from '@/hooks/useVisitorId';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { PromoCodeInput } from '@/components/PromoCodeInput';
 import { useDiscountCode, computeCodeDiscount, round2 } from '@/hooks/useDiscountCode';
-import { useLoyaltyDiscount } from '@/hooks/useLoyaltyDiscount';
+import { useGlobalDiscount } from '@/hooks/useGlobalDiscount';
 import DeliveryAreaSelector from '@/components/DeliveryAreaSelector';
 import { calculateDeliveryFee, getFulfillmentLabel, useDeliveryArea, useOrderFulfillment } from '@/lib/delivery';
 import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
+import { useLoyaltyReward } from '@/hooks/useLoyaltyReward';
 
 const FIXED_BRANCH = 'Stadhazza Branch';
 const CHECKOUT_FORM_KEY = 'nawa_checkout_form';
@@ -51,6 +52,8 @@ const CheckoutPage = () => {
   const { user } = useCustomerAuth();
   const accountEmail = user?.email ?? '';
   const { info: discountInfo, code: discountCode } = useDiscountCode();
+  const { data: globalDiscountInfo } = useGlobalDiscount();
+  const { amount: loyaltyReward } = useLoyaltyReward(cartItems, user?.id);
   const { trackCheckoutStart, trackCheckoutComplete } = useAnalytics();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState(loadStoredForm);
@@ -77,13 +80,12 @@ const CheckoutPage = () => {
     setFormData(prev => (prev.email ? prev : { ...prev, email: accountEmail }));
   }, [accountEmail]);
 
-  const { percent: loyaltyPercent } = useLoyaltyDiscount();
   const subtotal = getCartTotal();
-  const loyaltyDiscount = round2(subtotal * (loyaltyPercent / 100));
+  const globalDiscount = computeCodeDiscount(cartItems, subtotal, globalDiscountInfo ?? null);
   const codeDiscount = computeCodeDiscount(cartItems, subtotal, discountInfo);
   const delivery = calculateDeliveryFee(deliveryArea, subtotal, fulfillment);
   const deliveryFee = delivery?.fee ?? 0;
-  const total = round2(Math.max(0, subtotal - loyaltyDiscount - codeDiscount) + deliveryFee);
+  const total = round2(Math.max(0, subtotal - globalDiscount - codeDiscount - loyaltyReward) + deliveryFee);
   const itemCount = getCartCount();
   const selectedPaymentMethod = fulfillment === 'dine_in' ? formData.paymentMethod : 'online';
   const checkoutEmail = accountEmail || formData.email;
@@ -448,16 +450,22 @@ const CheckoutPage = () => {
                             <span>Subtotal</span>
                             <span>AED {subtotal.toFixed(2)}</span>
                           </div>
-                          {loyaltyDiscount > 0 && (
+                          {globalDiscount > 0 && globalDiscountInfo && (
                             <div className="flex justify-between text-sm text-green-600 font-medium">
-                              <span>Loyalty discount ({loyaltyPercent}%)</span>
-                              <span>-AED {loyaltyDiscount.toFixed(2)}</span>
+                              <span>Global discount ({globalDiscountInfo.percent}%)</span>
+                              <span>-AED {globalDiscount.toFixed(2)}</span>
                             </div>
                           )}
                           {codeDiscount > 0 && discountInfo && (
                             <div className="flex justify-between text-sm text-green-700 font-medium">
                               <span>Promo ({discountInfo.code} −{discountInfo.percent}%)</span>
                               <span>−AED {codeDiscount.toFixed(2)}</span>
+                            </div>
+                          )}
+                          {loyaltyReward > 0 && (
+                            <div className="flex justify-between text-sm text-green-700 font-medium">
+                              <span>Free loyalty reward</span>
+                              <span>-AED {loyaltyReward.toFixed(2)}</span>
                             </div>
                           )}
                           <div className="flex justify-between text-sm text-coffee-700">

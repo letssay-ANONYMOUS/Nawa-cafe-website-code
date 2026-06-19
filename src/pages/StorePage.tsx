@@ -8,6 +8,7 @@ import StoreProductCard from '@/components/StoreProductCard';
 import { supabase } from '@/integrations/supabase/client';
 import { FALLBACK_STORE_CATEGORIES, type StoreCategory, type StoreProduct } from '@/data/storeCatalog';
 import { useStoreCategories } from '@/hooks/useStoreCategories';
+import LoyaltyOfferBanner from '@/components/LoyaltyOfferBanner';
 
 const CATEGORY_KEY = 'store:activeCategory';
 const SCROLL_KEY = 'store:scrollY';
@@ -151,8 +152,11 @@ const StorePage = () => {
   return (
     <div className="min-h-screen">
       <Header />
+      <div className="pt-16">
+        <LoyaltyOfferBanner source="store" />
+      </div>
 
-      <section className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-coffee-50 via-cream-50 to-background">
+      <section className="pt-12 pb-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-coffee-50 via-cream-50 to-background">
         <div className="container mx-auto text-center">
           <h1 className="font-playfair text-5xl md:text-6xl font-bold text-coffee-900 mb-6 animate-fade-in">
             {activeCategoryConfig.heroTitle}

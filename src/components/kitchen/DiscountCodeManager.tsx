@@ -28,8 +28,8 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, RefreshCw, Trash2, Tag, Percent, Check, ChevronsUpDown, Sparkles } from 'lucide-react';
-import { useLoyaltyDiscount } from '@/hooks/useLoyaltyDiscount';
+import { CalendarIcon, RefreshCw, Trash2, Tag, Percent, Check, ChevronsUpDown } from 'lucide-react';
+import LoyaltyProgramManager from '@/components/kitchen/LoyaltyProgramManager';
 
 interface DiscountRow {
   id: string;
@@ -38,6 +38,7 @@ interface DiscountRow {
   scope: 'cart' | 'item';
   target_source: 'menu' | 'store' | null;
   target_name: string | null;
+  application_mode: 'manual' | 'global';
   active: boolean;
   expires_at: string | null;
   created_at: string;
@@ -49,6 +50,7 @@ interface StoreProductLite {
 }
 
 type Scope = 'cart' | 'item';
+type ApplicationMode = 'manual' | 'global';
 
 const DURATION_PRESETS: { label: string; hours: number | null }[] = [
   { label: '24 hours', hours: 24 },
@@ -74,22 +76,17 @@ export function DiscountCodeManager() {
   // Form state
   const [code, setCode] = useState('');
   const [percent, setPercent] = useState<string>('10');
+  const [applicationMode, setApplicationMode] = useState<ApplicationMode>('manual');
   const [scope, setScope] = useState<Scope>('cart');
   const [targetKey, setTargetKey] = useState<string>(''); // "menu:NAME" or "store:NAME"
   const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [durationLabel, setDurationLabel] = useState<string>('7 days');
   const [customExpiry, setCustomExpiry] = useState<Date | undefined>(undefined);
 
-  // Loyalty discount (site-wide, applied to every order)
-  const { percent: loyaltyPercent, save: saveLoyalty, saving: savingLoyalty } = useLoyaltyDiscount();
-  const [loyaltyDraft, setLoyaltyDraft] = useState<string>('');
-  useEffect(() => {
-    setLoyaltyDraft(String(loyaltyPercent));
-  }, [loyaltyPercent]);
-
   const refreshDiscountCaches = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['has-active-discount-codes'] });
     queryClient.invalidateQueries({ queryKey: ['discount-code'] });
+    queryClient.invalidateQueries({ queryKey: ['active-global-discount'] });
   }, [queryClient]);
 
   const load = useCallback(async () => {
@@ -138,6 +135,7 @@ export function DiscountCodeManager() {
   const resetForm = () => {
     setCode('');
     setPercent('10');
+    setApplicationMode('manual');
     setScope('cart');
     setTargetKey('');
     setDurationLabel('7 days');
@@ -186,6 +184,7 @@ export function DiscountCodeManager() {
     const payload = {
       code: cleanCode,
       percent: pct,
+      application_mode: applicationMode,
       scope,
       target_source,
       target_name,
@@ -227,7 +226,12 @@ export function DiscountCodeManager() {
     setRows((prev) => [createdRow as DiscountRow, ...prev.filter((r) => r.id !== createdRow.id)]);
     setLoading(false);
     refreshDiscountCaches();
-    toast({ title: 'Code saved', description: `${cleanCode} is now active.` });
+    toast({
+      title: applicationMode === 'global' ? 'Global discount saved' : 'Promo code saved',
+      description: applicationMode === 'global'
+        ? `${cleanCode} now applies automatically for every customer.`
+        : `${cleanCode} is active and must be entered by the customer.`,
+    });
     resetForm();
   };
 
@@ -256,86 +260,8 @@ export function DiscountCodeManager() {
     toast({ title: 'Code deleted', description: row.code });
   };
 
-  const handleSaveLoyalty = async () => {
-    const n = Number(loyaltyDraft);
-    if (!Number.isFinite(n) || n < 0 || n > 100) {
-      toast({ variant: 'destructive', title: 'Invalid percent', description: 'Loyalty discount must be 0–100.' });
-      return;
-    }
-    try {
-      await saveLoyalty(n);
-      toast({
-        title: n === 0 ? 'Loyalty discount disabled' : 'Loyalty discount updated',
-        description: n === 0
-          ? 'Customers will no longer see an automatic discount.'
-          : `Every order now gets ${n}% off automatically.`,
-      });
-    } catch (e) {
-      toast({ variant: 'destructive', title: 'Save failed', description: (e as Error).message });
-    }
-  };
-
   return (
     <div className="space-y-6">
-      {/* Site-wide loyalty discount control */}
-      <Card className="border-primary/30">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-            Loyalty discount (applied to every order)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-[auto,1fr,auto] md:items-end">
-          <div className="flex items-center gap-3">
-            <Switch
-              checked={loyaltyPercent > 0}
-              disabled={savingLoyalty}
-              onCheckedChange={async (on) => {
-                const next = on ? (Number(loyaltyDraft) > 0 ? Number(loyaltyDraft) : 15) : 0;
-                setLoyaltyDraft(String(next));
-                try {
-                  await saveLoyalty(next);
-                  toast({
-                    title: on ? 'Loyalty discount enabled' : 'Loyalty discount disabled',
-                    description: on
-                      ? `Every order now gets ${next}% off automatically.`
-                      : 'Customers will no longer see an automatic discount.',
-                  });
-                } catch (e) {
-                  toast({ variant: 'destructive', title: 'Save failed', description: (e as Error).message });
-                }
-              }}
-            />
-            <span className="text-sm font-medium">
-              {loyaltyPercent > 0 ? 'Active' : 'Disabled'}
-            </span>
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="loyalty-percent">Percent off</Label>
-            <div className="relative">
-              <Input
-                id="loyalty-percent"
-                type="number"
-                min={0}
-                max={100}
-                step={1}
-                value={loyaltyDraft}
-                onChange={(e) => setLoyaltyDraft(e.target.value)}
-                disabled={loyaltyPercent === 0 || savingLoyalty}
-              />
-              <Percent className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Default is 15%. Set to 0 or toggle off to disable for everyone.
-            </p>
-          </div>
-          <Button onClick={handleSaveLoyalty} disabled={savingLoyalty || loyaltyPercent === 0}>
-            {savingLoyalty ? 'Saving…' : 'Save percent'}
-          </Button>
-        </CardContent>
-      </Card>
-
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -344,13 +270,29 @@ export function DiscountCodeManager() {
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-1 md:col-span-2">
+            <Label>Discount type</Label>
+            <Select value={applicationMode} onValueChange={(value) => setApplicationMode(value as ApplicationMode)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="manual">Promo code - customer enters it</SelectItem>
+                <SelectItem value="global">Global discount code - automatic</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {applicationMode === 'global'
+                ? 'Applied automatically at cart and checkout. Customers do not type this code.'
+                : 'For blogger, influencer, and campaign codes. It is never filled in automatically.'}
+            </p>
+          </div>
+
           <div className="space-y-1">
-            <Label htmlFor="dc-code">Code</Label>
+            <Label htmlFor="dc-code">{applicationMode === 'global' ? 'Internal campaign code' : 'Code'}</Label>
             <Input
               id="dc-code"
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="SUMMER15"
+              placeholder={applicationMode === 'global' ? 'GLOBAL10' : 'SUMMER15'}
               maxLength={32}
             />
           </div>
@@ -489,7 +431,7 @@ export function DiscountCodeManager() {
 
           <div className="md:col-span-2 flex justify-end">
             <Button onClick={handleCreate} disabled={saving}>
-              {saving ? 'Creating…' : 'Create code'}
+              {saving ? 'Creating…' : applicationMode === 'global' ? 'Create global discount' : 'Create promo code'}
             </Button>
           </div>
         </CardContent>
@@ -522,6 +464,9 @@ export function DiscountCodeManager() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-mono font-bold text-base">{row.code}</span>
                         <Badge variant="secondary">{row.percent}% off</Badge>
+                        <Badge variant={row.application_mode === 'global' ? 'default' : 'outline'}>
+                          {row.application_mode === 'global' ? 'Global discount' : 'Manual promo'}
+                        </Badge>
                         <Badge variant="outline">
                           {row.scope === 'cart' ? 'Whole cart' : row.target_name || 'Item'}
                         </Badge>
@@ -555,6 +500,7 @@ export function DiscountCodeManager() {
           )}
         </CardContent>
       </Card>
+      <LoyaltyProgramManager />
     </div>
   );
 }

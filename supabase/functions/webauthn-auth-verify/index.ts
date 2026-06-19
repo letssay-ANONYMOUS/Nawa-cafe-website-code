@@ -7,11 +7,50 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+type WebAuthnConfig = {
+  rpId: string;
+  expectedOrigins: string[];
+};
+
 function fromBase64url(str: string): Uint8Array {
   const base64 = str.replace(/-/g, "+").replace(/_/g, "/");
   const padding = base64.length % 4 === 0 ? "" : "=".repeat(4 - (base64.length % 4));
   const binary = atob(base64 + padding);
   return new Uint8Array(binary.split("").map((c) => c.charCodeAt(0)));
+}
+
+function resolveWebAuthnConfig(req: Request): WebAuthnConfig {
+  const fallbackRpId = Deno.env.get("WEBAUTHN_RP_ID") || "nawacafe.com";
+  const configuredOrigin = Deno.env.get("WEBAUTHN_ORIGIN") || "";
+  const rawOrigin = req.headers.get("Origin") || configuredOrigin || `https://${fallbackRpId}`;
+  let origin = rawOrigin;
+  let rpId = fallbackRpId;
+
+  try {
+    const parsed = new URL(rawOrigin);
+    origin = parsed.origin;
+    const { hostname } = parsed;
+    if (hostname === "localhost" || hostname === "127.0.0.1") rpId = hostname;
+    else if (hostname === "nawacafe.com" || hostname === "www.nawacafe.com") rpId = "nawacafe.com";
+    else if (hostname.endsWith(".vercel.app")) rpId = hostname;
+  } catch {
+    origin = `https://${fallbackRpId}`;
+  }
+
+  const expectedOrigins = new Set([origin]);
+  if (configuredOrigin) {
+    try {
+      expectedOrigins.add(new URL(configuredOrigin).origin);
+    } catch {
+      expectedOrigins.add(configuredOrigin);
+    }
+  }
+  if (rpId === "nawacafe.com") {
+    expectedOrigins.add("https://nawacafe.com");
+    expectedOrigins.add("https://www.nawacafe.com");
+  }
+
+  return { rpId, expectedOrigins: [...expectedOrigins] };
 }
 
 serve(async (req) => {
@@ -82,13 +121,12 @@ serve(async (req) => {
       });
     }
 
-    const rpId = Deno.env.get("WEBAUTHN_RP_ID") || "nawacafe.com";
-    const origin = Deno.env.get("WEBAUTHN_ORIGIN") || `https://${rpId}`;
+    const { rpId, expectedOrigins } = resolveWebAuthnConfig(req);
 
     const verification = await verifyAuthenticationResponse({
       response,
       expectedChallenge: challengeRow.challenge,
-      expectedOrigin: [origin, "http://localhost:8080", "http://localhost:5173"],
+      expectedOrigin: expectedOrigins,
       expectedRPID: rpId,
       authenticator: {
         credentialID: fromBase64url(credential.credential_id),

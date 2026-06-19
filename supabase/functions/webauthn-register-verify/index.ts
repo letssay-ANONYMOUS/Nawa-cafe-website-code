@@ -7,10 +7,49 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+type WebAuthnConfig = {
+  rpId: string;
+  expectedOrigins: string[];
+};
+
 function toBase64url(bytes: Uint8Array): string {
   let binary = "";
   for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}
+
+function resolveWebAuthnConfig(req: Request): WebAuthnConfig {
+  const fallbackRpId = Deno.env.get("WEBAUTHN_RP_ID") || "nawacafe.com";
+  const configuredOrigin = Deno.env.get("WEBAUTHN_ORIGIN") || "";
+  const rawOrigin = req.headers.get("Origin") || configuredOrigin || `https://${fallbackRpId}`;
+  let origin = rawOrigin;
+  let rpId = fallbackRpId;
+
+  try {
+    const parsed = new URL(rawOrigin);
+    origin = parsed.origin;
+    const { hostname } = parsed;
+    if (hostname === "localhost" || hostname === "127.0.0.1") rpId = hostname;
+    else if (hostname === "nawacafe.com" || hostname === "www.nawacafe.com") rpId = "nawacafe.com";
+    else if (hostname.endsWith(".vercel.app")) rpId = hostname;
+  } catch {
+    origin = `https://${fallbackRpId}`;
+  }
+
+  const expectedOrigins = new Set([origin]);
+  if (configuredOrigin) {
+    try {
+      expectedOrigins.add(new URL(configuredOrigin).origin);
+    } catch {
+      expectedOrigins.add(configuredOrigin);
+    }
+  }
+  if (rpId === "nawacafe.com") {
+    expectedOrigins.add("https://nawacafe.com");
+    expectedOrigins.add("https://www.nawacafe.com");
+  }
+
+  return { rpId, expectedOrigins: [...expectedOrigins] };
 }
 
 serve(async (req) => {
@@ -65,13 +104,12 @@ serve(async (req) => {
       });
     }
 
-    const rpId = Deno.env.get("WEBAUTHN_RP_ID") || "nawacafe.com";
-    const origin = Deno.env.get("WEBAUTHN_ORIGIN") || `https://${rpId}`;
+    const { rpId, expectedOrigins } = resolveWebAuthnConfig(req);
 
     const verification = await verifyRegistrationResponse({
       response,
       expectedChallenge: challengeRow.challenge,
-      expectedOrigin: [origin, "http://localhost:8080", "http://localhost:5173"],
+      expectedOrigin: expectedOrigins,
       expectedRPID: rpId,
       requireUserVerification: true,
     });

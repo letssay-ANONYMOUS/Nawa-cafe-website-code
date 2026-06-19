@@ -3,8 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { CartItem } from '@/contexts/CartContext';
 
-const STORAGE_KEY = 'nawa_promo_code';
-
 export interface DiscountInfo {
   code: string;
   percent: number;
@@ -20,7 +18,7 @@ export interface DiscountInfo {
 // -----------------------------------------------------------------------------
 const listeners = new Set<() => void>();
 let currentCode: string = (() => {
-  try { return localStorage.getItem(STORAGE_KEY) || ''; } catch { return ''; }
+  return '';
 })();
 
 const subscribe = (cb: () => void) => {
@@ -33,26 +31,7 @@ function setSharedCode(next: string) {
   const normalized = next.trim().toUpperCase();
   if (normalized === currentCode) return;
   currentCode = normalized;
-  try {
-    if (normalized) localStorage.setItem(STORAGE_KEY, normalized);
-    else localStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // localStorage can be unavailable in private browsing; keep the in-memory code synced.
-  }
   listeners.forEach((cb) => cb());
-}
-
-// Keep tabs in sync
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', (e) => {
-    if (e.key === STORAGE_KEY) {
-      const next = (e.newValue || '').trim().toUpperCase();
-      if (next !== currentCode) {
-        currentCode = next;
-        listeners.forEach((cb) => cb());
-      }
-    }
-  });
 }
 
 async function fetchCode(code: string): Promise<DiscountInfo | null> {

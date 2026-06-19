@@ -1,6 +1,7 @@
 import Header from '@/components/Header';
 import Menu from '@/components/Menu';
 import Footer from '@/components/Footer';
+import LoyaltyOfferBanner from '@/components/LoyaltyOfferBanner';
 
 const MenuPage = () => {
 
@@ -8,6 +9,7 @@ const MenuPage = () => {
     <div className="min-h-screen">
       <Header />
       <div className="pt-16">
+        <LoyaltyOfferBanner source="menu" />
         <Menu />
       </div>
       <Footer />

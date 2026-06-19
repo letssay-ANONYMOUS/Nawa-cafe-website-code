@@ -22,8 +22,8 @@ const CustomerLogin = () => {
 
   // Already signed in → go to account
   useEffect(() => {
-    if (!loading && user && step === 'password') navigate('/account', { replace: true });
-  }, [loading, user, step, navigate]);
+    if (!loading && !isLoading && user && step === 'password') navigate('/account', { replace: true });
+  }, [loading, isLoading, user, step, navigate]);
 
   const handlePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,11 +47,12 @@ const CustomerLogin = () => {
 
       // Desktop / no passkey enrolled → password is enough
       navigate('/account', { replace: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Invalid email or password.';
       toast({
         variant: 'destructive',
         title: 'Login failed',
-        description: error?.message || 'Invalid email or password.',
+        description: message,
       });
     } finally {
       setIsLoading(false);
@@ -72,14 +73,15 @@ const CustomerLogin = () => {
       await assertPasskey();
       toast({ title: 'Verified!', description: 'Welcome back.' });
       navigate('/account', { replace: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Could not verify. Please try again.';
       // Biometric failed → sign out to avoid leaving a dangling partial session.
       await signOut();
       setStep('password');
       toast({
         variant: 'destructive',
         title: 'Biometric failed',
-        description: error?.message || 'Could not verify. Please try again.',
+        description: message,
       });
     } finally {
       setIsLoading(false);

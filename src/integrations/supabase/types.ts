@@ -185,6 +185,7 @@ export type Database = {
       discount_codes: {
         Row: {
           active: boolean
+          application_mode: string
           code: string
           created_at: string
           expires_at: string | null
@@ -197,6 +198,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          application_mode?: string
           code: string
           created_at?: string
           expires_at?: string | null
@@ -209,6 +211,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          application_mode?: string
           code?: string
           created_at?: string
           expires_at?: string | null
@@ -406,6 +409,7 @@ export type Database = {
           extras: string | null
           id: string
           item_category: string | null
+          item_source: string | null
           item_name: string
           menu_item_id: string | null
           notes: string | null
@@ -419,6 +423,7 @@ export type Database = {
           extras?: string | null
           id?: string
           item_category?: string | null
+          item_source?: string | null
           item_name: string
           menu_item_id?: string | null
           notes?: string | null
@@ -432,6 +437,7 @@ export type Database = {
           extras?: string | null
           id?: string
           item_category?: string | null
+          item_source?: string | null
           item_name?: string
           menu_item_id?: string | null
           notes?: string | null
@@ -471,6 +477,8 @@ export type Database = {
           customer_name: string
           customer_phone: string
           extra_notes: string | null
+          global_discount_amount: number
+          global_discount_code: string | null
           id: string
           ip_address: string | null
           loyalty_free_drink_amount: number
@@ -502,6 +510,8 @@ export type Database = {
           customer_name: string
           customer_phone: string
           extra_notes?: string | null
+          global_discount_amount?: number
+          global_discount_code?: string | null
           id?: string
           ip_address?: string | null
           loyalty_free_drink_amount?: number
@@ -533,6 +543,8 @@ export type Database = {
           customer_name?: string
           customer_phone?: string
           extra_notes?: string | null
+          global_discount_amount?: number
+          global_discount_code?: string | null
           id?: string
           ip_address?: string | null
           loyalty_free_drink_amount?: number
@@ -873,6 +885,16 @@ export type Database = {
     Functions: {
       delete_menu_card: { Args: { _target_id: number }; Returns: undefined }
       generate_order_number: { Args: never; Returns: string }
+      get_active_global_discount: {
+        Args: never
+        Returns: {
+          code: string
+          percent: number
+          scope: string
+          target_name: string
+          target_source: string
+        }[]
+      }
       has_active_discount_codes: { Args: never; Returns: boolean }
       has_role: {
         Args: {
@@ -907,6 +929,7 @@ export type Database = {
       purge_expired_deleted_menu_categories: { Args: never; Returns: number }
       purge_expired_deleted_store_categories: { Args: never; Returns: number }
       recalculate_customer_loyalty: { Args: { _user_id: string }; Returns: Json }
+      recalculate_all_customer_loyalty: { Args: never; Returns: number }
       restore_menu_category: { Args: { _id: string }; Returns: undefined }
       restore_store_category: { Args: { _id: string }; Returns: undefined }
       soft_delete_menu_category: { Args: { _id: string }; Returns: undefined }

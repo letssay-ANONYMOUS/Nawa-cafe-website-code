@@ -7,10 +7,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { hasPlatformAuthenticator, registerPasskey } from '@/lib/webauthn';
+import { loyaltyTargetLabel, useLoyaltyProgram } from '@/hooks/useLoyaltyProgram';
 import Header from '@/components/Header';
-import { Coffee, Fingerprint, Gift, History, LogOut, ShieldCheck } from 'lucide-react';
-
-const DEFAULT_THRESHOLD = 10;
+import { Fingerprint, Gift, History, LogOut, ShieldCheck } from 'lucide-react';
 
 interface PasskeyCredential {
   id: string;
@@ -34,12 +33,12 @@ const CustomerAccountPage = () => {
   const [loadingData, setLoadingData] = useState(true);
   const [paidCount, setPaidCount] = useState(0);
   const [freeDrinks, setFreeDrinks] = useState(0);
-  const [threshold, setThreshold] = useState(DEFAULT_THRESHOLD);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [credentials, setCredentials] = useState<PasskeyCredential[]>([]);
   const [recentOrders, setRecentOrders] = useState<CustomerOrderSummary[]>([]);
   const [canAddPasskey, setCanAddPasskey] = useState(false);
   const [addingPasskey, setAddingPasskey] = useState(false);
+  const { config: loyaltyProgram } = useLoyaltyProgram();
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -49,15 +48,13 @@ const CustomerAccountPage = () => {
       console.warn('Could not sync customer order history:', syncError);
     }
 
-    const [{ data: loyalty }, { data: profile }, { data: setting }, { data: creds }, { data: orders }] =
+    const [{ data: loyalty }, { data: profile }, { data: creds }, { data: orders }] =
       await Promise.all([
         supabase.from('loyalty_accounts')
           .select('paid_beverage_count, free_drinks_available')
           .eq('user_id', user.id).maybeSingle(),
         supabase.from('customer_profiles')
           .select('full_name').eq('user_id', user.id).maybeSingle(),
-        supabase.from('kitchen_settings')
-          .select('setting_value').eq('setting_key', 'loyalty_threshold').maybeSingle(),
         supabase.from('webauthn_credentials')
           .select('id, device_label, created_at')
           .eq('user_id', user.id)
@@ -72,8 +69,6 @@ const CustomerAccountPage = () => {
     setPaidCount(loyalty?.paid_beverage_count ?? 0);
     setFreeDrinks(loyalty?.free_drinks_available ?? 0);
     setProfileName(profile?.full_name ?? null);
-    const t = Number(setting?.setting_value);
-    if (Number.isFinite(t) && t > 0) setThreshold(t);
     const rawCreds = (creds ?? []) as Array<{ id: string; device_label: string | null; created_at: string }>;
     setCredentials(rawCreds);
     setRecentOrders((orders ?? []) as CustomerOrderSummary[]);
@@ -119,8 +114,10 @@ const CustomerAccountPage = () => {
     }
   };
 
+  const threshold = loyaltyProgram.threshold;
   const progressToNext = paidCount % threshold;
   const remaining = threshold - progressToNext;
+  const loyaltyTargets = [...loyaltyProgram.categoryTargets, ...loyaltyProgram.itemTargets];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100">
@@ -147,9 +144,9 @@ const CustomerAccountPage = () => {
               <Gift className="w-10 h-10 shrink-0" />
               <div>
                 <p className="text-xl font-bold">
-                  You have {freeDrinks} free drink{freeDrinks > 1 ? 's' : ''}! 🎉
+                  You have {freeDrinks} free reward{freeDrinks > 1 ? 's' : ''}!
                 </p>
-                <p className="text-cream-100">Auto-applied at your next checkout.</p>
+                <p className="text-cream-100">Applied automatically when an eligible item is in your cart.</p>
               </div>
             </CardContent>
           </Card>
@@ -159,9 +156,25 @@ const CustomerAccountPage = () => {
         <Card className="border-0 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Coffee className="w-5 h-5 text-primary" /> Your rewards
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-coffee-700">
+                <img
+                  src="/nawa-logo-white.png"
+                  alt=""
+                  aria-hidden="true"
+                  className="h-5 w-5 object-contain"
+                />
+              </span>
+              {loyaltyProgram.name}
             </CardTitle>
-            <CardDescription>Buy {threshold} beverages, get the next one free.</CardDescription>
+            <CardDescription>
+              Buy {threshold} eligible items, get the next one free.
+              {loyaltyTargets.length > 0 && (
+                <span className="mt-1 block">
+                  Eligible: {loyaltyTargets.slice(0, 4).map(loyaltyTargetLabel).join(', ')}
+                  {loyaltyTargets.length > 4 ? ` +${loyaltyTargets.length - 4} more` : ''}.
+                </span>
+              )}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {loadingData ? (
@@ -170,13 +183,13 @@ const CustomerAccountPage = () => {
               <>
                 <div className="flex items-end justify-between">
                   <span className="text-3xl font-bold text-coffee-900">{progressToNext}</span>
-                  <span className="text-muted-foreground">of {threshold} beverages</span>
+                  <span className="text-muted-foreground">of {threshold} eligible items</span>
                 </div>
                 <Progress value={(progressToNext / threshold) * 100} className="h-3" />
                 <p className="text-sm text-muted-foreground">
                   {remaining === threshold
-                    ? `Buy ${threshold} beverages to earn a free drink.`
-                    : `${remaining} more beverage${remaining > 1 ? 's' : ''} until your next free drink.`}
+                    ? `Buy ${threshold} eligible items to earn a free reward.`
+                    : `${remaining} more eligible item${remaining > 1 ? 's' : ''} until your next free reward.`}
                 </p>
               </>
             )}

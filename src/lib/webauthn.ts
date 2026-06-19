@@ -21,10 +21,16 @@ export const hasPlatformAuthenticator = async (): Promise<boolean> => {
  * JWT is in place (supabase.functions.invoke attaches it automatically).
  */
 export const registerPasskey = async (deviceLabel?: string): Promise<void> => {
+  if (!(await hasPlatformAuthenticator())) {
+    throw new Error('Face ID or fingerprint is not available on this device.');
+  }
+
   const { data: options, error: optErr } = await supabase.functions.invoke(
     'webauthn-register-options',
   );
-  if (optErr || !options) throw new Error('Could not start passkey registration');
+  if (optErr || !options || options.error) {
+    throw new Error(options?.error || 'Could not start passkey registration');
+  }
 
   // Triggers Face ID / fingerprint enrolment prompt on the device.
   const registrationResponse = await startRegistration(options);
@@ -40,10 +46,16 @@ export const registerPasskey = async (deviceLabel?: string): Promise<void> => {
  * Triggers Face ID / fingerprint on the device.
  */
 export const assertPasskey = async (): Promise<void> => {
+  if (!(await hasPlatformAuthenticator())) {
+    throw new Error('Face ID or fingerprint is not available on this device.');
+  }
+
   const { data: options, error: optErr } = await supabase.functions.invoke(
     'webauthn-auth-options',
   );
-  if (optErr || !options) throw new Error('Could not start biometric check');
+  if (optErr || !options || options.error) {
+    throw new Error(options?.error || 'Could not start biometric check');
+  }
 
   const authResponse = await startAuthentication(options);
 

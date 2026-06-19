@@ -9,30 +9,32 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
 import { PromoCodeInput } from '@/components/PromoCodeInput';
 import { useDiscountCode, computeCodeDiscount, round2 } from '@/hooks/useDiscountCode';
-import { useLoyaltyDiscount } from '@/hooks/useLoyaltyDiscount';
+import { useGlobalDiscount } from '@/hooks/useGlobalDiscount';
 import ShareCartPayment from '@/components/ShareCartPayment';
 import DeliveryAreaSelector from '@/components/DeliveryAreaSelector';
 import { calculateDeliveryFee, getFulfillmentLabel, useDeliveryArea, useOrderFulfillment } from '@/lib/delivery';
 import { useToast } from '@/hooks/use-toast';
 import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
+import { useLoyaltyReward } from '@/hooks/useLoyaltyReward';
 
 const CartPage = () => {
   const { cartItems, updateQuantity, removeFromCart, getCartTotal } = useCart();
   const { info: discountInfo } = useDiscountCode();
-  const { percent: loyaltyPercent } = useLoyaltyDiscount();
+  const { data: globalDiscountInfo } = useGlobalDiscount();
   const { area } = useDeliveryArea();
   const { fulfillment } = useOrderFulfillment();
   const { toast } = useToast();
   const { user } = useCustomerAuth();
   const navigate = useNavigate();
   const [rewardsPromptOpen, setRewardsPromptOpen] = useState(false);
+  const { amount: loyaltyReward } = useLoyaltyReward(cartItems, user?.id);
 
   const subtotal = getCartTotal();
-  const loyaltyDiscount = round2(subtotal * (loyaltyPercent / 100));
+  const globalDiscount = computeCodeDiscount(cartItems, subtotal, globalDiscountInfo ?? null);
   const codeDiscount = computeCodeDiscount(cartItems, subtotal, discountInfo);
   const delivery = calculateDeliveryFee(area, subtotal, fulfillment);
   const deliveryFee = delivery?.fee ?? 0;
-  const total = round2(Math.max(0, subtotal - loyaltyDiscount - codeDiscount) + deliveryFee);
+  const total = round2(Math.max(0, subtotal - globalDiscount - codeDiscount - loyaltyReward) + deliveryFee);
 
   const proceedToCheckout = () => {
     if (fulfillment === 'delivery' && !area) {
@@ -156,16 +158,22 @@ const CartPage = () => {
                             <span>Subtotal</span>
                             <span>AED {subtotal.toFixed(2)}</span>
                           </div>
-                          {loyaltyDiscount > 0 && (
+                          {globalDiscount > 0 && globalDiscountInfo && (
                             <div className="flex justify-between text-sm text-green-600 font-medium">
-                              <span>Loyalty discount ({loyaltyPercent}%)</span>
-                              <span>-AED {loyaltyDiscount.toFixed(2)}</span>
+                              <span>Global discount ({globalDiscountInfo.percent}%)</span>
+                              <span>-AED {globalDiscount.toFixed(2)}</span>
                             </div>
                           )}
                           {codeDiscount > 0 && discountInfo && (
                             <div className="flex justify-between text-sm text-green-700 font-medium">
                               <span>Promo ({discountInfo.code} −{discountInfo.percent}%)</span>
                               <span>−AED {codeDiscount.toFixed(2)}</span>
+                            </div>
+                          )}
+                          {loyaltyReward > 0 && (
+                            <div className="flex justify-between text-sm text-green-700 font-medium">
+                              <span>Free loyalty reward</span>
+                              <span>-AED {loyaltyReward.toFixed(2)}</span>
                             </div>
                           )}
                           <div className="flex justify-between text-sm text-coffee-700">

@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/contexts/CartContext';
+import { useDiscountCode } from '@/hooks/useDiscountCode';
 
 const PaymentSuccessPage = () => {
   const { clearCart } = useCart();
+  const { clear: clearPromoCode } = useDiscountCode();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -30,7 +32,12 @@ const PaymentSuccessPage = () => {
         setVerified(true);
         setOrderNumber(cashOrderNumber || null);
         clearCart();
-        try { localStorage.removeItem('nawa_checkout_form'); } catch {}
+        clearPromoCode();
+        try {
+          localStorage.removeItem('nawa_checkout_form');
+        } catch {
+          // Order completion must not fail when storage is unavailable.
+        }
         toast({
           title: "Order Sent to Kitchen",
           description: "Please pay cash at the cafe. Staff will prepare your dine-in order.",
@@ -69,8 +76,13 @@ const PaymentSuccessPage = () => {
           setVerified(true);
           setOrderNumber(data.order_number);
           clearCart();
+          clearPromoCode();
           // Clear saved checkout form on successful payment
-          try { localStorage.removeItem('nawa_checkout_form'); } catch {}
+          try {
+            localStorage.removeItem('nawa_checkout_form');
+          } catch {
+            // Order completion must not fail when storage is unavailable.
+          }
           toast({
             title: "Payment Confirmed!",
             description: "Thank you for your order. We'll start preparing it right away!",
@@ -88,7 +100,7 @@ const PaymentSuccessPage = () => {
     };
 
     verifyPayment();
-  }, [orderId, paymentId, cashOrder, cashOrderNumber, toast, clearCart, sharedPaymentId]);
+  }, [orderId, paymentId, cashOrder, cashOrderNumber, toast, clearCart, clearPromoCode, sharedPaymentId]);
 
   if (verifying) {
     return (

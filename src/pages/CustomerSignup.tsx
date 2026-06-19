@@ -24,8 +24,8 @@ const CustomerSignup = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!loading && user && step === 'form') navigate('/account', { replace: true });
-  }, [loading, user, step, navigate]);
+    if (!loading && !isLoading && user && step === 'form') navigate('/account', { replace: true });
+  }, [loading, isLoading, user, step, navigate]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,11 +53,12 @@ const CustomerSignup = () => {
 
       toast({ title: 'Account created!', description: 'Welcome to Nawa Cafe rewards.' });
       navigate('/account', { replace: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Please try again.';
       toast({
         variant: 'destructive',
         title: 'Could not create account',
-        description: error?.message || 'Please try again.',
+        description: message,
       });
     } finally {
       setIsLoading(false);
@@ -74,12 +75,13 @@ const CustomerSignup = () => {
         : 'This device';
       await registerPasskey(label);
       toast({ title: 'Biometric added!', description: 'You can now sign in with Face ID or fingerprint.' });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'You can add it later from your account.';
       // Non-fatal — account is already created; just skip passkey.
       toast({
         variant: 'destructive',
         title: 'Passkey not added',
-        description: error?.message || 'You can add it later from your account.',
+        description: message,
       });
     } finally {
       setIsLoading(false);
