@@ -5,6 +5,7 @@ import { useMenuCards, menuSections, groupCardsBySections, useMenuSections, type
 import { Card } from '@/components/ui/card';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { formatAEDFromInput } from '@/lib/money';
 
 const Menu = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -283,8 +284,8 @@ const Menu = () => {
                               {card.name}
                             </h3>
                             <div className="flex items-center justify-between">
-                              <p className="text-white/90 font-bold text-sm sm:text-base md:text-lg transition-all duration-300 group-hover:text-white">
-                                {card.price}
+                              <p className="whitespace-nowrap text-sm font-bold text-white/90 transition-all duration-300 group-hover:text-white sm:text-base md:text-lg">
+                                {formatAEDFromInput(card.price)}
                               </p>
                               <p className="text-white/60 text-[10px] hidden md:block transition-all duration-300 group-hover:text-white/90">
                                 Click for details

@@ -10,6 +10,7 @@ import { useMenuItems, toMenuCardItem } from '@/hooks/useMenuItems';
 import { useMenuCards, groupCardsBySections, menuSections, useMenuSections } from '@/hooks/useMenuCards';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AnimatePresence, motion, type Variants, useReducedMotion } from 'framer-motion';
+import { formatAED } from '@/lib/money';
 
 interface OptionChoice {
   name: string;
@@ -213,20 +214,25 @@ const MenuItemDetail = () => {
 
   const calculateTotalPrice = () => {
     if (!item) return 0;
-    let total = item.price;
-    
+    // Coerce to a number: staff-created menu cards can carry the price as a
+    // string, which would make `total += choice.price` concatenate text and
+    // hide the real price. Always work in numbers so the total stays visible.
+    let total = Number(item.price);
+    if (!Number.isFinite(total)) total = 0;
+
     const options = item.options as OptionGroup[] | undefined;
     if (options) {
       options.forEach(group => {
         const selected = selectedOptions[group.groupName] || [];
         selected.forEach(choiceName => {
           const choice = group.choices.find(c => c.name === choiceName);
-          if (choice) total += choice.price;
+          const choicePrice = Number(choice?.price);
+          if (choice && Number.isFinite(choicePrice)) total += choicePrice;
         });
       });
     }
-    
-    return total;
+
+    return Math.round(total * 100) / 100;
   };
 
   const isValidSelection = () => {
@@ -381,7 +387,7 @@ const MenuItemDetail = () => {
                       {item.description}
                     </p>
                     <div className="text-3xl font-bold text-[#c9a962]">
-                      AED {calculateTotalPrice().toFixed(2)}
+                      {formatAED(calculateTotalPrice())}
                     </div>
                   </div>
 
@@ -425,8 +431,12 @@ const MenuItemDetail = () => {
                                 </div>
                                 <span className="font-medium">{choice.name}</span>
                               </div>
-                              <span className="text-muted-foreground">
-                                {choice.price > 0 ? `+ AED ${choice.price.toFixed(2)}` : `AED ${choice.price.toFixed(2)}`}
+                              <span className="whitespace-nowrap text-muted-foreground tabular-nums">
+                                {Number(choice.price) > 0
+                                  ? `+ ${formatAED(Number(choice.price))}`
+                                  : Number(choice.price) < 0
+                                    ? `- ${formatAED(Math.abs(Number(choice.price)))}`
+                                    : 'Free'}
                               </span>
                             </div>
                           );
@@ -436,12 +446,13 @@ const MenuItemDetail = () => {
                   ))}
 
                   <div className="space-y-4">
-                    <Button 
-                      size="lg" 
-                      className="w-full"
+                    <Button
+                      size="lg"
+                      className="flex w-full items-center justify-center gap-2 whitespace-nowrap"
                       onClick={handleAddToCart}
                     >
-                      Add to Cart
+                      <span>Add to Cart</span>
+                      <span className="font-semibold tabular-nums">· {formatAED(calculateTotalPrice())}</span>
                     </Button>
                   </div>
                 </div>

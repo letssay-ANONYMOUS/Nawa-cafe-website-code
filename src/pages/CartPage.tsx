@@ -16,6 +16,8 @@ import { calculateDeliveryFee, getFulfillmentLabel, useDeliveryArea, useOrderFul
 import { useToast } from '@/hooks/use-toast';
 import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
 import { useLoyaltyReward } from '@/hooks/useLoyaltyReward';
+import { formatAED } from '@/lib/money';
+import PriceSummaryRow from '@/components/PriceSummaryRow';
 
 const CartPage = () => {
   const { cartItems, updateQuantity, removeFromCart, getCartTotal } = useCart();
@@ -34,6 +36,7 @@ const CartPage = () => {
   const codeDiscount = computeCodeDiscount(cartItems, subtotal, discountInfo);
   const delivery = calculateDeliveryFee(area, subtotal, fulfillment);
   const deliveryFee = delivery?.fee ?? 0;
+  const totalSavings = round2(globalDiscount + codeDiscount + loyaltyReward);
   const total = round2(Math.max(0, subtotal - globalDiscount - codeDiscount - loyaltyReward) + deliveryFee);
 
   const proceedToCheckout = () => {
@@ -106,7 +109,7 @@ const CartPage = () => {
                           />
                            <div className="flex-1">
                             <h3 className="font-semibold text-lg text-coffee-800 mb-2">{item.name}</h3>
-                            <p className="text-coffee-600 font-medium mb-4">AED {item.price.toFixed(2)}</p>
+                            <p className="text-coffee-600 font-medium mb-4">{formatAED(item.price)}</p>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
                                 <Button
@@ -154,53 +157,56 @@ const CartPage = () => {
                         <DeliveryAreaSelector subtotal={subtotal} />
                         <PromoCodeInput />
                         <div className="border-t border-coffee-200 pt-4 space-y-2">
-                          <div className="flex justify-between text-sm text-coffee-700">
-                            <span>Subtotal</span>
-                            <span>AED {subtotal.toFixed(2)}</span>
-                          </div>
+                          <PriceSummaryRow className="text-sm text-coffee-700" label="Subtotal" value={formatAED(subtotal)} />
                           {globalDiscount > 0 && globalDiscountInfo && (
-                            <div className="flex justify-between text-sm text-green-600 font-medium">
-                              <span>Global discount ({globalDiscountInfo.percent}%)</span>
-                              <span>-AED {globalDiscount.toFixed(2)}</span>
-                            </div>
+                            <PriceSummaryRow
+                              className="text-sm font-medium text-green-600"
+                              label={`Global discount (${globalDiscountInfo.percent}%)`}
+                              value={`-${formatAED(globalDiscount)}`}
+                            />
                           )}
                           {codeDiscount > 0 && discountInfo && (
-                            <div className="flex justify-between text-sm text-green-700 font-medium">
-                              <span>Promo ({discountInfo.code} −{discountInfo.percent}%)</span>
-                              <span>−AED {codeDiscount.toFixed(2)}</span>
-                            </div>
+                            <PriceSummaryRow
+                              className="text-sm font-medium text-green-700"
+                              label={`Promo (${discountInfo.code} -${discountInfo.percent}%)`}
+                              value={`-${formatAED(codeDiscount)}`}
+                            />
                           )}
                           {loyaltyReward > 0 && (
-                            <div className="flex justify-between text-sm text-green-700 font-medium">
-                              <span>Free loyalty reward</span>
-                              <span>-AED {loyaltyReward.toFixed(2)}</span>
-                            </div>
+                            <PriceSummaryRow
+                              className="text-sm font-medium text-green-700"
+                              label="Free loyalty reward"
+                              value={`-${formatAED(loyaltyReward)}`}
+                            />
                           )}
-                          <div className="flex justify-between text-sm text-coffee-700">
-                            <span>Order type</span>
-                            <span>{getFulfillmentLabel(fulfillment)}</span>
-                          </div>
-                          <div className="flex justify-between text-sm text-coffee-700">
-                            <span>Delivery</span>
-                            <span>{fulfillment === 'dine_in' ? 'No fee' : delivery?.label || 'Choose area'}</span>
-                          </div>
+                          <PriceSummaryRow className="text-sm text-coffee-700" label="Order type" value={getFulfillmentLabel(fulfillment)} />
+                          <PriceSummaryRow className="text-sm text-coffee-700" label="Delivery" value={fulfillment === 'dine_in' ? 'No fee' : delivery?.label || 'Choose area'} />
                           {fulfillment === 'delivery' && delivery?.isTbc && (
                             <p className="text-xs font-medium text-coffee-600">
                               We'll confirm your delivery fee by phone.
                             </p>
                           )}
-                          <div className="flex justify-between text-lg font-semibold text-coffee-800 border-t border-coffee-200 pt-2">
-                            <span>Total</span>
-                            <span>AED {total.toFixed(2)}</span>
-                          </div>
+                          <PriceSummaryRow
+                            className="border-t border-coffee-200 pt-2 text-lg font-semibold text-coffee-800"
+                            label="Total"
+                            value={formatAED(total)}
+                          />
+                          {totalSavings > 0 && (
+                            <PriceSummaryRow
+                              className="text-sm font-medium text-green-700"
+                              label="You save"
+                              value={formatAED(totalSavings)}
+                            />
+                          )}
                         </div>
                       </div>
                       <Button
                         size="lg"
-                        className="w-full bg-coffee-600 hover:bg-coffee-700"
+                        className="flex w-full items-center justify-center gap-2 whitespace-nowrap bg-coffee-600 hover:bg-coffee-700"
                         onClick={proceedToCheckout}
                       >
-                        Proceed to Checkout
+                        <span>Proceed to Checkout</span>
+                        <span className="font-semibold tabular-nums">· {formatAED(total)}</span>
                       </Button>
                       <ShareCartPayment subtotal={subtotal} total={total} />
                       <Link to="/menu">

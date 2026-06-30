@@ -10,6 +10,8 @@ import { Loader2, ShoppingCart, AlertTriangle, CheckCircle2 } from 'lucide-react
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getVisitorId } from '@/hooks/useVisitorId';
+import PriceSummaryRow from '@/components/PriceSummaryRow';
+import { formatAED } from '@/lib/money';
 
 interface SharedCartItem {
   id: number;
@@ -60,7 +62,7 @@ const SharedPaymentPage = () => {
       if (error || !data) {
         setError('This payment link is invalid or has been removed.');
       } else {
-        const row = data as any as SharedPayment;
+        const row = data as unknown as SharedPayment;
         if (new Date(row.expires_at).getTime() < Date.now()) {
           setError('This payment link has expired.');
         } else {
@@ -112,10 +114,11 @@ const SharedPaymentPage = () => {
       } else {
         throw new Error('No payment URL returned');
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Please try again.';
       toast({
         title: 'Payment could not be started',
-        description: e?.message || 'Please try again.',
+        description: message,
         variant: 'destructive',
       });
       setPaying(false);
@@ -183,11 +186,11 @@ const SharedPaymentPage = () => {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-coffee-800 truncate">{item.name}</p>
                           <p className="text-sm text-coffee-600">
-                            AED {Number(item.price).toFixed(2)} × {item.quantity}
+                            {formatAED(Number(item.price))} x {item.quantity}
                           </p>
                         </div>
                         <p className="font-semibold text-coffee-800 whitespace-nowrap">
-                          AED {(Number(item.price) * item.quantity).toFixed(2)}
+                          {formatAED(Number(item.price) * item.quantity)}
                         </p>
                         {item.image ? (
                           <img
@@ -206,14 +209,12 @@ const SharedPaymentPage = () => {
                     ))}
                   </ul>
                   <div className="border-t border-coffee-200 mt-4 pt-4 space-y-1 text-sm">
-                    <div className="flex justify-between text-coffee-700">
-                      <span>Subtotal</span>
-                      <span>AED {Number(sp.subtotal).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-base font-semibold text-coffee-800 border-t border-coffee-200 pt-2">
-                      <span>Total to pay</span>
-                      <span>AED {Number(sp.total).toFixed(2)}</span>
-                    </div>
+                    <PriceSummaryRow className="text-coffee-700" label="Subtotal" value={formatAED(Number(sp.subtotal))} />
+                    <PriceSummaryRow
+                      className="border-t border-coffee-200 pt-2 text-base font-semibold text-coffee-800"
+                      label="Total to pay"
+                      value={formatAED(Number(sp.total))}
+                    />
                     <p className="text-xs text-coffee-500 pt-2">
                       Final amount may include loyalty discount applied at checkout.
                     </p>
@@ -262,14 +263,14 @@ const SharedPaymentPage = () => {
                     onClick={handlePay}
                     disabled={paying}
                     size="lg"
-                    className="w-full mt-5 bg-coffee-600 hover:bg-coffee-700"
+                    className="mt-5 h-auto min-h-11 w-full whitespace-normal break-words bg-coffee-600 py-3 leading-snug hover:bg-coffee-700"
                   >
                     {paying ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Redirecting…
                       </>
                     ) : (
-                      <>Pay AED {Number(sp.total).toFixed(2)}</>
+                      <>Pay {formatAED(Number(sp.total))}</>
                     )}
                   </Button>
                   <p className="text-xs text-coffee-500 mt-3 text-center">

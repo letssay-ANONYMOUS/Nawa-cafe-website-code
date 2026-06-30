@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useCart, CartItem } from '@/contexts/CartContext';
+import { formatAED } from '@/lib/money';
 
 interface Props {
   subtotal: number;
@@ -68,18 +69,19 @@ const ShareCartPayment = ({ subtotal, total }: Props) => {
           await navigator.share({
             title: 'Nawa Cafe — Pay for my order',
             text: senderName
-              ? `${senderName} would like you to pay for their Nawa Cafe order (AED ${total.toFixed(2)}).`
-              : `Please pay for this Nawa Cafe order (AED ${total.toFixed(2)}).`,
+              ? `${senderName} would like you to pay for their Nawa Cafe order (${formatAED(total)}).`
+              : `Please pay for this Nawa Cafe order (${formatAED(total)}).`,
             url,
           });
         } catch {
           /* user dismissed share sheet — link is still shown */
         }
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Please try again.';
       toast({
         title: 'Could not create share link',
-        description: e?.message || 'Please try again.',
+        description: message,
         variant: 'destructive',
       });
     } finally {
@@ -157,7 +159,7 @@ const ShareCartPayment = ({ subtotal, total }: Props) => {
             </div>
             <div className="rounded-md bg-cream-100 p-3 text-sm text-coffee-700">
               {cartItems.length} item{cartItems.length === 1 ? '' : 's'} • Total{' '}
-              <span className="font-semibold">AED {total.toFixed(2)}</span>
+              <span className="whitespace-nowrap font-semibold tabular-nums">{formatAED(total)}</span>
             </div>
             <DialogFooter>
               <Button

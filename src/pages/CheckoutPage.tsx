@@ -20,6 +20,8 @@ import DeliveryAreaSelector from '@/components/DeliveryAreaSelector';
 import { calculateDeliveryFee, getFulfillmentLabel, useDeliveryArea, useOrderFulfillment } from '@/lib/delivery';
 import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
 import { useLoyaltyReward } from '@/hooks/useLoyaltyReward';
+import { formatAED } from '@/lib/money';
+import PriceSummaryRow from '@/components/PriceSummaryRow';
 
 const FIXED_BRANCH = 'Stadhazza Branch';
 const CHECKOUT_FORM_KEY = 'nawa_checkout_form';
@@ -85,6 +87,7 @@ const CheckoutPage = () => {
   const codeDiscount = computeCodeDiscount(cartItems, subtotal, discountInfo);
   const delivery = calculateDeliveryFee(deliveryArea, subtotal, fulfillment);
   const deliveryFee = delivery?.fee ?? 0;
+  const totalSavings = round2(globalDiscount + codeDiscount + loyaltyReward);
   const total = round2(Math.max(0, subtotal - globalDiscount - codeDiscount - loyaltyReward) + deliveryFee);
   const itemCount = getCartCount();
   const selectedPaymentMethod = fulfillment === 'dine_in' ? formData.paymentMethod : 'online';
@@ -414,13 +417,13 @@ const CheckoutPage = () => {
                         type="submit"
                         size="lg"
                         disabled={loading}
-                        className="w-full bg-coffee-600 hover:bg-coffee-700"
+                        className="h-auto min-h-11 w-full whitespace-normal break-words bg-coffee-600 py-3 leading-snug hover:bg-coffee-700"
                       >
                         {loading
                           ? 'Processing...'
                           : selectedPaymentMethod === 'cash'
-                            ? `Place Cash Order - AED ${total.toFixed(2)}`
-                            : `Proceed to Payment - AED ${total.toFixed(2)}`}
+                            ? `Place Cash Order - ${formatAED(total)}`
+                            : `Proceed to Payment - ${formatAED(total)}`}
                       </Button>
                     </form>
                   </CardContent>
@@ -438,65 +441,63 @@ const CheckoutPage = () => {
                       <div className="space-y-4 mb-6">
                         <div className="space-y-3">
                           {cartItems.map((item) => (
-                            <div key={item.id} className="flex justify-between text-sm">
-                              <span className="text-coffee-700">{item.name} × {item.quantity}</span>
-                              <span className="text-coffee-700">AED {(item.price * item.quantity).toFixed(2)}</span>
-                            </div>
+                            <PriceSummaryRow
+                              key={item.id}
+                              className="text-sm text-coffee-700"
+                              label={`${item.name} x ${item.quantity}`}
+                              value={formatAED(item.price * item.quantity)}
+                            />
                           ))}
                         </div>
                         <div className="border-t border-coffee-200 pt-4 space-y-2">
                           <PromoCodeInput />
-                          <div className="flex justify-between text-sm text-coffee-700 pt-2">
-                            <span>Subtotal</span>
-                            <span>AED {subtotal.toFixed(2)}</span>
-                          </div>
+                          <PriceSummaryRow className="pt-2 text-sm text-coffee-700" label="Subtotal" value={formatAED(subtotal)} />
                           {globalDiscount > 0 && globalDiscountInfo && (
-                            <div className="flex justify-between text-sm text-green-600 font-medium">
-                              <span>Global discount ({globalDiscountInfo.percent}%)</span>
-                              <span>-AED {globalDiscount.toFixed(2)}</span>
-                            </div>
+                            <PriceSummaryRow
+                              className="text-sm font-medium text-green-600"
+                              label={`Global discount (${globalDiscountInfo.percent}%)`}
+                              value={`-${formatAED(globalDiscount)}`}
+                            />
                           )}
                           {codeDiscount > 0 && discountInfo && (
-                            <div className="flex justify-between text-sm text-green-700 font-medium">
-                              <span>Promo ({discountInfo.code} −{discountInfo.percent}%)</span>
-                              <span>−AED {codeDiscount.toFixed(2)}</span>
-                            </div>
+                            <PriceSummaryRow
+                              className="text-sm font-medium text-green-700"
+                              label={`Promo (${discountInfo.code} -${discountInfo.percent}%)`}
+                              value={`-${formatAED(codeDiscount)}`}
+                            />
                           )}
                           {loyaltyReward > 0 && (
-                            <div className="flex justify-between text-sm text-green-700 font-medium">
-                              <span>Free loyalty reward</span>
-                              <span>-AED {loyaltyReward.toFixed(2)}</span>
-                            </div>
+                            <PriceSummaryRow
+                              className="text-sm font-medium text-green-700"
+                              label="Free loyalty reward"
+                              value={`-${formatAED(loyaltyReward)}`}
+                            />
                           )}
-                          <div className="flex justify-between text-sm text-coffee-700">
-                            <span>Order type</span>
-                            <span>{getFulfillmentLabel(fulfillment)}</span>
-                          </div>
+                          <PriceSummaryRow className="text-sm text-coffee-700" label="Order type" value={getFulfillmentLabel(fulfillment)} />
                           {fulfillment === 'dine_in' && (
                             <>
-                              <div className="flex justify-between text-sm text-coffee-700">
-                                <span>Table</span>
-                                <span>{formData.tableNumber.trim() || 'Enter table number'}</span>
-                              </div>
-                              <div className="flex justify-between text-sm text-coffee-700">
-                                <span>Payment</span>
-                                <span>{selectedPaymentMethod === 'cash' ? 'Cash at cafe' : 'Online'}</span>
-                              </div>
+                              <PriceSummaryRow className="text-sm text-coffee-700" label="Table" value={formData.tableNumber.trim() || 'Enter table number'} />
+                              <PriceSummaryRow className="text-sm text-coffee-700" label="Payment" value={selectedPaymentMethod === 'cash' ? 'Cash at cafe' : 'Online'} />
                             </>
                           )}
-                          <div className="flex justify-between text-sm text-coffee-700">
-                            <span>Delivery</span>
-                            <span>{fulfillment === 'dine_in' ? 'No fee' : delivery?.label || 'Choose area'}</span>
-                          </div>
+                          <PriceSummaryRow className="text-sm text-coffee-700" label="Delivery" value={fulfillment === 'dine_in' ? 'No fee' : delivery?.label || 'Choose area'} />
                           {fulfillment === 'delivery' && delivery?.isTbc && (
                             <p className="text-xs font-medium text-coffee-600">
                               We'll confirm your delivery fee by phone.
                             </p>
                           )}
-                          <div className="flex justify-between text-lg font-semibold text-coffee-800 border-t border-coffee-200 pt-2">
-                            <span>Total</span>
-                            <span>AED {total.toFixed(2)}</span>
-                          </div>
+                          <PriceSummaryRow
+                            className="border-t border-coffee-200 pt-2 text-lg font-semibold text-coffee-800"
+                            label="Total"
+                            value={formatAED(total)}
+                          />
+                          {totalSavings > 0 && (
+                            <PriceSummaryRow
+                              className="text-sm font-medium text-green-700"
+                              label="You save"
+                              value={formatAED(totalSavings)}
+                            />
+                          )}
                         </div>
                       </div>
                     )}
