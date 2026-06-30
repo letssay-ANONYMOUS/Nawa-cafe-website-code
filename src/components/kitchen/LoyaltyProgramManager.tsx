@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Gift, Save } from 'lucide-react';
 import { useMenuCards, useMenuSections, defaultSectionIdForCard } from '@/hooks/useMenuCards';
-import { useStoreCategories } from '@/hooks/useStoreCategories';
 import { useLoyaltyProgram, type LoyaltyProgramConfig } from '@/hooks/useLoyaltyProgram';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,12 +10,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-
-interface StoreProductOption {
-  id: string;
-  product_name: string;
-  category: string;
-}
 
 const toggleValue = (values: string[], value: string) => (
   values.includes(value) ? values.filter((item) => item !== value) : [...values, value]
@@ -28,19 +20,9 @@ export function LoyaltyProgramManager() {
   const { config, loading, save, saving } = useLoyaltyProgram();
   const { data: menuCards = [] } = useMenuCards();
   const { data: menuSections = [] } = useMenuSections();
-  const { data: storeCategories = [] } = useStoreCategories();
-  const [storeProducts, setStoreProducts] = useState<StoreProductOption[]>([]);
   const [draft, setDraft] = useState<LoyaltyProgramConfig>(config);
 
   useEffect(() => setDraft(config), [config]);
-
-  useEffect(() => {
-    supabase
-      .from('store_products')
-      .select('id, product_name, category')
-      .order('sort_order', { ascending: true })
-      .then(({ data }) => setStoreProducts((data as StoreProductOption[] | null) ?? []));
-  }, []);
 
   const menuCardOptions = useMemo(() => menuCards
     .filter((card): card is typeof card & { name: string } => Boolean(card.name))
@@ -50,36 +32,34 @@ export function LoyaltyProgramManager() {
       sectionId: card.section || defaultSectionIdForCard(card.id, menuSections),
     })), [menuCards, menuSections]);
 
-  const hasTargets = draft.categoryTargets.length > 0 || draft.itemTargets.length > 0;
-
+  const hasStampGivers = draft.categoryTargets.length > 0 || draft.itemTargets.length > 0;
   const handleSave = async () => {
     if (!draft.name.trim()) {
       toast({ variant: 'destructive', title: 'Program name required' });
       return;
     }
     if (!Number.isInteger(Number(draft.threshold)) || Number(draft.threshold) < 1) {
-      toast({ variant: 'destructive', title: 'Invalid target', description: 'Orders required must be at least 1.' });
+      toast({ variant: 'destructive', title: 'Invalid target', description: 'Stamps required must be at least 1.' });
       return;
     }
-    if (draft.enabled && !hasTargets) {
+    if (draft.enabled && !hasStampGivers) {
       toast({
         variant: 'destructive',
-        title: 'Choose eligible products',
-        description: 'Select at least one category or individual card before enabling rewards.',
+        title: 'Choose stamp-giving cards',
+        description: 'Select at least one menu category or card that gives a stamp before enabling the program.',
       });
       return;
     }
-
     try {
       await save({ ...draft, threshold: Number(draft.threshold), rewardQuantity: 1 });
       toast({
-        title: 'Loyalty program updated',
-        description: 'Customer progress and eligible products were recalculated.',
+        title: 'Stamp program updated',
+        description: 'Customer progress was recalculated.',
       });
     } catch (error: unknown) {
       toast({
         variant: 'destructive',
-        title: 'Could not save loyalty program',
+        title: 'Could not save stamp program',
         description: error instanceof Error ? error.message : 'Please try again.',
       });
     }
@@ -92,10 +72,11 @@ export function LoyaltyProgramManager() {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Gift className="h-5 w-5 text-primary" />
-              Loyalty program
+              Stamp card program
             </CardTitle>
             <CardDescription className="mt-1">
-              Choose qualifying categories or cards and how many purchases unlock one free eligible item.
+              Menu only. Choose which cards give a stamp when ordered, and which cards customers can redeem for
+              free once they collect enough stamps.
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -122,7 +103,7 @@ export function LoyaltyProgramManager() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="loyalty-threshold">Items required for one free item</Label>
+            <Label htmlFor="loyalty-threshold">Stamps required for one free item</Label>
             <Input
               id="loyalty-threshold"
               type="number"
@@ -139,92 +120,72 @@ export function LoyaltyProgramManager() {
         </div>
 
         <div className="rounded-md border bg-muted/20 p-4 text-sm">
-          Customers will see: <strong>Buy {draft.threshold || 1} eligible items, get 1 free.</strong>
+          Customers will see: <strong>Collect {draft.threshold || 1} stamps, get 1 free item.</strong>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <TargetList title="Menu categories">
-            {menuSections.map((section) => {
-              const value = `menu:${section.id}`.toLowerCase();
-              return (
-                <TargetOption
-                  key={value}
-                  id={`loyalty-${value}`}
-                  label={section.name}
-                  checked={draft.categoryTargets.includes(value)}
-                  onToggle={() => setDraft((current) => ({
-                    ...current,
-                    categoryTargets: toggleValue(current.categoryTargets, value),
-                  }))}
-                />
-              );
-            })}
-          </TargetList>
+        <TargetList title="Menu categories that give a stamp">
+          {menuSections.map((section) => {
+            const value = `menu:${section.id}`.toLowerCase();
+            return (
+              <TargetOption
+                key={value}
+                id={`loyalty-stamp-${value}`}
+                label={section.name}
+                checked={draft.categoryTargets.includes(value)}
+                onToggle={() => setDraft((current) => ({
+                  ...current,
+                  categoryTargets: toggleValue(current.categoryTargets, value),
+                }))}
+              />
+            );
+          })}
+        </TargetList>
 
-          <TargetList title="Store categories">
-            {storeCategories.map((category) => {
-              const value = `store:${category.id}`.toLowerCase();
-              return (
-                <TargetOption
-                  key={value}
-                  id={`loyalty-${value}`}
-                  label={category.label}
-                  checked={draft.categoryTargets.includes(value)}
-                  onToggle={() => setDraft((current) => ({
-                    ...current,
-                    categoryTargets: toggleValue(current.categoryTargets, value),
-                  }))}
-                />
-              );
-            })}
-          </TargetList>
-
-          <TargetList title="Individual menu cards">
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold">Individual menu cards</h3>
+          <p className="text-xs text-muted-foreground">
+            Each card has two Beanz-style flags. If no redeemable cards are selected, customers can redeem from the
+            same menu cards that give stamps.
+          </p>
+          <div className="max-h-[34rem] space-y-3 overflow-y-auto rounded-lg border bg-background p-3">
             {menuCardOptions.map((card) => {
-              const value = `menu:${card.name}`.toLowerCase();
+              const stampValue = `menu:${card.name}`.toLowerCase();
+              const sectionName = menuSections.find((section) => section.id === card.sectionId)?.name;
+              const categoryValue = `menu:${card.sectionId}`.toLowerCase();
+              const categoryGivesStamp = draft.categoryTargets.includes(categoryValue);
+              const givesStamp = draft.itemTargets.includes(stampValue);
+              const isRedeemable = draft.redeemableItemTargets.includes(stampValue);
               return (
-                <TargetOption
-                  key={`${card.id}-${value}`}
-                  id={`loyalty-menu-card-${card.id}`}
-                  label={card.name}
-                  detail={menuSections.find((section) => section.id === card.sectionId)?.name}
-                  checked={draft.itemTargets.includes(value)}
-                  onToggle={() => setDraft((current) => ({
+                <StampCardRow
+                  key={card.id}
+                  cardId={card.id}
+                  name={card.name}
+                  sectionName={sectionName}
+                  givesStamp={givesStamp || categoryGivesStamp}
+                  stampLockedByCategory={categoryGivesStamp}
+                  isRedeemable={isRedeemable}
+                  onStampToggle={() => setDraft((current) => ({
                     ...current,
-                    itemTargets: toggleValue(current.itemTargets, value),
+                    itemTargets: toggleValue(current.itemTargets, stampValue),
+                  }))}
+                  onRedeemToggle={() => setDraft((current) => ({
+                    ...current,
+                    redeemableItemTargets: toggleValue(current.redeemableItemTargets, stampValue),
                   }))}
                 />
               );
             })}
-          </TargetList>
-
-          <TargetList title="Individual store cards">
-            {storeProducts.map((product) => {
-              const value = `store:${product.product_name}`.toLowerCase();
-              return (
-                <TargetOption
-                  key={product.id}
-                  id={`loyalty-store-card-${product.id}`}
-                  label={product.product_name}
-                  detail={storeCategories.find((category) => category.id === product.category)?.label}
-                  checked={draft.itemTargets.includes(value)}
-                  onToggle={() => setDraft((current) => ({
-                    ...current,
-                    itemTargets: toggleValue(current.itemTargets, value),
-                  }))}
-                />
-              );
-            })}
-          </TargetList>
+          </div>
         </div>
 
         <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
-            {draft.categoryTargets.length} categories and {draft.itemTargets.length} individual cards selected.
+            {draft.categoryTargets.length + draft.itemTargets.length} stamp-giving selections,{' '}
+            {draft.redeemableItemTargets.length} redeemable selections.
           </p>
           <Button onClick={handleSave} disabled={loading || saving} className="gap-2">
             <Save className="h-4 w-4" />
-            {saving ? 'Saving...' : 'Save loyalty program'}
+            {saving ? 'Saving...' : 'Save stamp program'}
           </Button>
         </div>
       </CardContent>
@@ -232,11 +193,80 @@ export function LoyaltyProgramManager() {
   );
 }
 
+function StampCardRow({
+  cardId,
+  name,
+  sectionName,
+  givesStamp,
+  stampLockedByCategory,
+  isRedeemable,
+  onStampToggle,
+  onRedeemToggle,
+}: {
+  cardId: number;
+  name: string;
+  sectionName?: string;
+  givesStamp: boolean;
+  stampLockedByCategory: boolean;
+  isRedeemable: boolean;
+  onStampToggle: () => void;
+  onRedeemToggle: () => void;
+}) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-coffee-200">
+      <div className="mb-3 min-w-0">
+        <p className="truncate text-sm font-semibold leading-5 text-coffee-900">{name}</p>
+        {sectionName && <p className="truncate text-xs text-muted-foreground">{sectionName}</p>}
+      </div>
+
+      <div className="space-y-3">
+        <label
+          htmlFor={`loyalty-stamp-card-${cardId}`}
+          className={`flex cursor-pointer items-center gap-3 rounded-md p-1.5 transition-colors ${
+            stampLockedByCategory ? 'cursor-default bg-sky-50/70' : 'hover:bg-muted/60'
+          }`}
+        >
+          <Checkbox
+            id={`loyalty-stamp-card-${cardId}`}
+            aria-label={`${name} gives a stamp`}
+            checked={givesStamp}
+            disabled={stampLockedByCategory}
+            onCheckedChange={onStampToggle}
+            className="h-8 w-8 rounded-md border-2 border-slate-400 text-white data-[state=checked]:border-sky-300 data-[state=checked]:bg-sky-300 data-[state=checked]:text-white"
+          />
+          <span className="min-w-0 text-base leading-6 text-slate-600">
+            This item will give a stamp
+            {stampLockedByCategory && (
+              <span className="ml-1 text-xs text-slate-400">(enabled by category)</span>
+            )}
+          </span>
+        </label>
+
+        <label
+          htmlFor={`loyalty-redeem-card-${cardId}`}
+          className="flex cursor-pointer items-center gap-3 rounded-md p-1.5 transition-colors hover:bg-muted/60"
+        >
+          <Checkbox
+            id={`loyalty-redeem-card-${cardId}`}
+            aria-label={`${name} is redeemable with stamps`}
+            checked={isRedeemable}
+            onCheckedChange={onRedeemToggle}
+            className="h-8 w-8 rounded-md border-2 border-slate-400 text-white data-[state=checked]:border-sky-300 data-[state=checked]:bg-sky-300 data-[state=checked]:text-white"
+          />
+          <span className="min-w-0 text-base leading-6 text-slate-600">
+            Customers can redeem this item using stamp card
+          </span>
+        </label>
+      </div>
+    </div>
+  );
+}
+
 function TargetList({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
       <h3 className="text-sm font-semibold">{title}</h3>
-      <div className="h-56 space-y-1 overflow-y-auto rounded-md border bg-background p-2">
+      <div className="h-40 space-y-1 overflow-y-auto rounded-md border bg-background p-2">
         {children}
       </div>
     </div>

@@ -9,6 +9,9 @@ export interface LoyaltyProgramConfig {
   rewardQuantity: number;
   categoryTargets: string[];
   itemTargets: string[];
+  // Beanz two-flag model: menu cards a customer may claim FREE once enough
+  // stamps are collected. Independent of the earn set (categoryTargets/itemTargets).
+  redeemableItemTargets: string[];
 }
 
 const QUERY_KEY = ['loyalty-program'] as const;
@@ -19,6 +22,7 @@ const SETTING_KEYS = [
   'loyalty_reward_qty',
   'loyalty_eligible_categories',
   'loyalty_eligible_items',
+  'loyalty_redeemable_items',
 ] as const;
 
 const DEFAULT_CONFIG: LoyaltyProgramConfig = {
@@ -28,6 +32,7 @@ const DEFAULT_CONFIG: LoyaltyProgramConfig = {
   rewardQuantity: 1,
   categoryTargets: [],
   itemTargets: [],
+  redeemableItemTargets: [],
 };
 
 function parseTargets(value: string | undefined): string[] {
@@ -61,6 +66,7 @@ async function fetchLoyaltyProgram(): Promise<LoyaltyProgramConfig> {
       : DEFAULT_CONFIG.rewardQuantity,
     categoryTargets: parseTargets(settings.get('loyalty_eligible_categories')),
     itemTargets: parseTargets(settings.get('loyalty_eligible_items')),
+    redeemableItemTargets: parseTargets(settings.get('loyalty_redeemable_items')),
   };
 }
 
@@ -104,6 +110,7 @@ export function useLoyaltyProgram() {
         rewardQuantity: Math.max(1, Math.floor(config.rewardQuantity)),
         categoryTargets: [...new Set(config.categoryTargets.map((value) => value.toLowerCase()))],
         itemTargets: [...new Set(config.itemTargets.map((value) => value.toLowerCase()))],
+        redeemableItemTargets: [...new Set(config.redeemableItemTargets.map((value) => value.toLowerCase()))],
       };
       const updatedAt = new Date().toISOString();
       const rows = [
@@ -113,6 +120,7 @@ export function useLoyaltyProgram() {
         { setting_key: 'loyalty_reward_qty', setting_value: String(normalized.rewardQuantity), updated_at: updatedAt },
         { setting_key: 'loyalty_eligible_categories', setting_value: JSON.stringify(normalized.categoryTargets), updated_at: updatedAt },
         { setting_key: 'loyalty_eligible_items', setting_value: JSON.stringify(normalized.itemTargets), updated_at: updatedAt },
+        { setting_key: 'loyalty_redeemable_items', setting_value: JSON.stringify(normalized.redeemableItemTargets), updated_at: updatedAt },
       ];
       const { error } = await supabase.from('kitchen_settings').upsert(rows, { onConflict: 'setting_key' });
       if (error) throw error;

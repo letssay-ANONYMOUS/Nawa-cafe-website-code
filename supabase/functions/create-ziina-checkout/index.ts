@@ -403,23 +403,28 @@ serve(async (req) => {
       }
     }
 
-    // ===== LOYALTY FREE DRINK (buy N beverages, get the next free) =====
-    // Auto-applied for signed-in customers who have a free drink banked and an
-    // eligible beverage in the cart. Not applied to shared-payment links.
+    // ===== LOYALTY FREE ITEM (collect N stamps, claim a redeemable card free) =====
+    // Auto-applied for signed-in customers who have a banked free reward and a
+    // redeemable MENU card in the cart. Stamps are earned on the "gives a stamp"
+    // (eligible) set; the free item is chosen from the separate "redeemable" set
+    // — Beanz-style two-flag model. Store products never earn or redeem. Not
+    // applied to shared-payment links.
     let loyaltyFreeDrinkAmount = 0;
     if (userId && !sharedPaymentId) {
       try {
         const { data: settingRows } = await supabase
           .from("kitchen_settings")
           .select("setting_key, setting_value")
-        .in("setting_key", ["loyalty_enabled", "loyalty_eligible_categories", "loyalty_eligible_items"]);
+        .in("setting_key", ["loyalty_enabled", "loyalty_eligible_categories", "loyalty_eligible_items", "loyalty_redeemable_items"]);
         const settings = new Map((settingRows || []).map((r: KitchenSettingRow) => [r.setting_key, r.setting_value]));
         const enabled = (settings.get("loyalty_enabled") ?? "true") !== "false";
 
         let eligibleCategories: string[] = [];
         let eligibleItems: string[] = [];
+        let redeemableItems: string[] = [];
         try { eligibleCategories = JSON.parse(settings.get("loyalty_eligible_categories") || "[]"); } catch { eligibleCategories = []; }
         try { eligibleItems = JSON.parse(settings.get("loyalty_eligible_items") || "[]"); } catch { eligibleItems = []; }
+        try { redeemableItems = JSON.parse(settings.get("loyalty_redeemable_items") || "[]"); } catch { redeemableItems = []; }
 
         if (enabled && (eligibleCategories.length > 0 || eligibleItems.length > 0)) {
           const { data: loyalty } = await supabase
@@ -429,12 +434,17 @@ serve(async (req) => {
             .maybeSingle();
 
           if ((loyalty?.free_drinks_available ?? 0) > 0) {
-            // Free drink = the cheapest eligible beverage unit in the cart.
+            // Redemption pool = redeemable menu cards. When no redeemable cards
+            // are configured, fall back to the stamp (earn) set so existing
+            // programs keep working. Menu only — store is never redeemable.
+            const useRedeemable = redeemableItems.length > 0;
             const prices = validatedItems
               .filter((item) => {
-                const categoryKey = `${item.source}:${item.category || ""}`.toLowerCase();
-                const itemKey = `${item.source}:${item.name}`.toLowerCase();
-                return eligibleCategories.includes(categoryKey) || eligibleItems.includes(itemKey);
+                if (item.source !== "menu") return false;
+                const categoryKey = `menu:${item.category || ""}`.toLowerCase();
+                const itemKey = `menu:${item.name}`.toLowerCase();
+                if (useRedeemable) return redeemableItems.includes(itemKey);
+                return eligibleItems.includes(itemKey) || eligibleCategories.includes(categoryKey);
               })
               .map((it) => Number(it.price))
               .filter((p) => Number.isFinite(p) && p > 0);
@@ -444,7 +454,7 @@ serve(async (req) => {
           }
         }
       } catch (e) {
-        console.warn("Loyalty free-drink check failed (continuing without it):", e);
+        console.warn("Loyalty free-item check failed (continuing without it):", e);
       }
     }
 

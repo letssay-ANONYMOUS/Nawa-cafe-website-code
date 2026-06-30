@@ -7,8 +7,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Banknote, CreditCard, Hash, Lock, Mail, MapPin } from 'lucide-react';
+import { Banknote, CreditCard, Hash, Lock, Mail, MapPin, ReceiptText } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { supabase } from '@/integrations/supabase/client';
 import { getVisitorId } from '@/hooks/useVisitorId';
@@ -60,6 +61,7 @@ const CheckoutPage = () => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState(loadStoredForm);
   const [deliveryError, setDeliveryError] = useState('');
+  const [finalBillOpen, setFinalBillOpen] = useState(false);
   const checkoutStartTracked = useRef(false);
   const { area: deliveryArea } = useDeliveryArea();
   const { fulfillment } = useOrderFulfillment();
@@ -116,16 +118,14 @@ const CheckoutPage = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const validateCheckoutForm = () => {
     if (cartItems.length === 0) {
       toast({
         title: "Cart is Empty",
         description: "Please add items to your cart before checkout.",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     if (fulfillment === 'delivery' && !deliveryArea) {
@@ -135,7 +135,7 @@ const CheckoutPage = () => {
         description: 'Please select your delivery area before checkout.',
         variant: 'destructive',
       });
-      return;
+      return false;
     }
 
     if (fulfillment === 'dine_in' && !formData.tableNumber.trim()) {
@@ -144,10 +144,21 @@ const CheckoutPage = () => {
         description: 'Please enter your table number so staff can bring the order to you.',
         variant: 'destructive',
       });
-      return;
+      return false;
     }
 
     setDeliveryError('');
+    return true;
+  };
+
+  const handleReviewBill = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateCheckoutForm()) return;
+    setFinalBillOpen(true);
+  };
+
+  const handleConfirmFinalBill = async () => {
+    if (loading || !validateCheckoutForm()) return;
 
     setLoading(true);
 
@@ -272,7 +283,7 @@ const CheckoutPage = () => {
                       <div className="text-sm text-coffee-700 ml-7">{FIXED_BRANCH}</div>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleReviewBill} className="space-y-6">
                       <DeliveryAreaSelector subtotal={subtotal} error={deliveryError} />
 
                       {fulfillment === 'dine_in' && (
@@ -419,11 +430,7 @@ const CheckoutPage = () => {
                         disabled={loading}
                         className="h-auto min-h-11 w-full whitespace-normal break-words bg-coffee-600 py-3 leading-snug hover:bg-coffee-700"
                       >
-                        {loading
-                          ? 'Processing...'
-                          : selectedPaymentMethod === 'cash'
-                            ? `Place Cash Order - ${formatAED(total)}`
-                            : `Proceed to Payment - ${formatAED(total)}`}
+                        {loading ? 'Processing...' : `Review final bill - ${formatAED(total)}`}
                       </Button>
                     </form>
                   </CardContent>
@@ -508,6 +515,105 @@ const CheckoutPage = () => {
           </div>
         </div>
       </section>
+
+      <Dialog open={finalBillOpen} onOpenChange={(open) => !loading && setFinalBillOpen(open)}>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-lg p-5 sm:p-6">
+          <DialogHeader className="space-y-2 text-left">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-coffee-100 text-coffee-700">
+              <ReceiptText className="h-5 w-5" />
+            </div>
+            <DialogTitle className="text-2xl text-coffee-800">Final bill</DialogTitle>
+            <DialogDescription className="leading-6">
+              Check the full amount before your order is sent.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            <div className="rounded-lg border border-coffee-200 bg-cream-50 p-4">
+              <div className="space-y-3">
+                {cartItems.map((item) => (
+                  <PriceSummaryRow
+                    key={item.id}
+                    className="text-sm text-coffee-800"
+                    label={`${item.name} x ${item.quantity}`}
+                    value={formatAED(item.price * item.quantity)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2 rounded-lg border border-coffee-200 p-4">
+              <PriceSummaryRow className="text-sm text-coffee-700" label="Subtotal" value={formatAED(subtotal)} />
+              {globalDiscount > 0 && globalDiscountInfo && (
+                <PriceSummaryRow
+                  className="text-sm font-medium text-green-700"
+                  label={`Global discount (${globalDiscountInfo.percent}%)`}
+                  value={`-${formatAED(globalDiscount)}`}
+                />
+              )}
+              {codeDiscount > 0 && discountInfo && (
+                <PriceSummaryRow
+                  className="text-sm font-medium text-green-700"
+                  label={`Promo (${discountInfo.code} -${discountInfo.percent}%)`}
+                  value={`-${formatAED(codeDiscount)}`}
+                />
+              )}
+              {loyaltyReward > 0 && (
+                <PriceSummaryRow
+                  className="text-sm font-medium text-green-700"
+                  label="Stamp card reward"
+                  value={`-${formatAED(loyaltyReward)}`}
+                />
+              )}
+              <PriceSummaryRow className="text-sm text-coffee-700" label="Order type" value={getFulfillmentLabel(fulfillment)} />
+              {fulfillment === 'dine_in' && (
+                <>
+                  <PriceSummaryRow className="text-sm text-coffee-700" label="Table" value={formData.tableNumber.trim()} />
+                  <PriceSummaryRow className="text-sm text-coffee-700" label="Payment" value={selectedPaymentMethod === 'cash' ? 'Cash at cafe' : 'Online'} />
+                </>
+              )}
+              <PriceSummaryRow className="text-sm text-coffee-700" label="Delivery" value={fulfillment === 'dine_in' ? 'No fee' : delivery?.label || 'Choose area'} />
+              {fulfillment === 'delivery' && delivery?.isTbc && (
+                <p className="text-xs font-medium text-coffee-600">
+                  We'll confirm your delivery fee by phone before final delivery confirmation.
+                </p>
+              )}
+              {totalSavings > 0 && (
+                <PriceSummaryRow className="text-sm font-medium text-green-700" label="You save" value={formatAED(totalSavings)} />
+              )}
+              <PriceSummaryRow
+                className="border-t border-coffee-200 pt-3 text-xl font-semibold text-coffee-900"
+                label="Total to pay"
+                value={formatAED(total)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="mt-2 flex flex-col gap-2 sm:flex-col">
+            <Button
+              type="button"
+              disabled={loading}
+              className="h-auto min-h-11 w-full whitespace-normal bg-coffee-600 py-3 hover:bg-coffee-700"
+              onClick={handleConfirmFinalBill}
+            >
+              {loading
+                ? 'Processing...'
+                : selectedPaymentMethod === 'cash'
+                  ? `Confirm cash order - ${formatAED(total)}`
+                  : `Confirm and pay - ${formatAED(total)}`}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={loading}
+              className="h-11 w-full"
+              onClick={() => setFinalBillOpen(false)}
+            >
+              Edit order
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

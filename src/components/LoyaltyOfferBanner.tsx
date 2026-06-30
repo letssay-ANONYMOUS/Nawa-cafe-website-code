@@ -19,9 +19,9 @@ export function LoyaltyOfferBanner({ source }: { source?: 'menu' | 'store' }) {
         </span>
         <div className="min-w-0 text-sm leading-5">
           <span className="font-semibold">{config.name}: </span>
-          Buy {config.threshold} eligible items and get 1 free.
+          Collect {config.threshold} stamps and get 1 item free.
           <span className="ml-1 text-coffee-600">
-            Eligible: {visibleTargets.join(', ')}{additionalCount > 0 ? ` +${additionalCount} more` : ''}.
+            Gives a stamp: {visibleTargets.join(', ')}{additionalCount > 0 ? ` +${additionalCount} more` : ''}.
           </span>
         </div>
       </div>

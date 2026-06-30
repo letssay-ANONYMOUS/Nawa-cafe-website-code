@@ -43,13 +43,19 @@ export function useLoyaltyReward(cartItems: CartItem[], userId?: string) {
         identities.set(product.product_name.toLowerCase(), { source: 'store', category: product.category });
       }
 
+      // Mirrors create-ziina-checkout: redemption pool is the redeemable menu
+      // card set (Beanz-style), falling back to the stamp (earn) set when no
+      // redeemable cards are configured. Menu only — store never redeems.
+      const useRedeemable = config.redeemableItemTargets.length > 0;
       const eligiblePrices = cartItems
         .filter((item) => {
           const name = item.name.toLowerCase();
           const identity = identities.get(name);
-          if (!identity) return false;
-          return config.itemTargets.includes(`${identity.source}:${name}`)
-            || config.categoryTargets.includes(`${identity.source}:${identity.category}`.toLowerCase());
+          if (!identity || identity.source !== 'menu') return false;
+          const itemKey = `menu:${name}`;
+          if (useRedeemable) return config.redeemableItemTargets.includes(itemKey);
+          return config.itemTargets.includes(itemKey)
+            || config.categoryTargets.includes(`menu:${identity.category}`.toLowerCase());
         })
         .map((item) => item.price)
         .filter((price) => Number.isFinite(price) && price > 0);
