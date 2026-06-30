@@ -405,10 +405,10 @@ serve(async (req) => {
 
     // ===== LOYALTY FREE ITEM (collect N stamps, claim a redeemable card free) =====
     // Auto-applied for signed-in customers who have a banked free reward and a
-    // redeemable MENU card in the cart. Stamps are earned on the "gives a stamp"
-    // (eligible) set; the free item is chosen from the separate "redeemable" set
-    // — Beanz-style two-flag model. Store products never earn or redeem. Not
-    // applied to shared-payment links.
+    // stamp-giving or redeemable MENU card in the cart. Stamps are earned on
+    // the "gives a stamp" set. The free item can be any stamped card; the
+    // separate "redeemable" set can add redemption-only cards. Store products
+    // never earn or redeem. Not applied to shared-payment links.
     let loyaltyFreeDrinkAmount = 0;
     if (userId && !sharedPaymentId) {
       try {
@@ -434,17 +434,17 @@ serve(async (req) => {
             .maybeSingle();
 
           if ((loyalty?.free_drinks_available ?? 0) > 0) {
-            // Redemption pool = redeemable menu cards. When no redeemable cards
-            // are configured, fall back to the stamp (earn) set so existing
-            // programs keep working. Menu only — store is never redeemable.
-            const useRedeemable = redeemableItems.length > 0;
+            // Redemption pool = any stamp-giving card plus any explicitly
+            // redeemable menu cards. A customer can buy stamped cards across
+            // the menu and use the banked reward on a different stamped card.
             const prices = validatedItems
               .filter((item) => {
                 if (item.source !== "menu") return false;
                 const categoryKey = `menu:${item.category || ""}`.toLowerCase();
                 const itemKey = `menu:${item.name}`.toLowerCase();
-                if (useRedeemable) return redeemableItems.includes(itemKey);
-                return eligibleItems.includes(itemKey) || eligibleCategories.includes(categoryKey);
+                return redeemableItems.includes(itemKey)
+                  || eligibleItems.includes(itemKey)
+                  || eligibleCategories.includes(categoryKey);
               })
               .map((it) => Number(it.price))
               .filter((p) => Number.isFinite(p) && p > 0);

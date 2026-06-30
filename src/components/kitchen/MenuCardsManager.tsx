@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -41,6 +42,7 @@ import {
   type MenuCard,
   type MenuSection,
 } from "@/hooks/useMenuCards";
+import { useLoyaltyProgram, type LoyaltyProgramConfig } from "@/hooks/useLoyaltyProgram";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const SECTION_KEY = "kitchen_menu_card_section";
@@ -53,6 +55,8 @@ interface EditForm {
   image_url: string;
   section: string; // section id, "" = default
   card_number: string; // editable card id
+  gives_stamp: boolean;
+  redeemable_with_stamp: boolean;
 }
 
 interface DeletedMenuCategory {
@@ -78,6 +82,27 @@ const sectionNameById = (id: string | null, sections: MenuSection[]): string => 
 
 const effectiveSectionId = (card: MenuCard, sections: MenuSection[]): string | null =>
   card.section || defaultSectionIdForCard(card.id, sections);
+
+const loyaltyCardKey = (name: string | null | undefined) => {
+  const value = name?.trim().toLowerCase();
+  return value ? `menu:${value}` : "";
+};
+
+const updateLoyaltyTargets = (
+  values: string[],
+  oldKey: string,
+  newKey: string,
+  enabled: boolean,
+) => {
+  const normalizedOld = oldKey.toLowerCase();
+  const normalizedNew = newKey.toLowerCase();
+  const next = values.filter((value) => {
+    const normalizedValue = value.toLowerCase();
+    return normalizedValue !== normalizedOld && normalizedValue !== normalizedNew;
+  });
+  if (enabled && normalizedNew) next.push(normalizedNew);
+  return [...new Set(next)];
+};
 
 const getCardIdFromPath = (pathname: string): number | null => {
   const m = pathname.match(/\/admin\/kitchen\/menu-cards\/(\d+)/);
@@ -110,6 +135,12 @@ async function fetchDeletedMenuCategories(): Promise<DeletedMenuCategory[]> {
 export function MenuCardsManager() {
   const { data: cards = [], isLoading, refetch } = useMenuCards();
   const { data: sections = menuSections, isLoading: isSectionsLoading } = useMenuSections();
+  const {
+    config: loyaltyProgram,
+    loading: isLoyaltyLoading,
+    save: saveLoyaltyProgram,
+    saving: isSavingLoyalty,
+  } = useLoyaltyProgram();
   const { data: deletedCategories = [], isLoading: isDeletedCategoriesLoading } = useQuery({
     queryKey: ["deleted-menu-categories"],
     queryFn: fetchDeletedMenuCategories,
@@ -186,8 +217,20 @@ export function MenuCardsManager() {
       image_url: selectedCard.image_url ?? "",
       section: selectedCard.section ?? "",
       card_number: String(selectedCard.id),
+      gives_stamp: false,
+      redeemable_with_stamp: false,
     });
   }, [selectedCard]);
+
+  useEffect(() => {
+    if (!selectedCard) return;
+    const selectedKey = loyaltyCardKey(selectedCard.name);
+    setForm((current) => current ? {
+      ...current,
+      gives_stamp: loyaltyProgram.itemTargets.includes(selectedKey),
+      redeemable_with_stamp: loyaltyProgram.redeemableItemTargets.includes(selectedKey),
+    } : current);
+  }, [selectedCard, loyaltyProgram.itemTargets, loyaltyProgram.redeemableItemTargets]);
 
   const filtered = useMemo(() => {
     let list = cards;
@@ -248,6 +291,11 @@ export function MenuCardsManager() {
       if (!Number.isFinite(desiredId) || desiredId < 1) {
         throw new Error("Card number must be a positive integer.");
       }
+      const oldLoyaltyKey = loyaltyCardKey(selectedCard.name);
+      const newLoyaltyKey = loyaltyCardKey(form.name);
+      if ((form.gives_stamp || form.redeemable_with_stamp) && !newLoyaltyKey) {
+        throw new Error("Add a card name before enabling stamp options.");
+      }
 
       let finalId = selectedCard.id;
 
@@ -272,8 +320,25 @@ export function MenuCardsManager() {
         })
         .eq("id", finalId);
       if (error) throw error;
+      const updatedLoyaltyProgram: LoyaltyProgramConfig = {
+        ...loyaltyProgram,
+        itemTargets: updateLoyaltyTargets(
+          loyaltyProgram.itemTargets,
+          oldLoyaltyKey,
+          newLoyaltyKey,
+          form.gives_stamp,
+        ),
+        redeemableItemTargets: updateLoyaltyTargets(
+          loyaltyProgram.redeemableItemTargets,
+          oldLoyaltyKey,
+          newLoyaltyKey,
+          form.redeemable_with_stamp,
+        ),
+      };
+      await saveLoyaltyProgram(updatedLoyaltyProgram);
       await queryClient.invalidateQueries({ queryKey: ["menu-cards"] });
-      toast({ title: "Saved", description: `Card #${finalId} updated.` });
+      await queryClient.invalidateQueries({ queryKey: ["loyalty-program"] });
+      toast({ title: "Saved", description: `Card #${finalId} and stamp settings updated.` });
       if (finalId !== selectedCard.id) {
         navigate(`/admin/kitchen/menu-cards/${finalId}`);
       }
@@ -465,9 +530,9 @@ export function MenuCardsManager() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            <Button onClick={handleSave} disabled={saving || uploading}>
+            <Button onClick={handleSave} disabled={saving || uploading || isSavingLoyalty}>
               <Save className="w-4 h-4 mr-2" />
-              {saving ? "Saving…" : "Save Card"}
+              {saving || isSavingLoyalty ? "Saving…" : "Save Card"}
             </Button>
           </div>
         </div>
@@ -573,6 +638,39 @@ export function MenuCardsManager() {
                     Moves this card to a different section on the public menu.
                   </p>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-sky-200 bg-sky-50/30">
+              <CardHeader>
+                <CardTitle>Stamp card</CardTitle>
+                <CardDescription>
+                  These two flags control the customer stamp system for this exact menu card.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <StampFlagRow
+                  id={`menu-card-${selectedCard.id}-gives-stamp`}
+                  checked={form.gives_stamp}
+                  disabled={isLoyaltyLoading || saving || isSavingLoyalty}
+                  label="This item will give a stamp"
+                  onCheckedChange={(checked) =>
+                    setForm({ ...form, gives_stamp: checked === true })
+                  }
+                />
+                <StampFlagRow
+                  id={`menu-card-${selectedCard.id}-redeemable-stamp`}
+                  checked={form.redeemable_with_stamp}
+                  disabled={isLoyaltyLoading || saving || isSavingLoyalty}
+                  label="Customers can redeem this item using stamp card"
+                  onCheckedChange={(checked) =>
+                    setForm({ ...form, redeemable_with_stamp: checked === true })
+                  }
+                />
+                <p className="text-xs leading-5 text-muted-foreground">
+                  Customers collect one stamp for each paid quantity from cards marked as stamp-giving.
+                  Once they have enough stamps, one stamped or redeemable card in their cart becomes free.
+                </p>
               </CardContent>
             </Card>
 
@@ -856,6 +954,38 @@ export function MenuCardsManager() {
         )}
       </div>
     </div>
+  );
+}
+
+function StampFlagRow({
+  id,
+  checked,
+  disabled,
+  label,
+  onCheckedChange,
+}: {
+  id: string;
+  checked: boolean;
+  disabled?: boolean;
+  label: string;
+  onCheckedChange: (checked: boolean | "indeterminate") => void;
+}) {
+  return (
+    <label
+      htmlFor={id}
+      className="flex min-h-12 cursor-pointer items-center gap-3 rounded-md p-1.5 transition-colors hover:bg-white/70 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-70"
+    >
+      <Checkbox
+        id={id}
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={onCheckedChange}
+        className="h-8 w-8 shrink-0 rounded-md border-2 border-slate-400 text-white data-[state=checked]:border-sky-300 data-[state=checked]:bg-sky-300 data-[state=checked]:text-white"
+      />
+      <span className="min-w-0 text-base leading-6 text-slate-600">
+        {label}
+      </span>
+    </label>
   );
 }
 

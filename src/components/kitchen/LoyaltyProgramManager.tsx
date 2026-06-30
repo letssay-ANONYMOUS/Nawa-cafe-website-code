@@ -144,8 +144,8 @@ export function LoyaltyProgramManager() {
         <div className="space-y-2">
           <h3 className="text-sm font-semibold">Individual menu cards</h3>
           <p className="text-xs text-muted-foreground">
-            Each card has two Beanz-style flags. If no redeemable cards are selected, customers can redeem from the
-            same menu cards that give stamps.
+            Each card has two Beanz-style flags. Stamp-giving cards are always redeemable; the second flag can add
+            cards that are redeemable without giving stamps.
           </p>
           <div className="max-h-[34rem] space-y-3 overflow-y-auto rounded-lg border bg-background p-3">
             {menuCardOptions.map((card) => {
