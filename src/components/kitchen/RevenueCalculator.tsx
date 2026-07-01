@@ -29,6 +29,14 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface PaidOrder {
   total_amount: number;
@@ -42,6 +50,85 @@ const formatAED = (n: number) =>
 const formatAEDShort = (n: number) => {
   if (n >= 1000) return `AED ${(n / 1000).toFixed(1)}k`;
   return `AED ${n.toFixed(0)}`;
+};
+
+type RangeGrouping = "day" | "week" | "month";
+type QuickRange = "today" | "thisWeek" | "thisMonth" | "last30" | "yearToDate";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const toDateInputValue = (date: Date) => {
+  const copy = new Date(date);
+  copy.setMinutes(copy.getMinutes() - copy.getTimezoneOffset());
+  return copy.toISOString().slice(0, 10);
+};
+
+const startOfLocalDay = (value: string) => {
+  const date = value ? new Date(`${value}T00:00:00`) : new Date();
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+const endOfLocalDay = (value: string) => {
+  const date = value ? new Date(`${value}T23:59:59.999`) : new Date();
+  date.setHours(23, 59, 59, 999);
+  return date;
+};
+
+const startOfWeek = (date: Date) => {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  const day = copy.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  copy.setDate(copy.getDate() + mondayOffset);
+  return copy;
+};
+
+const applyQuickRange = (range: QuickRange) => {
+  const now = new Date();
+  const start = new Date(now);
+  const end = new Date(now);
+
+  if (range === "today") {
+    return { start: toDateInputValue(now), end: toDateInputValue(now), grouping: "day" as RangeGrouping };
+  }
+  if (range === "thisWeek") {
+    return { start: toDateInputValue(startOfWeek(now)), end: toDateInputValue(now), grouping: "day" as RangeGrouping };
+  }
+  if (range === "thisMonth") {
+    start.setDate(1);
+    return { start: toDateInputValue(start), end: toDateInputValue(now), grouping: "day" as RangeGrouping };
+  }
+  if (range === "yearToDate") {
+    start.setMonth(0, 1);
+    return { start: toDateInputValue(start), end: toDateInputValue(now), grouping: "month" as RangeGrouping };
+  }
+
+  start.setDate(start.getDate() - 29);
+  return { start: toDateInputValue(start), end: toDateInputValue(now), grouping: "day" as RangeGrouping };
+};
+
+const getOrderDate = (order: PaidOrder) => new Date(order.paid_at || order.created_at);
+
+const getBucketKey = (date: Date, grouping: RangeGrouping) => {
+  if (grouping === "month") {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  }
+  if (grouping === "week") {
+    const start = startOfWeek(date);
+    return toDateInputValue(start);
+  }
+  return toDateInputValue(date);
+};
+
+const getBucketLabel = (date: Date, grouping: RangeGrouping) => {
+  if (grouping === "month") {
+    return date.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+  }
+  if (grouping === "week") {
+    return `Week of ${date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
+  }
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 };
 
 // Animated number counter
@@ -69,6 +156,10 @@ const AnimatedNumber = ({ value, duration = 900 }: { value: number; duration?: n
 export const RevenueCalculator = () => {
   const [orders, setOrders] = useState<PaidOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const defaultRange = applyQuickRange("thisMonth");
+  const [rangeStart, setRangeStart] = useState(defaultRange.start);
+  const [rangeEnd, setRangeEnd] = useState(defaultRange.end);
+  const [rangeGrouping, setRangeGrouping] = useState<RangeGrouping>(defaultRange.grouping);
 
   const load = async () => {
     setLoading(true);
@@ -77,7 +168,7 @@ export const RevenueCalculator = () => {
       .select("total_amount, paid_at, created_at")
       .eq("payment_status", "paid")
       .order("created_at", { ascending: false })
-      .limit(1000);
+      .range(0, 9999);
     if (!error && data) setOrders(data as PaidOrder[]);
     setLoading(false);
   };
@@ -124,7 +215,7 @@ export const RevenueCalculator = () => {
     const hourly = Array.from({ length: 24 }, (_, h) => ({ hour: `${h}h`, total: 0 }));
 
     for (const o of orders) {
-      const d = new Date(o.paid_at || o.created_at);
+      const d = getOrderDate(o);
       const amt = Number(o.total_amount) || 0;
       allTime += amt;
       if (d >= startOfDay) {
@@ -180,6 +271,76 @@ export const RevenueCalculator = () => {
       hourly,
     };
   }, [orders]);
+
+  const rangeStats = useMemo(() => {
+    const start = startOfLocalDay(rangeStart);
+    const end = endOfLocalDay(rangeEnd);
+    const validRange = start <= end;
+    const buckets = new Map<string, { key: string; label: string; total: number; count: number }>();
+    let total = 0;
+    let count = 0;
+
+    if (!validRange) {
+      return {
+        validRange,
+        total,
+        count,
+        avgPerDay: 0,
+        avgPerWeek: 0,
+        avgOrder: 0,
+        days: 0,
+        chart: [] as { key: string; label: string; total: number; count: number }[],
+        label: "Choose a valid range",
+      };
+    }
+
+    for (const order of orders) {
+      const date = getOrderDate(order);
+      if (date < start || date > end) continue;
+      const amount = Number(order.total_amount) || 0;
+      total += amount;
+      count += 1;
+
+      const key = getBucketKey(date, rangeGrouping);
+      const bucketDate = rangeGrouping === "week" ? startOfWeek(date) : date;
+      const existing = buckets.get(key);
+      if (existing) {
+        existing.total += amount;
+        existing.count += 1;
+      } else {
+        buckets.set(key, {
+          key,
+          label: getBucketLabel(bucketDate, rangeGrouping),
+          total: amount,
+          count: 1,
+        });
+      }
+    }
+
+    const days = Math.max(1, Math.ceil((end.getTime() - start.getTime() + 1) / DAY_MS));
+    const sortedBuckets = Array.from(buckets.values()).sort((a, b) => a.key.localeCompare(b.key));
+    const startLabel = start.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+    const endLabel = end.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+
+    return {
+      validRange,
+      total,
+      count,
+      avgPerDay: total / days,
+      avgPerWeek: (total / days) * 7,
+      avgOrder: count ? total / count : 0,
+      days,
+      chart: sortedBuckets,
+      label: `${startLabel} - ${endLabel}`,
+    };
+  }, [orders, rangeEnd, rangeGrouping, rangeStart]);
+
+  const handleQuickRange = (range: QuickRange) => {
+    const next = applyQuickRange(range);
+    setRangeStart(next.start);
+    setRangeEnd(next.end);
+    setRangeGrouping(next.grouping);
+  };
 
   const tiles = [
     {
@@ -285,6 +446,165 @@ export const RevenueCalculator = () => {
           Refresh
         </Button>
       </motion.div>
+
+      {/* Editable range controls */}
+      <Card className="border-primary/10">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <CalendarRange className="w-4 h-4 text-primary" />
+            Profit time frame
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_180px_auto] gap-3 items-end">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Start date</label>
+              <Input
+                type="date"
+                value={rangeStart}
+                onChange={(e) => setRangeStart(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">End date</label>
+              <Input
+                type="date"
+                value={rangeEnd}
+                onChange={(e) => setRangeEnd(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Group chart by</label>
+              <Select value={rangeGrouping} onValueChange={(value) => setRangeGrouping(value as RangeGrouping)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="day">Days</SelectItem>
+                  <SelectItem value="week">Weeks</SelectItem>
+                  <SelectItem value="month">Months</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => handleQuickRange("today")}>
+                Today
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => handleQuickRange("thisWeek")}>
+                Week
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => handleQuickRange("thisMonth")}>
+                Month
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => handleQuickRange("last30")}>
+                30 days
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => handleQuickRange("yearToDate")}>
+                Year
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+            <Card className="bg-primary/5 border-primary/15">
+              <CardContent className="p-4">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Selected profit</p>
+                <p className="mt-1 text-2xl font-bold text-primary tabular-nums">
+                  <AnimatedNumber value={rangeStats.total} />
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">{rangeStats.label}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Paid orders</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums">{rangeStats.count}</p>
+                <p className="text-xs text-muted-foreground mt-1">{rangeStats.days} days included</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Avg / day</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums">{formatAED(rangeStats.avgPerDay)}</p>
+                <p className="text-xs text-muted-foreground mt-1">Across selected range</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Avg order</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums">{formatAED(rangeStats.avgOrder)}</p>
+                <p className="text-xs text-muted-foreground mt-1">{formatAED(rangeStats.avgPerWeek)} / week avg</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {!rangeStats.validRange && (
+            <p className="text-sm font-medium text-destructive">
+              Start date must be before the end date.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <CardTitle className="text-base flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              Selected range profit
+            </CardTitle>
+            <span className="text-xs text-muted-foreground">
+              Grouped by {rangeGrouping === "day" ? "day" : rangeGrouping === "week" ? "week" : "month"}
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={rangeStats.chart} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="rangeBarFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={1} />
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.45} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={false}
+                  tickLine={false}
+                  minTickGap={14}
+                />
+                <YAxis
+                  tickFormatter={formatAEDShort}
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={70}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "hsl(var(--popover))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: 8,
+                    fontSize: 12,
+                  }}
+                  formatter={(v: number) => [formatAED(v), "Profit"]}
+                  labelFormatter={(label) => `${label}`}
+                />
+                <Bar
+                  dataKey="total"
+                  fill="url(#rangeBarFill)"
+                  radius={[6, 6, 0, 0]}
+                  isAnimationActive
+                  animationDuration={900}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Hero all-time card */}
       <motion.div
