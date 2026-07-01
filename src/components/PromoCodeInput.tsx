@@ -83,7 +83,7 @@ export function PromoCodeInput() {
       )}
 
       {invalid && (
-        <p className="text-xs text-destructive">Invalid or expired code.</p>
+        <p className="text-xs text-destructive">Invalid, disabled, or expired code.</p>
       )}
     </div>
   );

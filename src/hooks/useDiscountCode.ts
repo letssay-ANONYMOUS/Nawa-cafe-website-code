@@ -17,8 +17,14 @@ export interface DiscountInfo {
 // parent page that also reads this hook.
 // -----------------------------------------------------------------------------
 const listeners = new Set<() => void>();
+const STORAGE_KEY = 'nawa_manual_discount_code';
 let currentCode: string = (() => {
-  return '';
+  if (typeof window === 'undefined') return '';
+  try {
+    return localStorage.getItem(STORAGE_KEY)?.trim().toUpperCase() || '';
+  } catch {
+    return '';
+  }
 })();
 
 const subscribe = (cb: () => void) => {
@@ -31,6 +37,15 @@ function setSharedCode(next: string) {
   const normalized = next.trim().toUpperCase();
   if (normalized === currentCode) return;
   currentCode = normalized;
+  try {
+    if (normalized) {
+      localStorage.setItem(STORAGE_KEY, normalized);
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  } catch {
+    // Promo persistence is a convenience; checkout must still work without storage.
+  }
   listeners.forEach((cb) => cb());
 }
 
