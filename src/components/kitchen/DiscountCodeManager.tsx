@@ -34,6 +34,7 @@ import LoyaltyProgramManager from '@/components/kitchen/LoyaltyProgramManager';
 interface DiscountRow {
   id: string;
   code: string;
+  display_name: string | null;
   percent: number;
   scope: 'cart' | 'item';
   target_source: 'menu' | 'store' | null;
@@ -75,6 +76,7 @@ export function DiscountCodeManager() {
 
   // Form state
   const [code, setCode] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [percent, setPercent] = useState<string>('10');
   const [applicationMode, setApplicationMode] = useState<ApplicationMode>('manual');
   const [scope, setScope] = useState<Scope>('cart');
@@ -134,6 +136,7 @@ export function DiscountCodeManager() {
 
   const resetForm = () => {
     setCode('');
+    setDisplayName('');
     setPercent('10');
     setApplicationMode('manual');
     setScope('cart');
@@ -144,6 +147,7 @@ export function DiscountCodeManager() {
 
   const handleCreate = async () => {
     const cleanCode = code.trim().toUpperCase();
+    const cleanDisplayName = displayName.trim();
     const pct = Number(percent);
 
     if (!cleanCode || cleanCode.length < 3) {
@@ -183,6 +187,7 @@ export function DiscountCodeManager() {
 
     const payload = {
       code: cleanCode,
+      display_name: cleanDisplayName || cleanCode,
       percent: pct,
       application_mode: applicationMode,
       scope,
@@ -287,7 +292,7 @@ export function DiscountCodeManager() {
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="dc-code">{applicationMode === 'global' ? 'Internal campaign code' : 'Code'}</Label>
+            <Label htmlFor="dc-code">{applicationMode === 'global' ? 'Internal code' : 'Code'}</Label>
             <Input
               id="dc-code"
               value={code}
@@ -295,6 +300,19 @@ export function DiscountCodeManager() {
               placeholder={applicationMode === 'global' ? 'GLOBAL10' : 'SUMMER15'}
               maxLength={32}
             />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="dc-display-name">Customer-facing name</Label>
+            <Input
+              id="dc-display-name"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder={applicationMode === 'global' ? 'Summer offer' : 'Summer 15'}
+              maxLength={60}
+            />
+            <p className="text-xs text-muted-foreground">
+              This exact name appears in cart and checkout. Leave blank to show the code.
+            </p>
           </div>
           <div className="space-y-1">
             <Label htmlFor="dc-percent">Discount %</Label>
@@ -463,6 +481,9 @@ export function DiscountCodeManager() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-mono font-bold text-base">{row.code}</span>
+                        {row.display_name && row.display_name !== row.code && (
+                          <Badge variant="outline">{row.display_name}</Badge>
+                        )}
                         <Badge variant="secondary">{row.percent}% off</Badge>
                         <Badge variant={row.application_mode === 'global' ? 'default' : 'outline'}>
                           {row.application_mode === 'global' ? 'Global discount' : 'Manual promo'}

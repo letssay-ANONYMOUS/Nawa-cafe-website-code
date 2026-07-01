@@ -34,6 +34,7 @@ const CartPage = () => {
   const subtotal = getCartTotal();
   const globalDiscount = computeCodeDiscount(cartItems, subtotal, globalDiscountInfo ?? null);
   const codeDiscount = computeCodeDiscount(cartItems, subtotal, discountInfo);
+  const globalDiscountLabel = globalDiscountInfo?.display_name?.trim() || globalDiscountInfo?.code || 'Global discount';
   const delivery = calculateDeliveryFee(area, subtotal, fulfillment);
   const deliveryFee = delivery?.fee ?? 0;
   const totalSavings = round2(globalDiscount + codeDiscount + loyaltyReward);
@@ -161,7 +162,7 @@ const CartPage = () => {
                           {globalDiscount > 0 && globalDiscountInfo && (
                             <PriceSummaryRow
                               className="text-sm font-medium text-green-600"
-                              label={`Global discount (${globalDiscountInfo.percent}%)`}
+                              label={`${globalDiscountLabel} (${globalDiscountInfo.percent}%)`}
                               value={`-${formatAED(globalDiscount)}`}
                             />
                           )}

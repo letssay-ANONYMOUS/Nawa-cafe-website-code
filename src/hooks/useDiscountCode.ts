@@ -5,6 +5,7 @@ import type { CartItem } from '@/contexts/CartContext';
 
 export interface DiscountInfo {
   code: string;
+  display_name: string | null;
   percent: number;
   scope: 'cart' | 'item';
   target_source: 'menu' | 'store' | null;
@@ -60,6 +61,7 @@ async function fetchCode(code: string): Promise<DiscountInfo | null> {
   if (!row) return null;
   return {
     code: row.code,
+    display_name: row.display_name ?? row.code,
     percent: Number(row.percent),
     scope: row.scope as 'cart' | 'item',
     target_source: (row.target_source as 'menu' | 'store' | null) ?? null,

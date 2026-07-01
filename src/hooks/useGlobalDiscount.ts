@@ -12,6 +12,7 @@ async function fetchGlobalDiscount(): Promise<DiscountInfo | null> {
   if (!row) return null;
   return {
     code: row.code,
+    display_name: row.display_name ?? row.code,
     percent: Number(row.percent),
     scope: row.scope as DiscountInfo['scope'],
     target_source: (row.target_source as DiscountInfo['target_source']) ?? null,

@@ -188,6 +188,7 @@ export type Database = {
           application_mode: string
           code: string
           created_at: string
+          display_name: string | null
           expires_at: string | null
           id: string
           percent: number
@@ -201,6 +202,7 @@ export type Database = {
           application_mode?: string
           code: string
           created_at?: string
+          display_name?: string | null
           expires_at?: string | null
           id?: string
           percent: number
@@ -214,6 +216,7 @@ export type Database = {
           application_mode?: string
           code?: string
           created_at?: string
+          display_name?: string | null
           expires_at?: string | null
           id?: string
           percent?: number
@@ -889,6 +892,7 @@ export type Database = {
         Args: never
         Returns: {
           code: string
+          display_name: string
           percent: number
           scope: string
           target_name: string
@@ -939,6 +943,7 @@ export type Database = {
         Args: { _code: string }
         Returns: {
           code: string
+          display_name: string
           percent: number
           scope: string
           target_name: string
