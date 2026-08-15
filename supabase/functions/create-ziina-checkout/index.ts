@@ -426,7 +426,20 @@ serve(async (req) => {
         try { eligibleItems = JSON.parse(settings.get("loyalty_eligible_items") || "[]"); } catch { eligibleItems = []; }
         try { redeemableItems = JSON.parse(settings.get("loyalty_redeemable_items") || "[]"); } catch { redeemableItems = []; }
 
-        if (enabled && (eligibleCategories.length > 0 || eligibleItems.length > 0)) {
+        // A free reward may only be claimed once the customer has confirmed
+        // their email address, so an account opened with someone else's
+        // address cannot spend rewards.
+        const { data: verifiedProfile } = await supabase
+          .from("customer_profiles")
+          .select("email_verified_at")
+          .eq("user_id", userId)
+          .maybeSingle();
+        const emailVerified = Boolean(verifiedProfile?.email_verified_at);
+        if (!emailVerified) {
+          console.log("Loyalty reward skipped: email not verified for", userId);
+        }
+
+        if (emailVerified && enabled && (eligibleCategories.length > 0 || eligibleItems.length > 0)) {
           const { data: loyalty } = await supabase
             .from("loyalty_accounts")
             .select("free_drinks_available")

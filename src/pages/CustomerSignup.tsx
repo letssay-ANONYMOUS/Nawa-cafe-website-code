@@ -31,8 +31,8 @@ const CustomerSignup = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password.length < 8) {
-      toast({ variant: 'destructive', title: 'Weak password', description: 'Use at least 8 characters.' });
+    if (password.length < 10) {
+      toast({ variant: 'destructive', title: 'Weak password', description: 'Use at least 10 characters.' });
       return;
     }
     if (password !== confirmPassword) {
@@ -176,7 +176,7 @@ const CustomerSignup = () => {
                 <Lock className="w-4 h-4" /> Password
               </Label>
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 8 characters" required className="h-12" />
+                placeholder="At least 10 characters" required className="h-12" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword" className="flex items-center gap-2">

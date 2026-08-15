@@ -113,6 +113,15 @@ serve(async (req) => {
       console.warn("Could not set email_confirm on auth user:", adminErr);
     }
 
+    // Rewards are withheld until the address is confirmed, so refresh the
+    // loyalty account now instead of waiting for the next paid order.
+    const { error: recalcErr } = await supabase.rpc("recalculate_customer_loyalty", {
+      _user_id: user.id,
+    });
+    if (recalcErr) {
+      console.warn("Could not refresh loyalty after verification:", recalcErr);
+    }
+
     console.log("Email verified for", user.id);
     return json({ verified: true });
   } catch (error) {
