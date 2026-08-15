@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
 import { hasPlatformAuthenticator, registerPasskey } from '@/lib/webauthn';
 import EmailVerificationStep from '@/components/EmailVerificationStep';
-import { Coffee, Fingerprint, Lock, Mail, Phone, User } from 'lucide-react';
+import { Coffee, Fingerprint, Lock, Mail, Phone, User, Users } from 'lucide-react';
 
 type Step = 'form' | 'verify-email' | 'passkey-prompt';
 
@@ -23,6 +24,11 @@ const CustomerSignup = () => {
   const { signUp, user, loading } = useCustomerAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  // Referral link: /signup?ref=abc123
+  const [referralCode, setReferralCode] = useState(
+    (searchParams.get('ref') ?? '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 6),
+  );
 
   useEffect(() => {
     if (!loading && !isLoading && user && step === 'form') navigate('/account', { replace: true });
@@ -44,7 +50,25 @@ const CustomerSignup = () => {
     try {
       await signUp(email, password, fullName.trim() || undefined, phone.trim() || undefined);
 
-      // Confirm the email address with a 6-digit code before finishing setup.
+      // Apply the referral code, if one came in on the link or was typed in.
+      // Non-fatal: a bad code must never block account creation.
+      if (referralCode.length === 6) {
+        try {
+          const { data, error } = await supabase.functions.invoke('claim-referral', {
+            body: { code: referralCode },
+          });
+          if (error || data?.error) throw new Error(data?.error || 'Could not apply referral code.');
+          toast({ title: 'Referral applied', description: `Code ${referralCode} is linked to your account.` });
+        } catch (referralError: unknown) {
+          toast({
+            variant: 'destructive',
+            title: 'Referral code not applied',
+            description: referralError instanceof Error ? referralError.message : 'Your account was still created.',
+          });
+        }
+      }
+
+      // Confirm the email address with a code before finishing setup.
       setStep('verify-email');
       setIsLoading(false);
       return;
@@ -184,6 +208,21 @@ const CustomerSignup = () => {
               </Label>
               <Input id="confirmPassword" type="password" value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter password" required className="h-12" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="referralCode" className="flex items-center gap-2">
+                <Users className="w-4 h-4" /> Referral code <span className="text-xs font-normal text-muted-foreground">(optional)</span>
+              </Label>
+              <Input
+                id="referralCode"
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 6))}
+                placeholder="Friend's code"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                className="h-12 font-mono tracking-[0.2em] lowercase"
+              />
             </div>
             <Button type="submit" className="w-full h-12 text-lg font-semibold" disabled={isLoading}>
               {isLoading ? 'Creating account…' : 'Create Account'}

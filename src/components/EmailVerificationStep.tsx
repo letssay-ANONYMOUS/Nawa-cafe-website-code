@@ -171,8 +171,7 @@ export function EmailVerificationStep({ email, onContinue }: Props) {
               <Benefit
                 icon={<Users className="h-4 w-4" />}
                 title="Referral rewards"
-                detail="Invite friends and earn bonus stamps."
-                badge="Coming soon"
+                detail="Share your code — you earn bonus stamps once a friend completes their first order."
               />
             </ul>
           </div>

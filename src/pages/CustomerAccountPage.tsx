@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { hasPlatformAuthenticator, registerPasskey } from '@/lib/webauthn';
 import { loyaltyTargetLabel, useLoyaltyProgram } from '@/hooks/useLoyaltyProgram';
 import Header from '@/components/Header';
+import ReferralCard from '@/components/ReferralCard';
 import { Fingerprint, Gift, History, LogOut, ShieldCheck } from 'lucide-react';
 
 interface PasskeyCredential {
@@ -195,6 +196,9 @@ const CustomerAccountPage = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Referrals */}
+        {user && <ReferralCard userId={user.id} />}
 
         {/* Recent orders */}
         <Card className="border-0 shadow-lg">

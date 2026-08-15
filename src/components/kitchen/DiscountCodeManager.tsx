@@ -30,6 +30,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { CalendarIcon, RefreshCw, Trash2, Tag, Percent, Check, ChevronsUpDown } from 'lucide-react';
 import LoyaltyProgramManager from '@/components/kitchen/LoyaltyProgramManager';
+import ReferralProgramManager from '@/components/kitchen/ReferralProgramManager';
 
 interface DiscountRow {
   id: string;
@@ -522,6 +523,7 @@ export function DiscountCodeManager() {
         </CardContent>
       </Card>
       <LoyaltyProgramManager />
+      <ReferralProgramManager />
     </div>
   );
 }
