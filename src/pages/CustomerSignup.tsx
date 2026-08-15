@@ -7,9 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useCustomerAuth } from '@/contexts/CustomerAuthContext';
 import { hasPlatformAuthenticator, registerPasskey } from '@/lib/webauthn';
+import EmailVerificationStep from '@/components/EmailVerificationStep';
 import { Coffee, Fingerprint, Lock, Mail, Phone, User } from 'lucide-react';
 
-type Step = 'form' | 'passkey-prompt';
+type Step = 'form' | 'verify-email' | 'passkey-prompt';
 
 const CustomerSignup = () => {
   const [fullName, setFullName] = useState('');
@@ -43,16 +44,10 @@ const CustomerSignup = () => {
     try {
       await signUp(email, password, fullName.trim() || undefined, phone.trim() || undefined);
 
-      // Check if device supports biometric — if so, offer passkey enrollment.
-      const hasBiometric = await hasPlatformAuthenticator();
-      if (hasBiometric) {
-        setStep('passkey-prompt');
-        setIsLoading(false);
-        return;
-      }
-
-      toast({ title: 'Account created!', description: 'Welcome to Nawa Cafe rewards.' });
-      navigate('/account', { replace: true });
+      // Confirm the email address with a 6-digit code before finishing setup.
+      setStep('verify-email');
+      setIsLoading(false);
+      return;
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Please try again.';
       toast({
@@ -89,6 +84,30 @@ const CustomerSignup = () => {
       navigate('/account', { replace: true });
     }
   };
+
+  const handleEmailVerified = async () => {
+    // After confirming, offer passkey enrollment when the device supports it.
+    try {
+      if (await hasPlatformAuthenticator()) {
+        setStep('passkey-prompt');
+        return;
+      }
+    } catch {
+      /* biometric probe failed — just finish */
+    }
+    toast({ title: 'Account created!', description: 'Welcome to Nawa Cafe rewards.' });
+    navigate('/account', { replace: true });
+  };
+
+  if (step === 'verify-email') {
+    return (
+      <EmailVerificationStep
+        email={email}
+        onVerified={handleEmailVerified}
+        onSkip={() => navigate('/account', { replace: true })}
+      />
+    );
+  }
 
   if (step === 'passkey-prompt') {
     return (
