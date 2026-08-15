@@ -36,9 +36,11 @@ serve(async (req) => {
 
   try {
     const { code } = await req.json();
-    const submitted = String(code ?? "").trim();
-    if (!/^\d{6}$/.test(submitted)) {
-      return json({ error: "Enter the 6-digit code from your email." }, 400);
+    // Codes are lowercase alphanumeric; accept whatever case the customer typed
+    // and strip spaces so a pasted code still works.
+    const submitted = String(code ?? "").trim().toLowerCase().replace(/\s+/g, "");
+    if (!/^[a-z0-9]{6}$/.test(submitted)) {
+      return json({ error: "Enter the 6-character code from your email." }, 400);
     }
 
     const supabase = createClient(

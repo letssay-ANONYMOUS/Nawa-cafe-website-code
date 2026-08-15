@@ -85,7 +85,7 @@ const CustomerSignup = () => {
     }
   };
 
-  const handleEmailVerified = async () => {
+  const handleVerificationContinue = async () => {
     // After confirming, offer passkey enrollment when the device supports it.
     try {
       if (await hasPlatformAuthenticator()) {
@@ -95,18 +95,11 @@ const CustomerSignup = () => {
     } catch {
       /* biometric probe failed — just finish */
     }
-    toast({ title: 'Account created!', description: 'Welcome to Nawa Cafe rewards.' });
     navigate('/account', { replace: true });
   };
 
   if (step === 'verify-email') {
-    return (
-      <EmailVerificationStep
-        email={email}
-        onVerified={handleEmailVerified}
-        onSkip={() => navigate('/account', { replace: true })}
-      />
-    );
+    return <EmailVerificationStep email={email} onContinue={handleVerificationContinue} />;
   }
 
   if (step === 'passkey-prompt') {
