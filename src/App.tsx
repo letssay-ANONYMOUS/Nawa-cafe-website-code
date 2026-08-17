@@ -42,6 +42,7 @@ import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import ProductDetail from "./pages/ProductDetail";
 import MaintenanceGate from "./components/MaintenanceGate";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import OurPartnersPage from "./pages/OurPartnersPage";
 import RefundPolicyPage from "./pages/RefundPolicyPage";
 import TermsConditionsPage from "./pages/TermsConditionsPage";
 
@@ -119,6 +120,7 @@ const App = () => {
                 <Route path="/account" element={<CustomerAuthGate><CustomerAccountPage /></CustomerAuthGate>} />
                 <Route path="/visitors" element={<AnalyticsDashboard />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                <Route path="/our-partners" element={<OurPartnersPage />} />
                 <Route path="/refund-policy" element={<RefundPolicyPage />} />
                 <Route path="/terms-conditions" element={<TermsConditionsPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -309,6 +309,9 @@ const Footer = () => {
               <Link to="/refund-policy" className="text-cream-300 hover:text-cream-100 transition-colors duration-200 text-xs sm:text-sm">
                 Refund Policy
               </Link>
+              <Link to="/our-partners" className="text-cream-300 hover:text-cream-100 transition-colors duration-200 text-xs sm:text-sm">
+                Our Partners
+              </Link>
             </div>
           </div>
         </div>

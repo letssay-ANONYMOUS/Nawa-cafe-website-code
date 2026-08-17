@@ -92,22 +92,53 @@ const TermsConditionsPage = () => {
         </section>
 
         <section className="mb-8">
-          <h2 className="font-playfair text-xl font-semibold mb-4">10. Privacy</h2>
+          <h2 className="font-playfair text-xl font-semibold mb-4">10. Customer Accounts</h2>
+          <p className="text-cream-200 mb-3">
+            You may create an account to order faster and collect rewards. You are responsible for keeping your
+            password and any device sign-in method secure, and for activity that happens through your account.
+            Please give accurate details and tell us if you believe your account has been used without your
+            permission.
+          </p>
           <p className="text-cream-200">
-            Use of this website is also subject to our{" "}
-            <Link to="/privacy-policy" className="underline hover:text-cream-100">Privacy Policy</Link>.
+            We may suspend or close an account that is used fraudulently, abusively, or in breach of these
+            terms. You may close your account at any time by contacting us; closing it also ends any unused
+            rewards.
           </p>
         </section>
 
         <section className="mb-8">
-          <h2 className="font-playfair text-xl font-semibold mb-4">11. Governing Law</h2>
+          <h2 className="font-playfair text-xl font-semibold mb-4">11. Stamp Card and Referral Rewards</h2>
+          <ul className="list-disc list-inside text-cream-200 space-y-1 ml-2">
+            <li>Stamps are collected on qualifying menu items chosen by Nawa Cafe, and only on orders that have been paid for</li>
+            <li>Only items marked as redeemable can be claimed for free, and a completed stamp card is required</li>
+            <li>Stamps and rewards have no cash value, cannot be exchanged for money, and cannot be sold or transferred between customers</li>
+            <li>Referral rewards are earned only after the invited customer completes their first paid order. Self-referrals and duplicate or fake accounts do not qualify</li>
+            <li>You must confirm your email address before claiming a free reward</li>
+            <li>We may change the number of stamps required, which items qualify, or the referral amounts at any time, and may pause or end the programme. Changes apply from the date they are published</li>
+            <li>We may withhold or cancel stamps and rewards obtained through error, abuse, or misuse of the programme</li>
+          </ul>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="font-playfair text-xl font-semibold mb-4">12. Privacy</h2>
+          <p className="text-cream-200">
+            Use of this website is also subject to our{" "}
+            <Link to="/privacy-policy" className="underline hover:text-cream-100">Privacy Policy</Link>, which
+            explains what we collect and lists the{" "}
+            <Link to="/our-partners" className="underline hover:text-cream-100">partners</Link> who help us run
+            the site.
+          </p>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="font-playfair text-xl font-semibold mb-4">13. Governing Law</h2>
           <p className="text-cream-200">
             These Terms are governed by the laws of the United Arab Emirates and the applicable laws of the relevant Emirate.
           </p>
         </section>
 
         <section className="mb-8">
-          <h2 className="font-playfair text-xl font-semibold mb-4">12. Changes</h2>
+          <h2 className="font-playfair text-xl font-semibold mb-4">14. Changes</h2>
           <p className="text-cream-200">
             Nawacafe may update these Terms at any time by publishing the updated version on the website.
           </p>
