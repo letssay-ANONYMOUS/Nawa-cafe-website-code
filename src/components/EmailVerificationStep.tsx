@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 interface Props {
   email: string;
   onContinue: () => void;
+  /** Let the customer leave without confirming — the account already exists. */
+  onSkip?: () => void;
 }
 
 const RESEND_COOLDOWN = 60;
@@ -40,7 +42,7 @@ function OrbitLoader() {
   );
 }
 
-export function EmailVerificationStep({ email, onContinue }: Props) {
+export function EmailVerificationStep({ email, onContinue, onSkip }: Props) {
   const { toast } = useToast();
   const [code, setCode] = useState('');
   const [phase, setPhase] = useState<'sending' | 'entry' | 'confirmed'>('sending');
@@ -133,6 +135,11 @@ export function EmailVerificationStep({ email, onContinue }: Props) {
             <span className="font-medium text-foreground">{email}</span>.
           </p>
         </div>
+        {onSkip && (
+          <Button type="button" variant="ghost" className="text-sm text-muted-foreground" onClick={onSkip}>
+            Skip for now
+          </Button>
+        )}
       </CardContent>,
     );
   }
@@ -236,6 +243,18 @@ export function EmailVerificationStep({ email, onContinue }: Props) {
             The code expires in 10 minutes. Check your spam folder if it hasn't arrived.
           </p>
         </div>
+
+        {onSkip && (
+          <div className="border-t pt-4 text-center">
+            <Button type="button" variant="ghost" className="text-sm text-muted-foreground" onClick={onSkip}>
+              Skip for now
+            </Button>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Your account is already created. You can confirm your email later from your account —
+              it's only needed to claim free rewards.
+            </p>
+          </div>
+        )}
       </CardContent>
     </>,
   );

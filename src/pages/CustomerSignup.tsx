@@ -123,7 +123,13 @@ const CustomerSignup = () => {
   };
 
   if (step === 'verify-email') {
-    return <EmailVerificationStep email={email} onContinue={handleVerificationContinue} />;
+    return (
+      <EmailVerificationStep
+        email={email}
+        onContinue={handleVerificationContinue}
+        onSkip={() => navigate('/account', { replace: true })}
+      />
+    );
   }
 
   if (step === 'passkey-prompt') {

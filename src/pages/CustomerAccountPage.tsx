@@ -10,7 +10,8 @@ import { hasPlatformAuthenticator, registerPasskey } from '@/lib/webauthn';
 import { loyaltyTargetLabel, useLoyaltyProgram } from '@/hooks/useLoyaltyProgram';
 import Header from '@/components/Header';
 import ReferralCard from '@/components/ReferralCard';
-import { Fingerprint, Gift, History, LogOut, ShieldCheck } from 'lucide-react';
+import EmailVerificationStep from '@/components/EmailVerificationStep';
+import { Fingerprint, Gift, History, LogOut, MailWarning, ShieldCheck } from 'lucide-react';
 
 interface PasskeyCredential {
   id: string;
@@ -39,6 +40,8 @@ const CustomerAccountPage = () => {
   const [recentOrders, setRecentOrders] = useState<CustomerOrderSummary[]>([]);
   const [canAddPasskey, setCanAddPasskey] = useState(false);
   const [addingPasskey, setAddingPasskey] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(true);
+  const [verifyingEmail, setVerifyingEmail] = useState(false);
   const { config: loyaltyProgram } = useLoyaltyProgram();
 
   const loadData = useCallback(async () => {
@@ -55,7 +58,7 @@ const CustomerAccountPage = () => {
           .select('paid_beverage_count, free_drinks_available')
           .eq('user_id', user.id).maybeSingle(),
         supabase.from('customer_profiles')
-          .select('full_name').eq('user_id', user.id).maybeSingle(),
+          .select('full_name, email_verified_at').eq('user_id', user.id).maybeSingle(),
         supabase.from('webauthn_credentials')
           .select('id, device_label, created_at')
           .eq('user_id', user.id)
@@ -70,6 +73,7 @@ const CustomerAccountPage = () => {
     setPaidCount(loyalty?.paid_beverage_count ?? 0);
     setFreeDrinks(loyalty?.free_drinks_available ?? 0);
     setProfileName(profile?.full_name ?? null);
+    setEmailVerified(Boolean((profile as { email_verified_at?: string | null } | null)?.email_verified_at));
     const rawCreds = (creds ?? []) as Array<{ id: string; device_label: string | null; created_at: string }>;
     setCredentials(rawCreds);
     setRecentOrders((orders ?? []) as CustomerOrderSummary[]);
@@ -120,10 +124,41 @@ const CustomerAccountPage = () => {
   const remaining = threshold - progressToNext;
   const loyaltyTargets = [...loyaltyProgram.categoryTargets, ...loyaltyProgram.itemTargets];
 
+  // Customers who skipped confirmation can finish it here at any time.
+  if (verifyingEmail && user?.email) {
+    return (
+      <EmailVerificationStep
+        email={user.email}
+        onContinue={() => { setVerifyingEmail(false); loadData(); }}
+        onSkip={() => setVerifyingEmail(false)}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100">
       <Header />
       <div className="container mx-auto px-4 pt-24 pb-16 max-w-2xl space-y-6">
+
+        {/* Unconfirmed email — rewards stay locked until this is done */}
+        {!loadingData && !emailVerified && (
+          <Card className="border-0 shadow-lg border-l-4 border-l-amber-500 bg-amber-50">
+            <CardContent className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <MailWarning className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                <div>
+                  <p className="font-semibold text-coffee-900">Confirm your email</p>
+                  <p className="text-sm text-coffee-700">
+                    You can order any time — confirming is only needed to claim free rewards.
+                  </p>
+                </div>
+              </div>
+              <Button onClick={() => setVerifyingEmail(true)} className="shrink-0">
+                Confirm now
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Header row */}
         <div className="flex items-center justify-between">

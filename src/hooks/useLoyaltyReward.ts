@@ -43,18 +43,16 @@ export function useLoyaltyReward(cartItems: CartItem[], userId?: string) {
         identities.set(product.product_name.toLowerCase(), { source: 'store', category: product.category });
       }
 
-      // Mirrors create-ziina-checkout: any stamp-giving menu card can be the
-      // free item. The separate redeemable set can add redemption-only cards,
-      // but it never excludes stamped cards. Menu only — store never redeems.
+      // Mirrors create-ziina-checkout: ONLY cards ticked as "Free redeem" can
+      // be claimed free. Fails closed — nothing ticked means nothing free,
+      // even on a full stamp card. Menu only — store never redeems.
       const eligiblePrices = cartItems
         .filter((item) => {
           const name = item.name.toLowerCase();
           const identity = identities.get(name);
           if (!identity || identity.source !== 'menu') return false;
-          const itemKey = `menu:${name}`;
-          return config.redeemableItemTargets.includes(itemKey)
-            || config.itemTargets.includes(itemKey)
-            || config.categoryTargets.includes(`menu:${identity.category}`.toLowerCase());
+          return config.redeemableItemTargets.includes(`menu:${name}`)
+            || config.redeemableItemTargets.includes(`menu:${identity.category}`.toLowerCase());
         })
         .map((item) => item.price)
         .filter((price) => Number.isFinite(price) && price > 0);

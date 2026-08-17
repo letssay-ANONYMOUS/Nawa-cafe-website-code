@@ -447,17 +447,19 @@ serve(async (req) => {
             .maybeSingle();
 
           if ((loyalty?.free_drinks_available ?? 0) > 0) {
-            // Redemption pool = any stamp-giving card plus any explicitly
-            // redeemable menu cards. A customer can buy stamped cards across
-            // the menu and use the banked reward on a different stamped card.
+            // Redemption pool = ONLY the menu cards the manager ticked as
+            // "Free redeem". Fails closed on purpose: if nothing is ticked,
+            // nothing can be claimed free even with a full stamp card, so the
+            // cafe never gives away an item it did not choose. Giving a stamp
+            // and being claimable for free are deliberately separate settings.
+            // Store products are never redeemable.
             const prices = validatedItems
               .filter((item) => {
                 if (item.source !== "menu") return false;
-                const categoryKey = `menu:${item.category || ""}`.toLowerCase();
                 const itemKey = `menu:${item.name}`.toLowerCase();
+                const categoryKey = `menu:${item.category || ""}`.toLowerCase();
                 return redeemableItems.includes(itemKey)
-                  || eligibleItems.includes(itemKey)
-                  || eligibleCategories.includes(categoryKey);
+                  || redeemableItems.includes(categoryKey);
               })
               .map((it) => Number(it.price))
               .filter((p) => Number.isFinite(p) && p > 0);

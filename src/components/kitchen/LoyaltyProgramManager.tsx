@@ -144,8 +144,10 @@ export function LoyaltyProgramManager() {
         <div className="space-y-2">
           <h3 className="text-sm font-semibold">Individual menu cards</h3>
           <p className="text-xs text-muted-foreground">
-            Each card has two Beanz-style flags. Stamp-giving cards are always redeemable; the second flag can add
-            cards that are redeemable without giving stamps.
+            Each card has two independent flags. <strong>Stamp</strong> = ordering it counts toward the
+            customer's card. <strong>Free redeem</strong> = it can be claimed free once the card is full.
+            They are separate on purpose: if nothing is ticked for Free redeem, nothing can be claimed
+            free — even by a customer with a full stamp card.
           </p>
           <div className="max-h-[34rem] space-y-3 overflow-y-auto rounded-lg border bg-background p-3">
             {menuCardOptions.map((card) => {
