@@ -77,7 +77,7 @@ export const CookieConsent = () => {
           <Cookie className="w-4 h-4 text-primary flex-shrink-0 hidden sm:block" />
           
           <p className="text-xs text-muted-foreground sm:flex-1 sm:min-w-0 leading-snug">
-            We use cookies to enhance your experience and analyze traffic.{' '}
+            We use cookies to keep the site working and, with your permission, to understand how it is used.{' '}
             <button
               onClick={() => setShowDetails(!showDetails)}
               className="text-primary hover:underline text-xs touch-manipulation"
@@ -125,7 +125,16 @@ export const CookieConsent = () => {
               <span className="font-medium">Analytics Cookies</span>
               <span className="text-muted-foreground">Optional</span>
             </div>
-            <p className="text-muted-foreground text-xs">Help us understand how visitors interact with our website.</p>
+            <p className="text-muted-foreground text-xs">
+              Help us understand how visitors use the site. Measured by Nawa Cafe on our own
+              systems — not shared with Google or any advertising company.
+            </p>
+            <p className="text-muted-foreground text-xs pt-1">
+              See our{' '}
+              <a href="/privacy-policy" className="text-primary hover:underline">Privacy Policy</a>
+              {' '}and{' '}
+              <a href="/our-partners" className="text-primary hover:underline">Partners</a>.
+            </p>
           </div>
         )}
       </div>

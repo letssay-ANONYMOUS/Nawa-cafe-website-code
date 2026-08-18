@@ -37,7 +37,7 @@ const PrivacyPolicyPage = () => {
             <li><strong>Email confirmation codes:</strong> a temporary code sent to confirm your address, stored in scrambled (hashed) form and deleted after a short period</li>
             <li><strong>Rewards information:</strong> your stamp card progress, rewards earned and redeemed, and referral records showing which account invited another</li>
             <li><strong>Sign-in security data (if you choose it):</strong> a passkey / Face ID or fingerprint credential. This stores a security key only — your actual fingerprint or face data never leaves your device and we never receive it</li>
-            <li><strong>Technical and usage information:</strong> IP address, browser and device type, approximate location, pages visited and website activity</li>
+            <li><strong>Technical and usage information:</strong> IP address, country, browser and device type, operating system, screen size, time zone, a visitor identifier, and — if you accept usage cookies — pages visited and website activity</li>
           </ul>
           <p className="text-cream-200 mt-3">
             We do not collect or store your card number. Card details are entered directly with our payment
@@ -111,10 +111,25 @@ const PrivacyPolicyPage = () => {
             for example keeping you signed in and remembering your cart. Analytics cookies help us understand how
             the site is used.
           </p>
+          <p className="text-cream-200 mb-3">
+            <strong>We measure website usage ourselves.</strong> Statistics such as pages viewed and how long a
+            visit lasted are recorded in our own database. We do not use Google Analytics, advertising trackers,
+            or third-party geolocation services, so no outside company is sent your browsing activity on this
+            site. Your approximate country is taken from the network connection itself, and we do not record
+            city-level location.
+          </p>
+          <p className="text-cream-200 mb-3">
+            <strong>Basic visit records are kept whether or not you accept cookies.</strong> When you open the
+            website we record a basic record of the visit — a visitor identifier, browser and device
+            characteristics, screen size, time zone, IP address and country. We keep these for security, fraud
+            prevention, and to keep the website running correctly, and we consider them necessary to operate the
+            site.
+          </p>
           <p className="text-cream-200">
-            Analytics only runs if you accept it in the cookie banner shown when you first visit. You can decline
+            <strong>Detailed usage measurement only runs if you accept it</strong> in the cookie banner — this
+            covers things like which pages you view, how far you scroll and how long you stay. You can decline
             and still use the website normally, and you can change your mind at any time by clearing cookies in
-            your browser settings.
+            your browser settings. Either way, this information stays in our own systems.
           </p>
         </section>
 

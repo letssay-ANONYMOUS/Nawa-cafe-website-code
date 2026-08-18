@@ -45,10 +45,10 @@ const PARTNERS: Partner[] = [
     policy: "https://ziina.com/privacy",
   },
   {
-    name: "Google (Analytics and Fonts)",
-    role: "Website statistics and fonts",
+    name: "Google Fonts",
+    role: "Delivering the typefaces used on this site",
     data:
-      "Anonymous usage statistics such as pages visited and approximate location, plus your IP address when fonts load. Analytics only runs if you accept analytics cookies.",
+      "Your IP address and browser type, sent automatically when your browser downloads the fonts used for our text. No account, order or cookie information is involved. We do not use Google Analytics or any Google advertising product.",
     location: "United States",
     policy: "https://policies.google.com/privacy",
   },
@@ -108,6 +108,15 @@ const OurPartnersPage = () => {
         </div>
 
         <section className="mt-10">
+          <h2 className="font-playfair text-xl font-semibold">Website statistics stay with us</h2>
+          <p className="mt-3 text-cream-200">
+            We measure how the website is used with our own system, stored in our own database. We do
+            not use Google Analytics, advertising trackers, or third-party geolocation lookups, and no
+            outside company receives your browsing activity on this site.
+          </p>
+        </section>
+
+        <section className="mt-8">
           <h2 className="font-playfair text-xl font-semibold">Data stored outside the UAE</h2>
           <p className="mt-3 text-cream-200">
             Some of these companies store or process information on servers outside the United Arab

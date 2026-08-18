@@ -38,24 +38,16 @@ Deno.serve(async (req) => {
     console.log('Track visitor request received');
     console.log('Resolved IP:', ipAddress);
 
-    // Resolve IP to geolocation
-    let country: string | null = null;
-    let city: string | null = null;
-    if (ipAddress !== 'unknown') {
-      try {
-        const geoRes = await fetch(`http://ip-api.com/json/${ipAddress}?fields=status,country,city`);
-        if (geoRes.ok) {
-          const geo = await geoRes.json();
-          if (geo.status === 'success') {
-            country = geo.country || null;
-            city = geo.city || null;
-            console.log('Geolocation resolved:', { country, city });
-          }
-        }
-      } catch (e) {
-        console.error('Geolocation lookup failed:', e);
-      }
-    }
+    // Country comes from the edge network header that already accompanies the
+    // request. We deliberately do NOT send the visitor's IP to a third-party
+    // geolocation service: the previous ip-api.com lookup shipped every
+    // visitor's IP to another company over plain HTTP. City-level detail is
+    // dropped — country is enough for our reporting.
+    const country: string | null =
+      req.headers.get('cf-ipcountry')
+      || req.headers.get('x-vercel-ip-country')
+      || null;
+    const city: string | null = null;
 
     const body: TrackVisitorRequest = await req.json();
     const {

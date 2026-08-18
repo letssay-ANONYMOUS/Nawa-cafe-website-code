@@ -10,7 +10,6 @@ import { AdminProvider } from "@/contexts/AdminContext";
 import { CustomerAuthProvider } from "@/contexts/CustomerAuthContext";
 import { RouteAwareCookieConsent } from "@/components/RouteAwareCookieConsent";
 import PageViewTracker from "@/components/PageViewTracker";
-import GoogleAnalytics from "@/components/GoogleAnalytics";
 import ScrollRestoration from "@/components/ScrollRestoration";
 import ImagePreloader from "@/components/ImagePreloader";
 import Home from "./pages/Home";
@@ -92,7 +91,6 @@ const App = () => {
             <Sonner />
             <BrowserRouter>
               <LocationTracker />
-              <GoogleAnalytics />
               <PageViewTracker />
               <ScrollRestoration />
               <ImagePreloader />
