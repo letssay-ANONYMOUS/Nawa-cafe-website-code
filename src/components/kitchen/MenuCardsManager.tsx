@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo , useRef} from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { ArrowLeft, Clock, ImageIcon, LayoutGrid, Plus, RefreshCw, RotateCcw, Save, Search, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, Clock, Gift, ImageIcon, LayoutGrid, Plus, RefreshCw, RotateCcw, Save, Search, Stamp, Trash2, Upload } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,6 +47,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const SECTION_KEY = "kitchen_menu_card_section";
 const ALL_ID = "__all__";
+const STAMP_ID = "__stamp__";
 
 interface EditForm {
   name: string;
@@ -161,6 +162,7 @@ export function MenuCardsManager() {
   const [categoryName, setCategoryName] = useState("");
   const [categoryImageUrl, setCategoryImageUrl] = useState("");
   const [savingCategory, setSavingCategory] = useState(false);
+  const resultsRef = useRef<HTMLDivElement | null>(null);
 
   const selectedId = getCardIdFromPath(location.pathname);
   const selectedCard = useMemo(
@@ -232,9 +234,23 @@ export function MenuCardsManager() {
     } : current);
   }, [selectedCard, loyaltyProgram.itemTargets, loyaltyProgram.redeemableItemTargets]);
 
+  // Is this card part of the stamp programme, either directly or because its
+  // whole category gives stamps?
+  const stampInfo = useCallback((card: MenuCard) => {
+    const key = `menu:${(card.name ?? '').trim()}`.toLowerCase();
+    const sectionKey = `menu:${effectiveSectionId(card, sections) ?? ''}`.toLowerCase();
+    const givesStamp = loyaltyProgram.itemTargets.includes(key)
+      || loyaltyProgram.categoryTargets.includes(sectionKey);
+    const redeemable = loyaltyProgram.redeemableItemTargets.includes(key)
+      || loyaltyProgram.redeemableItemTargets.includes(sectionKey);
+    return { givesStamp, redeemable, inStampSystem: givesStamp || redeemable };
+  }, [sections, loyaltyProgram.itemTargets, loyaltyProgram.categoryTargets, loyaltyProgram.redeemableItemTargets]);
+
   const filtered = useMemo(() => {
     let list = cards;
-    if (activeSection !== ALL_ID) {
+    if (activeSection === STAMP_ID) {
+      list = list.filter((c) => stampInfo(c).inStampSystem);
+    } else if (activeSection !== ALL_ID) {
       list = list.filter((c) => effectiveSectionId(c, sections) === activeSection);
     }
     const q = search.trim().toLowerCase();
@@ -248,12 +264,22 @@ export function MenuCardsManager() {
       );
     }
     return [...list].sort((a, b) => a.id - b.id);
-  }, [cards, sections, activeSection, search]);
+  }, [cards, sections, activeSection, search, stampInfo]);
+
+  const stampCardCount = useMemo(
+    () => cards.filter((c) => stampInfo(c).inStampSystem).length,
+    [cards, stampInfo],
+  );
 
   const handleSectionChange = (id: string) => {
     setActiveSection(id);
     localStorage.setItem(SECTION_KEY, id);
     navigate("/admin/kitchen/menu-cards");
+    // Jump straight to the cards for the category that was clicked, so the
+    // manager isn't left looking at the filter row with the results off-screen.
+    window.requestAnimationFrame(() => {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   };
 
   const openCard = (card: MenuCard) => {
@@ -883,19 +909,44 @@ export function MenuCardsManager() {
             {s.name}
           </Button>
         ))}
+        <Button
+          variant={activeSection === STAMP_ID ? "default" : "outline"}
+          onClick={() => handleSectionChange(STAMP_ID)}
+          className="rounded-full px-5 gap-1.5"
+          size="sm"
+        >
+          <Stamp className="h-3.5 w-3.5" />
+          In stamp system
+          <span className="ml-1 rounded-full bg-background/25 px-1.5 text-xs tabular-nums">
+            {stampCardCount}
+          </span>
+        </Button>
       </div>
 
-      <div className="flex justify-between items-center gap-3">
+      <div ref={resultsRef} className="scroll-mt-24 flex justify-between items-center gap-3">
         <h3 className="font-playfair text-2xl font-bold text-foreground">
-          {activeSection === ALL_ID ? "All Menu Cards" : sectionNameById(activeSection, sections)}
+          {activeSection === ALL_ID
+            ? "All Menu Cards"
+            : activeSection === STAMP_ID
+              ? "Cards in the stamp system"
+              : sectionNameById(activeSection, sections)}
         </h3>
         <span className="text-sm text-muted-foreground">{filtered.length} cards</span>
       </div>
+
+      {activeSection === STAMP_ID && (
+        <p className="-mt-2 text-sm text-muted-foreground">
+          Every card that gives a stamp or can be claimed free. Open a card to change its stamp
+          settings. Cards marked only <strong>Gives stamp</strong> build the card but cannot be
+          claimed free.
+        </p>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         {filtered.map((card) => {
           const sectId = effectiveSectionId(card, sections);
           const isOverridden = !!card.section && card.section !== defaultSectionIdForCard(card.id, sections);
+          const stamps = stampInfo(card);
           return (
             <Card
               key={card.id}
@@ -919,6 +970,20 @@ export function MenuCardsManager() {
                 <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/60 text-white text-xs">
                   #{card.id}
                 </div>
+                {stamps.inStampSystem && (
+                  <div className="absolute bottom-2 left-2 flex flex-wrap gap-1">
+                    {stamps.givesStamp && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-coffee-700/90 px-2 py-0.5 text-[10px] font-semibold text-white">
+                        <Stamp className="h-3 w-3" /> Gives stamp
+                      </span>
+                    )}
+                    {stamps.redeemable && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-600/90 px-2 py-0.5 text-[10px] font-semibold text-white">
+                        <Gift className="h-3 w-3" /> Free redeem
+                      </span>
+                    )}
+                  </div>
+                )}
                 {isOverridden && (
                   <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px]">
                     Moved
